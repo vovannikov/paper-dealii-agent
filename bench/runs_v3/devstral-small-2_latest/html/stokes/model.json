@@ -1,0 +1,309 @@
+{
+  "name": "lid_driven_cavity",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "velocity vector",
+      "dimension": {
+        "length": 1,
+        "mass": 0,
+        "time": -1,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    },
+    {
+      "name": "p",
+      "rank": "scalar",
+      "space": "L2",
+      "description": "pressure",
+      "dimension": {
+        "length": -1,
+        "mass": 1,
+        "time": -2,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "nu",
+      "rank": "scalar",
+      "description": "kinematic viscosity",
+      "dimension": {
+        "length": 2,
+        "mass": 0,
+        "time": -1,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    },
+    {
+      "name": "u_lid",
+      "rank": "vector",
+      "description": "lid velocity",
+      "dimension": {
+        "length": 1,
+        "mass": 0,
+        "time": -1,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "nu",
+                    "rank": "scalar",
+                    "description": "kinematic viscosity",
+                    "dimension": {
+                      "length": 2,
+                      "mass": 0,
+                      "time": -1,
+                      "temperature": 0,
+                      "amount": 0,
+                      "current": 0,
+                      "luminosity": 0
+                    }
+                  },
+                  {
+                    "type": "Apply",
+                    "name": "epsilon",
+                    "args": [
+                      {
+                        "type": "Field",
+                        "name": "u",
+                        "rank": "vector",
+                        "space": "H1",
+                        "description": "velocity vector",
+                        "dimension": {
+                          "length": 1,
+                          "mass": 0,
+                          "time": -1,
+                          "temperature": 0,
+                          "amount": 0,
+                          "current": 0,
+                          "luminosity": 0
+                        }
+                      }
+                    ],
+                    "rank": "tensor"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "type": "Grad",
+            "operand": {
+              "type": "Field",
+              "name": "p",
+              "rank": "scalar",
+              "space": "L2",
+              "description": "pressure",
+              "dimension": {
+                "length": -1,
+                "mass": 1,
+                "time": -2,
+                "temperature": 0,
+                "amount": 0,
+                "current": 0,
+                "luminosity": 0
+              }
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "momentum"
+    },
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Div",
+        "operand": {
+          "type": "Field",
+          "name": "u",
+          "rank": "vector",
+          "space": "H1",
+          "description": "velocity vector",
+          "dimension": {
+            "length": 1,
+            "mass": 0,
+            "time": -1,
+            "temperature": 0,
+            "amount": 0,
+            "current": 0,
+            "luminosity": 0
+          }
+        }
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "continuity"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "lid",
+      "value": {
+        "type": "Parameter",
+        "name": "u_lid",
+        "rank": "vector",
+        "description": "lid velocity",
+        "dimension": {
+          "length": 1,
+          "mass": 0,
+          "time": -1,
+          "temperature": 0,
+          "amount": 0,
+          "current": 0,
+          "luminosity": 0
+        }
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "walls",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [
+    {
+      "name": "epsilon",
+      "definition": {
+        "type": "Equation",
+        "lhs": {
+          "type": "Apply",
+          "name": "epsilon",
+          "args": [
+            {
+              "type": "Field",
+              "name": "u",
+              "rank": "vector",
+              "space": "H1",
+              "description": "velocity vector",
+              "dimension": {
+                "length": 1,
+                "mass": 0,
+                "time": -1,
+                "temperature": 0,
+                "amount": 0,
+                "current": 0,
+                "luminosity": 0
+              }
+            }
+          ],
+          "rank": "tensor"
+        },
+        "rhs": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Constant",
+              "value": 0.5
+            },
+            {
+              "type": "Add",
+              "terms": [
+                {
+                  "type": "Grad",
+                  "operand": {
+                    "type": "Field",
+                    "name": "u",
+                    "rank": "vector",
+                    "space": "H1",
+                    "description": "velocity vector",
+                    "dimension": {
+                      "length": 1,
+                      "mass": 0,
+                      "time": -1,
+                      "temperature": 0,
+                      "amount": 0,
+                      "current": 0,
+                      "luminosity": 0
+                    }
+                  }
+                },
+                {
+                  "type": "Transpose",
+                  "operand": {
+                    "type": "Grad",
+                    "operand": {
+                      "type": "Field",
+                      "name": "u",
+                      "rank": "vector",
+                      "space": "H1",
+                      "description": "velocity vector",
+                      "dimension": {
+                        "length": 1,
+                        "mass": 0,
+                        "time": -1,
+                        "temperature": 0,
+                        "amount": 0,
+                        "current": 0,
+                        "luminosity": 0
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "name": "epsilon"
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}

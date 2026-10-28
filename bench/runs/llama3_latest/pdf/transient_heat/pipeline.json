@@ -1,0 +1,15 @@
+{
+ "stages": {
+  "validate": "failed"
+ },
+ "details": {
+  "validate": "1 error(s)"
+ },
+ "issues": [
+  "error: the robin value '2*T' prescribes the outward flux \u03ba dT/dn and grows with T (slope +2), so the boundary feeds energy in as T rises: almost certainly a sign error. A convective condition -k dT/dn = h (T - T_amb) is written as robin with value -h*(T - T_amb); fix model.json [boundary 'left'] (anti_dissipative_boundary)"
+ ],
+ "solution": null,
+ "passed": false,
+ "status": "failed",
+ "seconds": 0.0013244152069091797
+}

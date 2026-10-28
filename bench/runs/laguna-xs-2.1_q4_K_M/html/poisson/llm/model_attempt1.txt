@@ -1,0 +1,121 @@
+```json
+{
+  "name": "steady_diffusion_with_source",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "scalar unknown (concentration)",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "k",
+      "rank": "scalar",
+      "description": "diffusivity",
+      "dimension": null
+    },
+    {
+      "name": "f",
+      "rank": "scalar",
+      "description": "volumetric production rate",
+      "dimension": null
+    },
+    {
+      "name": "g_N",
+      "rank": "scalar",
+      "description": "prescribed outward flux through right side",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Neg",
+        "operand": {
+          "type": "Div",
+          "operand": {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Grad",
+                "operand": {
+                  "type": "Field",
+                  "name": "u",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "scalar unknown (concentration)",
+                  "dimension": null
+                }
+              },
+              {
+                "type": "Parameter",
+                "name": "k",
+                "rank": "scalar",
+                "description": "diffusivity",
+                "dimension": null
+              }
+            ]
+          }
+        }
+      },
+      "rhs": {
+        "type": "Parameter",
+        "name": "f",
+        "rank": "scalar",
+        "description": "volumetric production rate",
+        "dimension": null
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "left_and_bottom",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "right",
+      "value": {
+        "type": "Parameter",
+        "name": "g_N",
+        "rank": "scalar",
+        "description": "prescribed outward flux through right side",
+        "dimension": null
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "top",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```

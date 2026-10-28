@@ -1,0 +1,52 @@
+{
+ "model": "qwen3.6:27b-coding",
+ "case": "allen_cahn",
+ "modality": "html",
+ "document_chars": 4767,
+ "started": 1793135269.83006,
+ "model_ok": true,
+ "model_attempts": 2,
+ "model_first_ok": false,
+ "model_issues": [
+  "missing_initial_condition: field 'c' has a TimeDerivative but no initial condition"
+ ],
+ "model_seconds": 435.6435670852661,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: 'int' object is not subscriptable"
+ ],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 57.55186438560486,
+ "total_seconds": 493.244193315506,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 240.23790454864502,
+   "prompt_tokens": 3338,
+   "completion_tokens": 7318,
+   "answer_chars": 3962,
+   "reasoning_chars": 20736,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 195.40201663970947,
+   "prompt_tokens": 4468,
+   "completion_tokens": 5963,
+   "answer_chars": 4344,
+   "reasoning_chars": 18015,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 57.55137348175049,
+   "prompt_tokens": 2312,
+   "completion_tokens": 1756,
+   "answer_chars": 353,
+   "reasoning_chars": 4940,
+   "finish": "stop"
+  }
+ ]
+}

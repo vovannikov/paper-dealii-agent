@@ -1,0 +1,60 @@
+{
+ "model": "devstral-small-2:latest",
+ "case": "allen_cahn",
+ "modality": "html",
+ "document_chars": 4767,
+ "started": 1793169623.0947258,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 84.23518776893616,
+ "model_parse_errors": [],
+ "instance_ok": false,
+ "instance_attempts": 3,
+ "instance_first_ok": false,
+ "instance_issues": [
+  "missing_boundary_mapping: geometry has no face-id mapping for boundary 'boundary'",
+  "unconstrained_sides: no boundary condition on side(s) 0 left (x-min), 1 right (x-max), 2 bottom (y-min), 3 top (y-max): they get the natural zero-flux condition (insulated / traction-free); map them to a boundary if the problem prescribes something there"
+ ],
+ "instance_seconds": 28.387328624725342,
+ "total_seconds": 112.65695142745972,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 84.23132538795471,
+   "prompt_tokens": 3660,
+   "completion_tokens": 1319,
+   "answer_chars": 6178,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 11.005642175674438,
+   "prompt_tokens": 2329,
+   "completion_tokens": 140,
+   "answer_chars": 338,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 8.659227848052979,
+   "prompt_tokens": 2504,
+   "completion_tokens": 140,
+   "answer_chars": 338,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 8.721085786819458,
+   "prompt_tokens": 2679,
+   "completion_tokens": 140,
+   "answer_chars": 338,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

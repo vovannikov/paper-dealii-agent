@@ -1,0 +1,22 @@
+{
+  "parameter_values": {
+    "lambda": 1.5,
+    "mu": 1.0,
+    "g_N": [0.0, -0.05]
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [4.0, 1.0],
+    "boundary_ids": {
+      "left": 0,
+      "right": 1,
+      "top_and_bottom": [2, 3]
+    }
+  },
+  "value_sources": {
+    "lambda": "Section 4",
+    "mu": "Section 4",
+    "g_N": "Section 4",
+    "geometry": "Section 1"
+  }
+}

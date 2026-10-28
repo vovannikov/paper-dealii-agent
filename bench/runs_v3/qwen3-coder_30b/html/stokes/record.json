@@ -1,0 +1,39 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "stokes",
+ "modality": "html",
+ "document_chars": 4547,
+ "started": 1793172796.4591415,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 12.796568393707275,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 2.9417145252227783,
+ "total_seconds": 15.764166355133057,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 12.793003797531128,
+   "prompt_tokens": 3411,
+   "completion_tokens": 825,
+   "answer_chars": 3328,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 2.941169261932373,
+   "prompt_tokens": 2102,
+   "completion_tokens": 154,
+   "answer_chars": 395,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

@@ -1,0 +1,57 @@
+{
+ "model": "llama3:latest",
+ "case": "elasticity",
+ "modality": "pdf",
+ "document_chars": 1321,
+ "started": 1793130607.454693,
+ "model_ok": true,
+ "model_attempts": 2,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 39.66216421127319,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 2,
+ "instance_first_ok": false,
+ "instance_issues": [],
+ "instance_seconds": 6.701475381851196,
+ "total_seconds": 46.398791551589966,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 19.28988289833069,
+   "prompt_tokens": 1748,
+   "completion_tokens": 940,
+   "answer_chars": 3484,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 20.36716866493225,
+   "prompt_tokens": 2768,
+   "completion_tokens": 980,
+   "answer_chars": 3833,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 3.799894332885742,
+   "prompt_tokens": 856,
+   "completion_tokens": 173,
+   "answer_chars": 477,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 2.9008655548095703,
+   "prompt_tokens": 1095,
+   "completion_tokens": 144,
+   "answer_chars": 348,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

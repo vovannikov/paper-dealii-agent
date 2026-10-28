@@ -1,0 +1,48 @@
+{
+ "model": "qwen3.6:27b-coding",
+ "case": "elasticity",
+ "modality": "html",
+ "document_chars": 5662,
+ "started": 1793173188.583112,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 260.85720658302307,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 2,
+ "instance_first_ok": false,
+ "instance_issues": [],
+ "instance_seconds": 153.22648286819458,
+ "total_seconds": 414.11623764038086,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 260.8536241054535,
+   "prompt_tokens": 4067,
+   "completion_tokens": 7986,
+   "answer_chars": 6177,
+   "reasoning_chars": 23432,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 86.44273972511292,
+   "prompt_tokens": 2627,
+   "completion_tokens": 2619,
+   "answer_chars": 465,
+   "reasoning_chars": 7409,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 66.782719373703,
+   "prompt_tokens": 2870,
+   "completion_tokens": 2116,
+   "answer_chars": 393,
+   "reasoning_chars": 6117,
+   "finish": "stop"
+  }
+ ]
+}

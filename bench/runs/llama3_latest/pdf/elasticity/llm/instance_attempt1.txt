@@ -1,0 +1,25 @@
+Here is the extracted ProblemInstance in JSON format:
+
+```
+{
+  "parameter_values": {
+    "lambda": 1.5,
+    "mu": 1.0,
+    "f": [0.0, 0.0],
+    "gN": [0.0, -0.05]
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [4.0, 1.0],
+    "boundary_ids": {
+      "left": 0,
+      "right": 1,
+      "top": 3,
+      "bottom": 2
+    }
+  },
+  "value_sources": {}
+}
+```
+
+Note that I did not include any refinements or field degrees, as they are not mentioned in the paper.

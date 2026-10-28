@@ -1,0 +1,39 @@
+{
+ "model": "laguna-xs-2.1:q4_K_M",
+ "case": "heat_nafems",
+ "modality": "html",
+ "document_chars": 4806,
+ "started": 1793138515.0824041,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 120.08523631095886,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 20.15075659751892,
+ "total_seconds": 140.27412056922913,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 120.08314800262451,
+   "prompt_tokens": 3096,
+   "completion_tokens": 5942,
+   "answer_chars": 3930,
+   "reasoning_chars": 15533,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 20.150195121765137,
+   "prompt_tokens": 2113,
+   "completion_tokens": 1611,
+   "answer_chars": 438,
+   "reasoning_chars": 4366,
+   "finish": "stop"
+  }
+ ]
+}

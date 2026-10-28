@@ -1,0 +1,29 @@
+Here is the extracted ProblemInstance (parameter values and geometry) in JSON format:
+
+```
+{
+  "parameter_values": {
+    "k": 52.0,
+    "h": 750.0,
+    "T_amb": 0.0
+  },
+  "geometry": {
+    "lower_left": [
+      0.0,
+      0.0
+    ],
+    "upper_right": [
+      0.6,
+      1.0
+    ],
+    "boundary_ids": {
+      "left": 0,
+      "bottom": 2,
+      "top_and_right": [1, 3]
+    }
+  },
+  "value_sources": {}
+}
+```
+
+Note that the paper does not provide values for `T_ref` or `refinements`, so they are omitted.

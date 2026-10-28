@@ -1,0 +1,37 @@
+{
+ "stages": {
+  "validate": "passed",
+  "generate": "passed",
+  "build": "passed",
+  "run": "passed",
+  "diagnose": "passed",
+  "verify": "skipped"
+ },
+ "details": {
+  "validate": "model and instance consistent",
+  "generate": "deal.II reference program generated",
+  "build": "compiled against deal.II",
+  "run": "ran to completion (256 cells, 2467 unknowns)",
+  "diagnose": "Newton / linear-solver / time-step diagnostics acceptable",
+  "verify": "verification disabled"
+ },
+ "issues": [],
+ "solution": "runs_v3/devstral-small-2_latest/html/stokes/solution.vtu",
+ "passed": true,
+ "status": "ran",
+ "compare": {
+  "comparable": true,
+  "rel_linf": 1.0
+ },
+ "seconds": 39.64242219924927,
+ "per_array": {
+  "u": {
+   "linf": 1.0,
+   "l2": 0.16271212491020984
+  },
+  "p": {
+   "linf": 0.315613462472143,
+   "l2": 0.3323705727367405
+  }
+ }
+}

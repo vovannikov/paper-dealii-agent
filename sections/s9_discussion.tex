@@ -1,0 +1,32 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{What makes the approach different}
+\paragraph{The unit of trust is the mathematics, not the program.} In architectures where the model writes the solver (or the solver input), the generated artefact is both the product and the only thing a reviewer can read. In \femagent{} the model's product is a short, typed, declarative record (about 150 lines of JSON for the heat benchmark) that a domain scientist can read in minutes, and the program is a deterministic consequence of it. The audit question changes from ``is this 236-line C++ file right?'' to ``did the model read the paper right?'', which is a question the scientist can answer and the validators can partly answer.
+
+\paragraph{Defence in depth with independent layers.} The experiments show that no single layer is sufficient, and that the layers are complementary. Schema and referential validation catch malformed output; rank and dimension validation catch inconsistent equations (and, notably, hallucinated units); instance validation catches missing values; the generator's scope checks stop constructs the backend cannot represent faithfully; static well-posedness rules catch sign and pairing errors before any build; and the verification gate establishes properties of the discrete operator that none of the earlier layers can see. The one remaining weakness---an extraction that is internally consistent, passes every check, yet does not state what the paper states---is addressed by \emph{storing} the extraction, with values annotated by their source, for review.
+
+\paragraph{Verification is generated, not written.} The manufactured solutions, tangent checks and invariants come from the IR; they do not depend on the model's ability to write tests, which is a weak point of current LLMs \citep{fembench2025}. Mutation testing gives a quantitative handle on the verification's power, which the code-generation literature largely lacks.
+
+\paragraph{Token efficiency by construction.} The model never sees code, compiler logs or solver output. A model call has a prompt of about $3\,000$ tokens and a typical repair message is a handful of lines. We make no claim about a general reduction relative to a direct-generation architecture, because the full ablation has not been run; the toy baseline of Section~\ref{sec:baseline} (one document, three models) used roughly three to five times as many tokens in total as the extraction and ended without a compiling program, but it is a single sample. The measured token counts in Section~\ref{sec:extraction} are the LLM cost per paper of this architecture.
+
+\subsection{How to apply it efficiently}
+Based on the experiments, we recommend the following practice.
+\begin{enumerate}
+\item \emph{Prefer HTML with MathML to PDF text}, when a publisher page is available; PDF text worked for many documents but loses the grouping of fractions and the equation numbering. For PDFs without a web counterpart a layout-aware converter that emits LaTeX or MathML is the natural extension.
+\item \emph{Use the prompt contract that matches the IR.} The experiment on prompt extension (Section~\ref{sec:prompt}) shows that documenting every node type the IR can express (time and space coordinates, vectors, initial data, relations) is a larger lever than the choice of the model.
+\item \emph{Use a model that follows structure and keep reasoning bounded.} A smaller non-reasoning model that returns schema-conformant JSON in seconds can be preferable to a reasoning model that needs minutes and occasionally never finishes; if a reasoning model is used, give it a large context and cap its output.
+\item \emph{Use the stored artefacts.} Inspect \code{model.json} and \code{instance.json}, fix mistakes by hand, and resume from the JSON without a model call. The tool reports exactly which values are missing rather than inventing them.
+\item \emph{Treat the verification verdict as conditional on its coverage.} In the present version it does not exercise boundary-condition terms (Section~\ref{sec:verification}); for new problem classes compare with an independent reference, as done for the NAFEMS benchmark.
+\end{enumerate}
+
+\subsection{Limitations and threats to validity}
+\paragraph{Scope of the implementation.} Rectangular two-dimensional domains, polynomial data, $H^1$-conforming elements, and no distributed or matrix-free execution. The MCP interface, the curated recipe knowledge base and the HPC backend described in the research plan are not implemented, and nothing in this paper should be read as a result for them.
+
+\paragraph{Small, partly synthetic corpus.} The extraction benchmark has six documents; one is a third-party page, five were authored by us in the style of a short paper, rendered both as MathML HTML and as a LaTeX-compiled PDF. They are cleaner than many real papers and each describes a single complete problem. The model-by-document matrix has 60 cells, so differences of one cell between models are not significant. Each configuration was run once at temperature $0$; run-to-run variance of a served model was not measured. The results characterise the prototype and its prompt, not the models in general.
+
+\paragraph{The scorer.} Equivalence is decided by evaluating residuals on random polynomial fields, which is far more tolerant of notation than string matching, but it has blind spots. Two strong forms that agree pointwise may differ in the natural boundary condition they imply after integration by parts (for example the divergence-of-stress form of elasticity against the Navier--Cauchy form); the scorer accepts both, and in our data the generator rejected the Navier--Cauchy variant for an unrelated reason. Incompressible problems are compared modulo the constraint, and such variants produce different discrete solutions (Section~\ref{sec:e2e}). Instances are compared through their effect on the operator and boundary data, not through the free-text notes.
+
+\paragraph{Discretization is injected.} Element degrees, pinning of the pressure and the mesh refinement are not in the paper; in the benchmark they were taken from the gold instance, as the tool leaves them to the user or to defaults.
+
+\paragraph{Local, quantized models.} All models were served locally through Ollama in 4-bit quantizations of 8--33B-parameter models; results with frontier models may differ in either direction.

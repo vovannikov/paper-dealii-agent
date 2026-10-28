@@ -1,0 +1,115 @@
+{
+  "name": "creeping_flow",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "velocity",
+      "dimension": {"length": 1, "time": -1}
+    }
+  ],
+  "parameters": [
+    {
+      "name": "ν",
+      "rank": "scalar",
+      "description": "kinematic viscosity",
+      "dimension": {"mass": 1, "length": -1, "time": -1}
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "name": "stokes",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Grad",
+                    "operand": {
+                      "type": "Field",
+                      "name": "u",
+                      "rank": "vector",
+                      "space": "H1",
+                      "description": "velocity",
+                      "dimension": {"length": 1, "time": -1}
+                    }
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "ν",
+                    "rank": "scalar",
+                    "description": "kinematic viscosity",
+                    "dimension": {"mass": 1, "length": -1, "time": -1}
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      }
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "lid",
+      "value": {
+        "type": "Constant",
+        "value": {
+          "type": "VectorExpr",
+          "components": [
+            {
+              "type": "Constant",
+              "value": 1
+            },
+            {
+              "type": "Constant",
+              "value": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "no-slip",
+      "value": {
+        "type": "Constant",
+        "value": {
+          "type": "VectorExpr",
+          "components": [
+            {
+              "type": "Constant",
+              "value": 0
+            },
+            {
+              "type": "Constant",
+              "value": 0
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}

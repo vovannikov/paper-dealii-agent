@@ -1,0 +1,45 @@
+{
+ "model": "llama3:latest",
+ "case": "transient_heat",
+ "modality": "html",
+ "document_chars": 4461,
+ "started": 1793130313.5805922,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [
+  "dimension_mismatch: terms of a sum have inconsistent physical dimensions: T^-1\u00b7\u0398, T^-1"
+ ],
+ "model_seconds": 60.2677526473999,
+ "model_parse_errors": [],
+ "total_seconds": 60.29161024093628,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 20.481926679611206,
+   "prompt_tokens": 2935,
+   "completion_tokens": 956,
+   "answer_chars": 4013,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 20.174877405166626,
+   "prompt_tokens": 3945,
+   "completion_tokens": 952,
+   "answer_chars": 4037,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 19.60202693939209,
+   "prompt_tokens": 4951,
+   "completion_tokens": 906,
+   "answer_chars": 3829,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

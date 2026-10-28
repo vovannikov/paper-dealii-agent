@@ -1,0 +1,39 @@
+{
+ "model": "llama3:latest",
+ "case": "transient_heat",
+ "modality": "pdf",
+ "document_chars": 1309,
+ "started": 1793130587.1914556,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 16.758925199508667,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 3.4373619556427,
+ "total_seconds": 20.209842681884766,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 16.757580518722534,
+   "prompt_tokens": 1724,
+   "completion_tokens": 815,
+   "answer_chars": 3169,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 3.4369823932647705,
+   "prompt_tokens": 828,
+   "completion_tokens": 159,
+   "answer_chars": 529,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

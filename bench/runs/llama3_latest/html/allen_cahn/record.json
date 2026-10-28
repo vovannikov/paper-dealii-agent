@@ -1,0 +1,47 @@
+{
+ "model": "llama3:latest",
+ "case": "allen_cahn",
+ "modality": "html",
+ "document_chars": 4767,
+ "started": 1793130470.6221437,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 46.20197939872742,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: 3 validation errors for PDEModel\nequations.0\n  Value error, expr_from_dict: unknown node type 'f' [type=value_error, input_value={'type': 'Equation', 'lhs...': 0}, 'name': 'strong'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error\nboundary_conditions.0.boundary_id.str\n  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type\nboundary_conditions.0.boundary_id.int\n  Input should be a valid integer [type=int_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/int_type",
+  "response JSON did not match PDEModel: missing key 'base'",
+  "response JSON did not match PDEModel: missing key 'base'"
+ ],
+ "total_seconds": 46.20963263511658,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 16.134888172149658,
+   "prompt_tokens": 3122,
+   "completion_tokens": 735,
+   "answer_chars": 3088,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 14.894155502319336,
+   "prompt_tokens": 4085,
+   "completion_tokens": 697,
+   "answer_chars": 2921,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 15.170389652252197,
+   "prompt_tokens": 4835,
+   "completion_tokens": 703,
+   "answer_chars": 2937,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

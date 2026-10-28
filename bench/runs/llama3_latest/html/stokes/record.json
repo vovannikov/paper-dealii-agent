@@ -1,0 +1,50 @@
+{
+ "model": "llama3:latest",
+ "case": "stokes",
+ "modality": "html",
+ "document_chars": 4547,
+ "started": 1793130436.2558057,
+ "model_ok": true,
+ "model_attempts": 2,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 30.55005645751953,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\n  Value error, equations reference undeclared parameters: ['p'] [type=value_error, input_value={'name': 'creeping_flow',...None, 'ambiguity': None}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error"
+ ],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 3.738065719604492,
+ "total_seconds": 34.315123319625854,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 17.548057556152344,
+   "prompt_tokens": 2973,
+   "completion_tokens": 812,
+   "answer_chars": 3120,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 12.999754190444946,
+   "prompt_tokens": 3904,
+   "completion_tokens": 613,
+   "answer_chars": 2343,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 3.737577438354492,
+   "prompt_tokens": 2076,
+   "completion_tokens": 148,
+   "answer_chars": 453,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

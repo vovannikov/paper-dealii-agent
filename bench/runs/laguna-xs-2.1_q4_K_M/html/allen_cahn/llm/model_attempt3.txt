@@ -1,0 +1,221 @@
+{
+  "name": "allen_cahn",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "c",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "non-conserved order parameter",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "M",
+      "rank": "scalar",
+      "description": "mobility",
+      "dimension": null
+    },
+    {
+      "name": "kappa",
+      "rank": "scalar",
+      "description": "gradient-energy coefficient",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "TimeDerivative",
+            "operand": {
+              "type": "Field",
+              "name": "c",
+              "rank": "scalar",
+              "space": "H1",
+              "description": "non-conserved order parameter",
+              "dimension": null
+            }
+          },
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Parameter",
+                "name": "M",
+                "rank": "scalar",
+                "description": "mobility",
+                "dimension": null
+              },
+              {
+                "type": "Add",
+                "terms": [
+                  {
+                    "type": "Pow",
+                    "base": {
+                      "type": "Field",
+                      "name": "c",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "non-conserved order parameter",
+                      "dimension": null
+                    },
+                    "exponent": 3
+                  },
+                  {
+                    "type": "Neg",
+                    "operand": {
+                      "type": "Field",
+                      "name": "c",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "non-conserved order parameter",
+                      "dimension": null
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Parameter",
+                  "name": "M",
+                  "rank": "scalar",
+                  "description": "mobility",
+                  "dimension": null
+                },
+                {
+                  "type": "Parameter",
+                  "name": "kappa",
+                  "rank": "scalar",
+                  "description": "gradient-energy coefficient",
+                  "dimension": null
+                },
+                {
+                  "type": "Laplacian",
+                  "operand": {
+                    "type": "Field",
+                    "name": "c",
+                    "rank": "scalar",
+                    "space": "H1",
+                    "description": "non-conserved order parameter",
+                    "dimension": null
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [
+    {
+      "field": "c",
+      "time": 0,
+      "value": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Constant",
+            "value": 0.5
+          },
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Add",
+                "terms": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "Neg",
+                    "operand": {
+                      "type": "Constant",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "Field",
+                "name": "x",
+                "rank": "scalar",
+                "space": "L2",
+                "description": "spatial coordinate x",
+                "dimension": null
+              }
+            ]
+          },
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Add",
+                "terms": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "Neg",
+                    "operand": {
+                      "type": "Constant",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "Field",
+                "name": "y",
+                "rank": "scalar",
+                "space": "L2",
+                "description": "spatial coordinate y",
+                "dimension": null
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "boundary_conditions": [
+    {
+      "field": "c",
+      "type": "neumann",
+      "boundary_id": "all_boundaries",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": "equation (4) in paper: ∇c · n = 0 on ∂Ω",
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [
+    "Domain is unit square Ω = (0,1)²",
+    "M = 1, κ = 0.01",
+    "Simulation runs from t = 0 to t = 1 with Δt = 0.01"
+  ],
+  "provenance": "Allen-Cahn equation for phase ordering, derived from L2 gradient flow of Ginzburg-Landau free energy",
+  "ambiguity": null
+}

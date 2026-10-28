@@ -1,0 +1,336 @@
+Let me carefully extract the PDE model from this paper content.
+
+**Problem Description:**
+- Unsteady heat conduction in a thin square plate Ω = (0,1) × (0,1)
+- Time interval: 0 ≤ t ≤ 1
+- Initially at reference temperature T = 0
+- At t = 0, the left edge starts to be heated with temperature rising linearly with time
+- The three other edges (right, bottom, top) are thermally insulated
+
+**Governing Equation:**
+Heat equation:
+∂T/∂t - ∇·(κ ∇T) = 0 in Ω, t > 0
+
+**Initial Condition:**
+T(x, y, 0) = 0
+
+**Boundary Conditions:**
+1. Left edge (x = 0): T(0, y, t) = βt (Dirichlet condition with ramped temperature)
+2. Right edge (x = 1): κ ∂T/∂n = 0 (Insulated - Neumann with value 0)
+3. Bottom edge (y = 0): κ ∂T/∂n = 0 (Insulated - Neumann with value 0)
+4. Top edge (y = 1): κ ∂T/∂n = 0 (Insulated - Neumann with value 0)
+
+**Parameters:**
+- κ = 0.5 (thermal diffusivity)
+- β = 2 (heating rate)
+- Time in seconds, temperature in kelvin above reference
+
+Now let me construct the PDE-IR:
+
+**Fields:**
+- T: scalar field, rank scalar, space H1, temperature
+
+**Parameters:**
+- κ: scalar, thermal diffusivity
+- β: scalar, heating rate
+
+**Equation:**
+∂T/∂t - ∇·(κ ∇T) = 0
+
+In the PDE-IR format:
+- TimeDerivative of T
+- Minus divergence of (κ times gradient of T)
+- Equals 0
+
+**Initial Condition:**
+T(x, y, 0) = 0
+
+**Boundary Conditions:**
+1. Left edge (x = 0): Dirichlet, T = βt
+2. Right edge (x = 1): Neumann, κ ∂T/∂n = 0
+3. Bottom edge (y = 0): Neumann, κ ∂T/∂n = 0
+4. Top edge (y = 1): Neumann, κ ∂T/∂n = 0
+
+Wait, I need to think about the boundary IDs. The paper mentions:
+- Left edge: x = 0
+- Right edge: x = 1
+- Bottom edge: y = 0
+- Top edge: y = 1
+
+I should use distinct boundary IDs for each edge. Let me use:
+- "left" for x = 0
+- "right" for x = 1
+- "bottom" for y = 0
+- "top" for y = 1
+
+For the Neumann conditions, the value is κ ∂T/∂n = 0, which means the outward normal flux is 0. In the PDE-IR format, for a Neumann condition, the value is the prescribed outward normal flux. So for -div(κ grad(T)), the Neumann value would be κ ∂T/∂n.
+
+Actually, let me re-read the instructions:
+"A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+
+So for the heat equation ∂T/∂t - ∇·(κ ∇T) = 0, which can be written as ∂T/∂t + (-∇·(κ ∇T)) = 0, the Neumann value for the boundary condition is κ ∂T/∂n.
+
+For the insulated boundaries, κ ∂T/∂n = 0, so the Neumann value is 0.
+
+For the Dirichlet condition on the left edge, T = βt.
+
+Let me also think about dimensions:
+- κ is thermal diffusivity, which has units of m²/s (length²/time)
+- β is heating rate, which has units of K/s (temperature/time)
+- T is temperature, which has units of K (temperature)
+
+Actually, looking at the paper again:
+- "Time is measured in seconds and temperature in kelvin above the reference temperature."
+- κ = 0.5 (thermal diffusivity)
+- β = 2 (heating rate)
+
+The dimensions:
+- κ: thermal diffusivity has dimension length²/time = {"length": 2, "time": -1}
+- β: heating rate has dimension temperature/time = {"temperature": 1, "time": -1}
+- T: temperature has dimension temperature = {"temperature": 1}
+
+Wait, but the paper says "temperature in kelvin above the reference temperature", so T is in K. And β is the heating rate, so βt would be in K.
+
+Let me construct the JSON now.
+
+For the equation:
+∂T/∂t - ∇·(κ ∇T) = 0
+
+In PDE-IR:
+- LHS: Add of TimeDerivative(T) and Neg(Div(Mul(Grad(T), κ)))
+- RHS: Constant(0)
+
+Actually, let me be more careful. The equation is:
+∂T/∂t - ∇·(κ ∇T) = 0
+
+This can be rewritten as:
+∂T/∂t = ∇·(κ ∇T)
+
+Or in the form:
+∂T/∂t - ∇·(κ ∇T) = 0
+
+For the PDE-IR, I need to express the strong form. Let me think about how to structure this.
+
+The equation is:
+∂T/∂t - ∇·(κ ∇T) = 0
+
+So:
+- TimeDerivative(T) - Div(Mul(Grad(T), κ)) = 0
+
+In the PDE-IR format:
+{
+  "type": "Equation",
+  "lhs": {
+    "type": "Add",
+    "terms": [
+      {
+        "type": "TimeDerivative",
+        "operand": {
+          "type": "Field",
+          "name": "T",
+          ...
+        }
+      },
+      {
+        "type": "Neg",
+        "operand": {
+          "type": "Div",
+          "operand": {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Grad",
+                "operand": {
+                  "type": "Field",
+                  "name": "T",
+                  ...
+                }
+              },
+              {
+                "type": "Parameter",
+                "name": "κ",
+                ...
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "rhs": {
+    "type": "Constant",
+    "value": 0
+  }
+}
+
+Wait, I need to be careful about the order. The equation is:
+∂T/∂t - ∇·(κ ∇T) = 0
+
+So the LHS should be:
+TimeDerivative(T) + (-Div(Mul(Grad(T), κ)))
+
+Or equivalently:
+Add([TimeDerivative(T), Neg(Div(Mul(Grad(T), κ)))])
+
+And RHS is 0.
+
+Let me also think about the boundary conditions more carefully.
+
+The paper says:
+- Left edge (x = 0): T(0, y, t) = βt (Dirichlet)
+- Right edge (x = 1): κ ∂T/∂n = 0 (Neumann)
+- Bottom edge (y = 0): κ ∂T/∂n = 0 (Neumann)
+- Top edge (y = 1): κ ∂T/∂n = 0 (Neumann)
+
+For the Dirichlet condition on the left edge:
+- field: T
+- type: dirichlet
+- boundary_id: "left"
+- value: βt (which is Mul(β, t))
+
+Wait, but t is time, which is not a parameter in the traditional sense. Let me think about this.
+
+Actually, looking at the PDE-IR format, the value for a Dirichlet condition should be an expression. For T = βt, the value is β * t.
+
+But t is time, which is a variable. In the PDE-IR, I think I should express this as:
+{
+  "type": "Mul",
+  "factors": [
+    {
+      "type": "Parameter",
+      "name": "β",
+      ...
+    },
+    {
+      "type": "Field",
+      "name": "t",
+      ...
+    }
+  ]
+}
+
+Hmm, but t is not really a field. Let me think about this differently.
+
+Actually, looking at the example in the instructions, the Dirichlet value is just a constant or expression. For T = βt, I think I should use:
+{
+  "type": "Mul",
+  "factors": [
+    {
+      "type": "Parameter",
+      "name": "β",
+      ...
+    },
+    {
+      "type": "Constant",
+      "value": "t"
+    }
+  ]
+}
+
+Wait, that doesn't seem right either. Let me look at the example again.
+
+In the example, the Dirichlet value is:
+{
+  "type": "Constant",
+  "value": 0
+}
+
+So for T = βt, I think the value should be:
+{
+  "type": "Mul",
+  "factors": [
+    {
+      "type": "Parameter",
+      "name": "β",
+      ...
+    },
+    {
+      "type": "Field",
+      "name": "t",
+      ...
+    }
+  ]
+}
+
+But t is time, not a spatial field. Let me think...
+
+Actually, in the context of PDEs, time is often treated as a parameter or a separate variable. For the boundary condition T = βt, I think I should express it as:
+{
+  "type": "Mul",
+  "factors": [
+    {
+      "type": "Parameter",
+      "name": "β",
+      ...
+    },
+    {
+      "type": "Field",
+      "name": "t",
+      "rank": "scalar",
+      "space": "L2",  // or some temporal space
+      "description": "time",
+      "dimension": {"time": 1}
+    }
+  ]
+}
+
+Hmm, but this is getting complicated. Let me just use a simpler approach and treat t as a field or parameter.
+
+Actually, looking at the problem more carefully, I think the cleanest approach is to treat t as a parameter or field. Let me just use:
+
+For the Dirichlet condition T = βt:
+{
+  "type": "Mul",
+  "factors": [
+    {
+      "type": "Parameter",
+      "name": "β",
+      "rank": "scalar",
+      "description": "heating rate",
+      "dimension": {"temperature": 1, "time": -1}
+    },
+    {
+      "type": "Field",
+      "name": "t",
+      "rank": "scalar",
+      "space": "L2",
+      "description": "time",
+      "dimension": {"time": 1}
+    }
+  ]
+}
+
+Actually, I realize I'm overcomplicating this. Let me just follow the pattern from the example and use what makes sense.
+
+For the Neumann conditions, the value is κ ∂T/∂n = 0, so the Neumann value is 0.
+
+Let me now write out the full JSON structure.
+
+Actually, wait. Let me re-read the instructions about boundary conditions:
+
+"A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`. An insulated / zero-flux boundary is neumann with value 0."
+
+So for the heat equation ∂T/∂t - ∇·(κ ∇T) = 0, which has the form ∂T/∂t + (-∇·(κ ∇T)) = 0, the Neumann value for insulated boundaries is κ ∂T/∂n = 0, so the value is 0.
+
+This matches what the paper says: "κ ∂T/∂n = 0 on x = 1, y = 0, y = 1."
+
+Now let me finalize the JSON structure.
+
+For the dimensions:
+- κ (thermal diffusivity): {"length": 2, "time": -1}
+- β (heating rate): {"temperature": 1, "time": -1}
+- T (temperature): {"temperature": 1}
+
+Let me also think about the boundary IDs. The paper mentions:
+- Left edge: x = 0
+- Right edge: x = 1
+- Bottom edge: y = 0
+- Top edge: y = 1
+
+I'll use:
+- "left" for x = 0
+- "right" for x = 1
+- "bottom" for y = 0
+- "top" for y = 1
+
+Now let me construct the final JSON.

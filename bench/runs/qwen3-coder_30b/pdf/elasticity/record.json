@@ -1,0 +1,47 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "elasticity",
+ "modality": "pdf",
+ "document_chars": 1321,
+ "started": 1793131068.1154048,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 63.354543685913086,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: missing key 'name'",
+  "response JSON did not match PDEModel: missing key 'name'",
+  "response JSON did not match PDEModel: missing key 'name'"
+ ],
+ "total_seconds": 63.363024950027466,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 19.721938848495483,
+   "prompt_tokens": 1746,
+   "completion_tokens": 1516,
+   "answer_chars": 6937,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 21.08249258995056,
+   "prompt_tokens": 3315,
+   "completion_tokens": 1516,
+   "answer_chars": 6937,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 22.54449462890625,
+   "prompt_tokens": 4884,
+   "completion_tokens": 1516,
+   "answer_chars": 6937,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

@@ -1,0 +1,47 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "heat_nafems",
+ "modality": "pdf",
+ "document_chars": 2489,
+ "started": 1793131001.6732175,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 39.652544260025024,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\nprovenance\n  Input should be a dictionary or an instance of Provenance [type=dataclass_type, input_value='Wolfram Documentation, H...ingle-HeatTransfer-0001', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/dataclass_type",
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\nprovenance.document\n  Field required [type=missing, input_value={'source': 'Wolfram Docum... NAFEMS Documentation.'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing",
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\nprovenance.document\n  Field required [type=missing, input_value={'source': 'Wolfram Docum... NAFEMS Documentation.'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing"
+ ],
+ "total_seconds": 39.66774606704712,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 12.439201593399048,
+   "prompt_tokens": 2114,
+   "completion_tokens": 924,
+   "answer_chars": 3622,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 13.266847372055054,
+   "prompt_tokens": 3164,
+   "completion_tokens": 966,
+   "answer_chars": 3769,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 13.942140340805054,
+   "prompt_tokens": 4243,
+   "completion_tokens": 966,
+   "answer_chars": 3769,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

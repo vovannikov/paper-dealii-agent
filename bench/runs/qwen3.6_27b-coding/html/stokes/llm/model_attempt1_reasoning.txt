@@ -1,0 +1,477 @@
+Here's a thinking process:
+
+1.  **Understand the Goal**: Extract the mathematical model from the provided paper text into a specific JSON schema (PDE-IR) for femagent. The schema requires fields, parameters, equations (strong form), initial conditions, boundary conditions, etc.
+
+2.  **Analyze the Input Text**:
+   - **Problem**: Steady flow of incompressible Newtonian fluid in a unit square cavity Ω=(0,1)×(0,1).
+   - **Governing Equations**: Stokes equations (creeping flow, inertia negligible).
+     - Momentum: `-∇·(2ν ε(u)) + ∇p = 0` in Ω
+     - Continuity: `∇·u = 0` in Ω
+     - Strain rate: `ε(u) = 1/2 (∇u + ∇u^T)`
+   - **Boundary Conditions**:
+     - Top wall (y=1): `u = u_lid = (1, 0)` (Dirichlet)
+     - Other walls (x=0, x=1, y=0): `u = 0` (Dirichlet, no-slip)
+     - Pressure: determined up to an additive constant (no explicit BC needed for p in this formulation, or we can note it's underdetermined, but typically in PDE-IR we just specify BCs for the fields we solve for. Since p is a field, we might need a reference pressure or just leave it as is. The prompt says "Because the velocity is prescribed on the whole boundary, the pressure is determined only up to an additive constant." I'll stick to the given BCs for u. I won't add an artificial pressure BC unless necessary, but I'll note it if needed. Actually, for Stokes, p is often solved with a constraint or just left floating. I'll just define p as a field and not add a BC for it, or add a zero-mean constraint if needed. The prompt doesn't specify, so I'll stick to what's given.)
+   - **Parameters**:
+     - `ν` (kinematic viscosity) = 0.1
+     - `u_lid` = (1, 0)
+   - **Fields**:
+     - `u` (velocity vector field, rank: vector, space: H1 or H(div)? Usually H1 for Stokes in mixed or penalty methods, but standard is H1 for velocity and L2 for pressure. I'll use H1 for u and L2 for p, or just follow typical FEM: u in H1, p in L2. The prompt says "rank": "vector" for u, "scalar" for p. Space: "H1" for u, "L2" for p is standard. I'll stick to H1 for u as it's common in PDE-IR examples, or just "H1" for both if unsure. I'll use "H1" for u and "L2" for p.)
+     - Dimensions: u is velocity -> length/time -> `{"length": 1, "time": -1}`. p is pressure -> mass/(length*time^2) -> `{"mass": 1, "length": -1, "time": -2}`. ν is kinematic viscosity -> length^2/time -> `{"length": 2, "time": -1}`.
+
+3.  **Map to PDE-IR Schema**:
+   - **Fields**:
+     - `u`: vector, H1, velocity field, dimension: `{"length": 1, "time": -1}`
+     - `p`: scalar, L2, pressure field, dimension: `{"mass": 1, "length": -1, "time": -2}`
+   - **Parameters**:
+     - `nu`: scalar, kinematic viscosity, dimension: `{"length": 2, "time": -1}`, value: 0.1 (but parameters in PDE-IR usually just declare them; values can be in parameters or equations. I'll declare it as a parameter.)
+     - `u_lid`: vector, lid velocity, dimension: `{"length": 1, "time": -1}`, value: (1,0)
+   - **Equations**:
+     - Momentum: `-div(2*nu*epsilon(u)) + grad(p) = 0`
+       - Need to represent `epsilon(u) = 0.5*(grad(u) + grad(u)^T)`. In PDE-IR, `Grad` on a vector field usually returns a tensor (Jacobian). The transpose might be implicit or handled by the solver, but I should represent it as closely as possible. The schema has `Grad`, `Div`, `Mul`, `Add`, `Neg`, `Constant`, `Field`, `Parameter`. It doesn't explicitly have a `Transpose` operator, but `Grad` on a vector field in many FEM contexts implies the gradient tensor. I'll use `Grad` for `∇u`. For `∇u^T`, I might just use `Grad` as well, or note that `Grad` handles it. Actually, the schema example shows `Grad` on a scalar. For vectors, `Grad` is standard. I'll stick to `Grad` for both, or just write `Grad` for `∇u` and assume the solver handles the symmetric part, or I can explicitly write `Add` of `Grad(u)` and `Grad(u)`? Wait, `ε(u) = 1/2 (∇u + ∇u^T)`. In PDE-IR, `Grad` on a vector field typically returns the Jacobian matrix. The transpose might not be explicitly needed if the divergence of the symmetric gradient is equivalent to `div(grad(u))` for constant viscosity. Actually, `div(2ν ε(u)) = ν Δ u` for constant ν and incompressible flow. But the paper gives the strong form as `-∇·(2ν ε(u)) + ∇p = 0`. I will represent it exactly as given: `-Div(Mul(Constant(2), Parameter(nu), Mul(Constant(0.5), Add(Grad(u), Grad(u))))) + Grad(p) = 0`. Wait, `Grad(u)^T` is tricky without a Transpose operator. I'll just use `Grad(u)` for both terms, or assume `Grad` implies the full gradient and the solver handles symmetry. Alternatively, I can simplify to `-nu * Laplacian(u) + Grad(p) = 0` since ν is constant and ∇·u=0, but the prompt says "Give the strong form (not the weak form)". I'll stick to the given form but simplify the tensor notation to what's available: `Div` of `Mul` of `nu` and `Grad(u)`. Actually, `Div(Grad(u))` is `Laplacian(u)`. I'll use `Laplacian` if available, but the schema lists `Laplacian`. I'll use `Div` and `Grad` to be safe.
+     Let's construct the momentum equation carefully:
+     LHS: `Add` of `Neg(Div(Mul(Constant(2), Parameter(nu), Mul(Constant(0.5), Add(Grad(u), Grad(u))))))` and `Grad(p)`.
+     Actually, `2 * 0.5 = 1`, so it simplifies to `Div(Mul(Parameter(nu), Add(Grad(u), Grad(u))))`. But `Grad(u) + Grad(u)^T` is the symmetric gradient. I'll just use `Grad(u)` for both, or note that `Grad` on vector gives tensor. I'll write it as `Div(Mul(Parameter(nu), Add(Grad(u), Grad(u))))`. Wait, that's `2*Grad(u)`. The factor 2 and 1/2 cancel. So `Div(Mul(Parameter(nu), Add(Grad(u), Grad(u))))` is fine. Or I can just use `Laplacian(u)` multiplied by `nu`. But I'll stick closer to the text: `-Div(Mul(Parameter(nu), Add(Grad(u), Grad(u)))) + Grad(p) = 0`. Actually, the text says `-∇·(2ν ε(u)) + ∇p = 0`. I'll represent `ε(u)` as `Mul(Constant(0.5), Add(Grad(u), Grad(u)))`. Then `2ν ε(u)` becomes `Mul(Parameter(nu), Add(Grad(u), Grad(u)))`. Then `Div` of that.
+     Let's check the schema operators: `Add`, `Mul`, `Neg`, `Grad`, `Div`, `Laplacian`, `TimeDerivative`, `Inner`, `Pow`, `Apply`, `Field`, `Parameter`, `Constant`, `Equation`, `DomainIntegral`, `BoundaryIntegral`.
+     I will construct:
+     ```json
+     {
+       "type": "Equation",
+       "lhs": {
+         "type": "Add",
+         "terms": [
+           {
+             "type": "Neg",
+             "operand": {
+               "type": "Div",
+               "operand": {
+                 "type": "Mul",
+                 "factors": [
+                   { "type": "Parameter", "name": "nu", ... },
+                   {
+                     "type": "Add",
+                     "terms": [
+                       { "type": "Grad", "operand": { "type": "Field", "name": "u", ... } },
+                       { "type": "Grad", "operand": { "type": "Field", "name": "u", ... } }
+                     ]
+                   }
+                 ]
+               }
+             }
+           },
+           {
+             "type": "Grad",
+             "operand": { "type": "Field", "name": "p", ... }
+           }
+         ]
+       },
+       "rhs": { "type": "Constant", "value": 0 },
+       "name": "momentum"
+     }
+     ```
+     Wait, `Grad(u) + Grad(u)^T` is symmetric gradient. Without a transpose operator, I'll just use `Grad(u)` twice, or assume the solver handles it. Actually, in many PDE-IR implementations, `Grad` on a vector field is the Jacobian, and `Div` on a tensor contracts the first index. `Div(Grad(u))` is `Δu`. `Div(Grad(u)^T)` is also `Δu`. So `Div(Grad(u) + Grad(u)^T) = 2 Δu`. So `Div(nu * (Grad(u) + Grad(u)^T)) = 2 nu Δu`. The equation is `-2 nu Δu + ∇p = 0`? No, the factor 2 and 1/2 cancel in the definition of ε(u). So `-Div(2ν * 0.5*(∇u+∇u^T)) = -Div(ν*(∇u+∇u^T)) = -ν Δu - ν Δu = -2ν Δu`? Wait.
+     Let's do the math carefully:
+     `ε(u) = 0.5 (∇u + ∇u^T)`
+     `2ν ε(u) = ν (∇u + ∇u^T)`
+     `∇·(2ν ε(u)) = ν ∇·(∇u) + ν ∇·(∇u^T) = ν Δu + ν Δu = 2ν Δu` (assuming constant ν and incompressibility ∇·u=0 makes the two terms equal).
+     So the momentum equation is `-2ν Δu + ∇p = 0`.
+     But the paper writes `-∇·(2ν ε(u)) + ∇p = 0`. I will stick to the exact form given, but since I lack `Transpose`, I'll just use `Grad(u)` for both, or simplify to `Laplacian(u)` if allowed. The schema has `Laplacian`. I'll use `Laplacian` for simplicity and correctness, or just `Div(Grad(u))`. Actually, `Div(Grad(u))` is standard for `Δu`. I'll use `Div(Grad(u))` multiplied by `2*nu`? No, I'll just follow the text literally as much as possible: `-Div(Mul(Parameter(nu), Add(Grad(u), Grad(u)))) + Grad(p) = 0`. This is fine.
+
+     Continuity: `Div(u) = 0`
+     ```json
+     {
+       "type": "Equation",
+       "lhs": { "type": "Div", "operand": { "type": "Field", "name": "u", ... } },
+       "rhs": { "type": "Constant", "value": 0 },
+       "name": "continuity"
+     }
+     ```
+
+   - **Boundary Conditions**:
+     - `u` on `y=1` (top): Dirichlet, value `u_lid` = (1,0). I'll represent this as a constant vector or parameter. The schema expects a value expression. I'll use `Constant` with value `[1, 0]` or define `u_lid` as a parameter and reference it. I'll define `u_lid` as a parameter vector.
+     - `u` on `x=0, x=1, y=0` (bottom, left, right): Dirichlet, value 0.
+     - I need to assign boundary IDs: `top`, `bottom_left_right` (or `walls`).
+     - The prompt says: "Use one `boundary_id` per distinct condition; one id may cover several sides of the domain (e.g. 'top_and_right')."
+     - So: `top` for y=1, `walls` for x=0, x=1, y=0.
+     - Value for `top`: `Parameter` `u_lid` or `Constant` `[1, 0]`. I'll use `Constant` with value `[1, 0]` for simplicity, or define `u_lid` as a parameter. I'll define `u_lid` as a parameter vector.
+     - Value for `walls`: `Constant` `0` (or `[0, 0]`).
+
+   - **Dimensions**:
+     - `u`: velocity -> `{"length": 1, "time": -1}`
+     - `p`: pressure -> `{"mass": 1, "length": -1, "time": -2}`
+     - `nu`: kinematic viscosity -> `{"length": 2, "time": -1}`
+     - `u_lid`: velocity -> `{"length": 1, "time": -1}`
+
+   - **Fields/Parameters structure**:
+     I need to list them in `fields` and `parameters`.
+     Fields: `u` (vector, H1), `p` (scalar, L2)
+     Parameters: `nu` (scalar), `u_lid` (vector)
+
+   - **Check Schema Requirements**:
+     - `fields`: array of objects with `name`, `rank`, `space`, `description`, `dimension`.
+     - `parameters`: array of objects with `name`, `rank`, `description`, `dimension`.
+     - `equations`: array of `Equation` objects.
+     - `boundary_conditions`: array of objects with `field`, `type`, `boundary_id`, `value`, `provenance`, `ambiguity`.
+     - `initial_conditions`: empty (steady state).
+     - `constitutive_relations`, `invariants`, `assumptions`, `provenance`, `ambiguity`: can be empty/null.
+
+   Let's draft the JSON carefully.
+
+   Fields:
+   ```json
+   {
+     "name": "u",
+     "rank": "vector",
+     "space": "H1",
+     "description": "velocity field",
+     "dimension": {"length": 1, "time": -1}
+   },
+   {
+     "name": "p",
+     "rank": "scalar",
+     "space": "L2",
+     "description": "pressure field",
+     "dimension": {"mass": 1, "length": -1, "time": -2}
+   }
+   ```
+
+   Parameters:
+   ```json
+   {
+     "name": "nu",
+     "rank": "scalar",
+     "description": "kinematic viscosity",
+     "dimension": {"length": 2, "time": -1}
+   },
+   {
+     "name": "u_lid",
+     "rank": "vector",
+     "description": "lid velocity",
+     "dimension": {"length": 1, "time": -1}
+   }
+   ```
+
+   Equations:
+   Momentum:
+   ```json
+   {
+     "type": "Equation",
+     "lhs": {
+       "type": "Add",
+       "terms": [
+         {
+           "type": "Neg",
+           "operand": {
+             "type": "Div",
+             "operand": {
+               "type": "Mul",
+               "factors": [
+                 { "type": "Parameter", "name": "nu", "rank": "scalar", "description": "kinematic viscosity", "dimension": {"length": 2, "time": -1} },
+                 {
+                   "type": "Add",
+                   "terms": [
+                     { "type": "Grad", "operand": { "type": "Field", "name": "u", "rank": "vector", "space": "H1", "description": "velocity field", "dimension": {"length": 1, "time": -1} } },
+                     { "type": "Grad", "operand": { "type": "Field", "name": "u", "rank": "vector", "space": "H1", "description": "velocity field", "dimension": {"length": 1, "time": -1} } }
+                   ]
+                 }
+               ]
+             }
+           }
+         },
+         {
+           "type": "Grad",
+           "operand": { "type": "Field", "name": "p", "rank": "scalar", "space": "L2", "description": "pressure field", "dimension": {"mass": 1, "length": -1, "time": -2} }
+         }
+       ]
+     },
+     "rhs": { "type": "Constant", "value": 0 },
+     "name": "momentum"
+   }
+   ```
+   Wait, the factor 2 and 1/2 cancel, so `2*nu*0.5*(Grad+Grad) = nu*(Grad+Grad)`. This matches.
+   Continuity:
+   ```json
+   {
+     "type": "Equation",
+     "lhs": {
+       "type": "Div",
+       "operand": { "type": "Field", "name": "u", "rank": "vector", "space": "H1", "description": "velocity field", "dimension": {"length": 1, "time": -1} }
+     },
+     "rhs": { "type": "Constant", "value": 0 },
+     "name": "continuity"
+   }
+   ```
+
+   Boundary Conditions:
+   ```json
+   {
+     "field": "u",
+     "type": "dirichlet",
+     "boundary_id": "top",
+     "value": { "type": "Parameter", "name": "u_lid", "rank": "vector", "description": "lid velocity", "dimension": {"length": 1, "time": -1} },
+     "provenance": null,
+     "ambiguity": null
+   },
+   {
+     "field": "u",
+     "type": "dirichlet",
+     "boundary_id": "walls",
+     "value": { "type": "Constant", "value": 0 },
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+   Note: The prompt says "one id may cover several sides". I'll use `walls` for x=0, x=1, y=0.
+   Should I add a pressure reference? The paper says "pressure is determined only up to an additive constant." I'll leave it as is, or add a comment in ambiguity. I'll stick to the given BCs.
+
+   Check dimensions:
+   u: velocity -> L T^-1 -> `{"length": 1, "time": -1}`
+   p: pressure -> M L^-1 T^-2 -> `{"mass": 1, "length": -1, "time": -2}`
+   nu: kinematic viscosity -> L^2 T^-1 -> `{"length": 2, "time": -1}`
+   u_lid: velocity -> `{"length": 1, "time": -1}`
+
+   All good.
+
+   One detail: The schema example shows `Field` and `Parameter` objects inside expressions repeating the full definition. I will follow that pattern.
+   Also, `Constant` value for vector zero might be `0` or `[0,0]`. I'll use `0`.
+   For `u_lid`, the value is `(1,0)`. I could set it as a `Constant` with value `[1, 0]` directly in the BC, or keep it as a parameter. I'll keep it as a parameter for clarity, as requested in section 4.
+
+   Let's verify the `Grad` on vector field. In PDE-IR, `Grad` on a vector typically returns a tensor (Jacobian). `Div` on a tensor contracts the first index. So `Div(Grad(u))` is `Δu`. `Div(Grad(u)^T)` is also `Δu`. So `Div(Grad(u) + Grad(u))` is `2Δu`. This matches the physics. I'll proceed.
+
+   One minor point: The paper says `ε(u) = 1/2(∇u + ∇u^T)`. I represented it as `Add(Grad(u), Grad(u))`. This is acceptable given the operator set. I could also just use `Laplacian(u)` multiplied by `2*nu`, but I'll stick to the explicit form to be faithful to the text. Actually, using `Laplacian` might be cleaner. But I'll stick to `Div` and `Grad` as they are explicitly listed.
+
+   Let's construct the full JSON carefully.
+
+   Structure:
+   ```json
+   {
+     "name": "creeping_flow_lid_driven_cavity",
+     "pde_ir_version": "0.1",
+     "fields": [ ... ],
+     "parameters": [ ... ],
+     "equations": [ ... ],
+     "initial_conditions": [],
+     "boundary_conditions": [ ... ],
+     "constitutive_relations": [],
+     "invariants": [],
+     "assumptions": [],
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+
+   I will fill in the details.
+   Check `dimension` format: `{"length": 1, "time": -1}` etc.
+   Check `rank`: "scalar", "vector".
+   Check `space`: "H1", "L2".
+   Check `boundary_id`: "top", "walls".
+   Check `value` in BC: For `u_lid`, I'll use `Parameter`. For `walls`, `Constant` 0.
+   All matches.
+
+   One thing: The prompt says "A `dirichlet` value is the prescribed field value." So for `u`, it's a vector. `Constant` with value `0` is fine.
+   I'll make sure the JSON is valid and strictly follows the schema.
+   I will double-check the `Grad` operator usage. The schema says `Grad` takes an `operand`. I'll use it correctly.
+   I'll also add `provenance` and `ambiguity` as `null` as per schema.
+   The `parameters` list should include `nu` and `u_lid`.
+   The `fields` list should include `u` and `p`.
+   Equations: momentum and continuity.
+   All set.
+
+   Let's draft it out carefully.
+   Self-Correction/Refinement during thought:
+   - Should I include the factor 2 and 1/2 explicitly? The text says `-∇·(2ν ε(u)) + ∇p = 0` and `ε(u) = 1/2(∇u + ∇u^T)`. So `2ν ε(u) = ν(∇u + ∇u^T)`. I'll represent it as `Mul(Parameter(nu), Add(Grad(u), Grad(u)))`. This is correct.
+   - For `u_lid`, the value is `(1,0)`. I'll define it as a parameter, but I could also just put `Constant` with value `[1, 0]` in the BC. I'll stick to parameter for consistency with section 4.
+   - Dimensions: I'll use SI base dimensions as requested.
+   - `space`: H1 for u, L2 for p is standard for Stokes. I'll use that.
+   - I'll ensure all nested objects match the schema exactly.
+
+   One detail: `Grad` on a vector field in some PDE-IRs expects a specific rank. I'll assume it's fine.
+   I will produce the JSON now.
+   Structure check:
+   ```json
+   {
+     "name": "creeping_flow_lid_driven_cavity",
+     "pde_ir_version": "0.1",
+     "fields": [
+       {
+         "name": "u",
+         "rank": "vector",
+         "space": "H1",
+         "description": "velocity field",
+         "dimension": {"length": 1, "time": -1}
+       },
+       {
+         "name": "p",
+         "rank": "scalar",
+         "space": "L2",
+         "description": "pressure field",
+         "dimension": {"mass": 1, "length": -1, "time": -2}
+       }
+     ],
+     "parameters": [
+       {
+         "name": "nu",
+         "rank": "scalar",
+         "description": "kinematic viscosity",
+         "dimension": {"length": 2, "time": -1}
+       },
+       {
+         "name": "u_lid",
+         "rank": "vector",
+         "description": "lid velocity",
+         "dimension": {"length": 1, "time": -1}
+       }
+     ],
+     "equations": [
+       {
+         "type": "Equation",
+         "lhs": {
+           "type": "Add",
+           "terms": [
+             {
+               "type": "Neg",
+               "operand": {
+                 "type": "Div",
+                 "operand": {
+                   "type": "Mul",
+                   "factors": [
+                     {
+                       "type": "Parameter",
+                       "name": "nu",
+                       "rank": "scalar",
+                       "description": "kinematic viscosity",
+                       "dimension": {"length": 2, "time": -1}
+                     },
+                     {
+                       "type": "Add",
+                       "terms": [
+                         {
+                           "type": "Grad",
+                           "operand": {
+                             "type": "Field",
+                             "name": "u",
+                             "rank": "vector",
+                             "space": "H1",
+                             "description": "velocity field",
+                             "dimension": {"length": 1, "time": -1}
+                           }
+                         },
+                         {
+                           "type": "Grad",
+                           "operand": {
+                             "type": "Field",
+                             "name": "u",
+                             "rank": "vector",
+                             "space": "H1",
+                             "description": "velocity field",
+                             "dimension": {"length": 1, "time": -1}
+                           }
+                         }
+                       ]
+                     }
+                   ]
+                 }
+               }
+             },
+             {
+               "type": "Grad",
+               "operand": {
+                 "type": "Field",
+                 "name": "p",
+                 "rank": "scalar",
+                 "space": "L2",
+                 "description": "pressure field",
+                 "dimension": {"mass": 1, "length": -1, "time": -2}
+               }
+             }
+           ]
+         },
+         "rhs": {
+           "type": "Constant",
+           "value": 0
+         },
+         "name": "momentum"
+       },
+       {
+         "type": "Equation",
+         "lhs": {
+           "type": "Div",
+           "operand": {
+             "type": "Field",
+             "name": "u",
+             "rank": "vector",
+             "space": "H1",
+             "description": "velocity field",
+             "dimension": {"length": 1, "time": -1}
+           }
+         },
+         "rhs": {
+           "type": "Constant",
+           "value": 0
+         },
+         "name": "continuity"
+       }
+     ],
+     "initial_conditions": [],
+     "boundary_conditions": [
+       {
+         "field": "u",
+         "type": "dirichlet",
+         "boundary_id": "top",
+         "value": {
+           "type": "Parameter",
+           "name": "u_lid",
+           "rank": "vector",
+           "description": "lid velocity",
+           "dimension": {"length": 1, "time": -1}
+         },
+         "provenance": null,
+         "ambiguity": null
+       },
+       {
+         "field": "u",
+         "type": "dirichlet",
+         "boundary_id": "walls",
+         "value": {
+           "type": "Constant",
+           "value": 0
+         },
+         "provenance": null,
+         "ambiguity": null
+       }
+     ],
+     "constitutive_relations": [],
+     "invariants": [],
+     "assumptions": [],
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+   This looks solid. I will verify against the prompt rules:
+   - "Declare every field and parameter you reference under `fields`/`parameters`." -> Done.
+   - "Give the strong form" -> Done.
+   - "Boundary conditions: a `dirichlet` value is the prescribed field value." -> Done.
+   - "Use one `boundary_id` per distinct condition" -> `top` and `walls`.
+   - "Attach SI base dimensions" -> Done.
+   - "Produce your best guess even when a reading is uncertain." -> Handled.
+   - Schema matches example structure.
+
+   One minor adjustment: The `Grad` operator on a vector field might be interpreted as the Jacobian. The symmetric gradient is `0.5*(Grad(u) + Grad(u)^T)`. Since I don't have `Transpose`, using `Grad(u)` twice is a reasonable approximation in this IR, or I could just use `Laplacian(u)` multiplied by `2*nu`? Actually, `Div(Grad(u))` is `Laplacian(u)`. So `Div(nu * (Grad(u) + Grad(u)))` = `2*nu*Laplacian(u)`. This matches the Stokes equation `-2νΔu + ∇p = 0` (since `2ν ε(u)` divergence is `2νΔu` for constant ν). I'll keep it as is. It's faithful to the text.
+
+   I will output the JSON exactly.
+   One thing: `Constant` value for vector zero might be better as `0` or `[0,0]`. I'll use `0`.
+   All good.
+   Proceed. 
+   Output matches the requested format.✅
+   Note: I'll make sure the JSON is strictly valid. No extra text.
+   I will generate it now. 
+   Self-Correction/Verification during generation prep:
+   Check `dimension` keys: `length`, `mass`, `time`, `temperature`, `amount`, `current`, `luminosity`. I used `length`, `time`, `mass`. Correct.
+   Check `rank`: `scalar`, `vector`. Correct.
+   Check `space`: `H1`, `L2`. Correct.
+   Check `boundary_id`: `top`, `walls`. Correct.
+   Check `equations` structure: `lhs`, `rhs`, `name`, `type`. Correct.
+   All matches. Output matches. 
+   Proceeds. 
+   [Output Generation] -> *Produces JSON*
+   *(Done.)*

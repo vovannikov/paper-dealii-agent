@@ -1,0 +1,32 @@
+\section{The Deterministic Mathematical Compiler}
+\label{sec:compiler}
+
+\subsection{From the strong form to the weak form}
+The compiler turns each strong-form equation $\mathcal L(u)=0$ into a residual $R(u;v)=0$ for test functions $v$ in the space of the corresponding unknown. It applies the following rules, each tagged in the provenance of the result.
+\begin{enumerate}
+\item \emph{Test and integrate.} Multiply by a test function of matching rank (scalar $v$ for scalar equations, vector $\mathbf v$ for vector equations; a vector equation uses the inner product) and integrate over $\Omega$.
+\item \emph{Integrate by parts} every divergence term of second order, $-\int_\Omega\nabla\cdot\mathbf q\,v\dd x=\int_\Omega\mathbf q\cdot\nabla v\dd x-\int_{\partial\Omega}(\mathbf q\cdot\mathbf n)\,v\dd s$, where $\mathbf q$ is a vector flux ($\mathbf q=k\nabla u$) or, for a tensor flux, $\sigma(u):\nabla\mathbf v$ and $(\sigma\mathbf n)\cdot\mathbf v$. A \code{Laplacian} is first rewritten as a divergence of a gradient. Terms of first order (for instance a pressure gradient $\nabla p\cdot\mathbf v$ or a convection term) are tested but not integrated by parts.
+\item \emph{Treat the boundary term} according to the boundary conditions. On a Dirichlet boundary the test function vanishes and the term is dropped (the value is imposed through constraints); on a Neumann boundary $\mathbf q\cdot\mathbf n$ is replaced by the prescribed outward flux $g_N$; on a Robin boundary it is replaced by the value expression, which still references the unknown and therefore contributes a boundary mass term to the matrix and a source-like term to the right-hand side. Boundaries without a stated condition are natural (homogeneous Neumann).
+\end{enumerate}
+For $-\nabla\cdot(k\nabla u)=f$ with Dirichlet data on $\Gamma_D$ and flux $g_N$ on $\Gamma_N$ the result is
+\begin{equation}
+\int_\Omega k\nabla u\cdot\nabla v\dd x-\int_\Omega f\,v\dd x-\int_{\Gamma_N}g_N\,v\dd s=0 .
+\end{equation}
+For the heat benchmark of Section~\ref{sec:heat} with Newton's law of cooling on $\Gamma_R$ ($\mathbf q\cdot\mathbf n=-h(T-T_\infty)$) the result is
+\begin{equation}
+\int_\Omega k\nabla T\cdot\nabla v\dd x+\int_{\Gamma_R}h\,T\,v\dd s=\int_{\Gamma_R}h\,T_\infty\,v\dd s .
+\end{equation}
+The compiler does not accept an LLM-supplied weak form; the strong form is the only input. Because the transformation is deterministic, an extraction that writes $\nabla\cdot(k\nabla T)=0$ instead of $-\nabla\cdot(k\nabla T)=0$ yields the same discrete problem, since the flux relation is applied consistently to the equation as written.
+
+\subsection{Time discretization}
+A \code{TimeDerivative} makes the model time-dependent, and the discretization plan then selects a time family. The reference backend supports (i)~self-discretized schemes (backward Euler/BDF1, a $\theta$-method, and an IMEX splitting that treats the linear part implicitly and nonlinear reaction terms explicitly), (ii)~\dealii{} Runge--Kutta schemes, and (iii)~a SUNDIALS ARKode family in which the integrator owns the loop. For nonlinear and multi-field problems the system path uses implicit Euler with a Newton solve per step. The residual of the step is built by replacing every $u_t$ by $(u-u^{n})/\Delta t$, which remains valid when $u_t$ has a nonlinear coefficient. Time-varying Dirichlet data (\code{TimeCoordinate} in a boundary value) is re-applied at every step; time-independent data is applied once, so that steady-state code is byte-identical to before. Static checks confirm that a \code{TimeDerivative} comes with a time plan and a step count and that a steady model does not receive one; first-order derivatives of bare fields are required; fields without a time derivative are identified as algebraic (the pressure of an incompressible flow gives an index-two differential--algebraic system), which excludes explicit schemes for them.
+
+\subsection{Gateaux linearization and Newton/Picard}
+For nonlinear residuals $R(u;v)=0$ the compiler derives the Jacobian symbolically as the Gateaux derivative
+\begin{equation}
+J(u)[\delta u;v]=\left.\frac{\mathrm d}{\mathrm d\varepsilon}R(u+\varepsilon\,\delta u;v)\right|_{\varepsilon=0}.
+\end{equation}
+The linearization engine differentiates \code{Grad}, \code{Div}, \code{Transpose}, \code{Trace}, \code{Inner}, products, powers and constitutive \code{Apply} nodes (relations are inlined; multi-argument relations $k(u,\nabla u)$ are substituted simultaneously and differentiated with the chain rule). Convection is handled as a first-class node: $D[(\mathbf a\cdot\nabla)\mathbf b]=(D\mathbf a\cdot\nabla)\mathbf b+(\mathbf a\cdot\nabla)D\mathbf b$ gives the Newton tangent, and holding the convecting velocity fixed gives a Picard iteration. Choosing a dedicated node rather than a composition of \code{Inner} and \code{Grad} avoids an index ambiguity ($\nabla b\cdot\mathbf a$ against $\mathbf a\cdot\nabla b$ differ for vector $b$). This engine is not left unverified: Section~\ref{sec:verification} describes the tangent-consistency gate that checks, on the very integrands the generated solver uses, that $J(u)\,p\approx(R(u+\epsilon p)-R(u))/\epsilon$ for a perturbation $p$ in each field and in all fields.
+
+\subsection{The discretization plan}
+Choices that a paper does not state are collected in a \code{DiscretizationPlan}: time family and scheme; \code{LinearSolverSpec} (direct, CG, GMRES; preconditioner none, SSOR, block-triangular with SIMPLE or scaled LSC Schur complement); \code{NewtonSpec} (full step or residual-based backtracking line search, absolute/relative/step tolerances, iteration limits, divergence and stagnation detection); \code{AdaptiveRefinementSpec} (number of Kelly-estimator cycles, marking strategy, transfer frequency); and \code{TimeStepControlSpec} (relative tolerance for an embedded-pair controller). Static checks reject or warn about specifications that are inconsistent with the model: CG on a nonsymmetric or indefinite operator (\code{cg\_nonsymmetric}, \code{cg\_indefinite}), a block preconditioner on a problem without saddle-point structure, a preconditioner on a zero diagonal, an unpreconditioned iterative solve of a saddle-point system (\code{saddle\_point\_unpreconditioned}), and time-step control requested for a steady model (\code{time\_control\_steady}). Default plans are chosen by \code{plan\_discretization}; elements default to $Q_1$, and to Taylor--Hood $Q_2/Q_1$ for problems with a constraint multiplier.

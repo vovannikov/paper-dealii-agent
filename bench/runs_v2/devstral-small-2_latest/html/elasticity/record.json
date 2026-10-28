@@ -1,0 +1,47 @@
+{
+ "model": "devstral-small-2:latest",
+ "case": "elasticity",
+ "modality": "html",
+ "document_chars": 5662,
+ "started": 1793169205.9841733,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [
+  "dimension_mismatch: equation sides have inconsistent physical dimensions: lhs is L^-2\u00b7M\u00b7T^-2, rhs is M\u00b7T^-2"
+ ],
+ "model_seconds": 321.87424206733704,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\n  Value error, equations reference undeclared fields: ['f'] [type=value_error, input_value={'name': 'plane_strain_ca...None, 'ambiguity': None}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error"
+ ],
+ "total_seconds": 321.89178252220154,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 108.41493916511536,
+   "prompt_tokens": 3949,
+   "completion_tokens": 1687,
+   "answer_chars": 6486,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 106.38991832733154,
+   "prompt_tokens": 5753,
+   "completion_tokens": 1671,
+   "answer_chars": 6448,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 107.05496406555176,
+   "prompt_tokens": 7480,
+   "completion_tokens": 1656,
+   "answer_chars": 6376,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

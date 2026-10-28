@@ -1,0 +1,212 @@
+{
+  "name": "transient_heating_square_plate",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "T",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "temperature field",
+      "dimension": {
+        "length": 0,
+        "mass": 0,
+        "time": 0,
+        "temperature": 1,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "kappa",
+      "rank": "scalar",
+      "description": "thermal diffusivity",
+      "dimension": {
+        "length": 2,
+        "mass": 0,
+        "time": -1,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    },
+    {
+      "name": "beta",
+      "rank": "scalar",
+      "description": "heating rate",
+      "dimension": {
+        "length": 0,
+        "mass": 0,
+        "time": -1,
+        "temperature": 1,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "TimeDerivative",
+            "operand": {
+              "type": "Field",
+              "name": "T",
+              "rank": "scalar",
+              "space": "H1",
+              "description": "temperature field",
+              "dimension": {
+                "length": 0,
+                "mass": 0,
+                "time": 0,
+                "temperature": 1,
+                "amount": 0,
+                "current": 0,
+                "luminosity": 0
+              }
+            },
+            "order": 1
+          },
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Parameter",
+                    "name": "kappa",
+                    "rank": "scalar",
+                    "description": "thermal diffusivity",
+                    "dimension": {
+                      "length": 2,
+                      "mass": 0,
+                      "time": -1,
+                      "temperature": 0,
+                      "amount": 0,
+                      "current": 0,
+                      "luminosity": 0
+                    }
+                  },
+                  {
+                    "type": "Grad",
+                    "operand": {
+                      "type": "Field",
+                      "name": "T",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "temperature field",
+                      "dimension": {
+                        "length": 0,
+                        "mass": 0,
+                        "time": 0,
+                        "temperature": 1,
+                        "amount": 0,
+                        "current": 0,
+                        "luminosity": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [
+    {
+      "field": "T",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "boundary_conditions": [
+    {
+      "field": "T",
+      "type": "dirichlet",
+      "boundary_id": "left_edge",
+      "value": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Parameter",
+            "name": "beta",
+            "rank": "scalar",
+            "description": "heating rate",
+            "dimension": {
+              "length": 0,
+              "mass": 0,
+              "time": -1,
+              "temperature": 1,
+              "amount": 0,
+              "current": 0,
+              "luminosity": 0
+            }
+          },
+          {
+            "type": "TimeCoordinate"
+          }
+        ]
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "T",
+      "type": "neumann",
+      "boundary_id": "right_edge",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "T",
+      "type": "neumann",
+      "boundary_id": "bottom_edge",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "T",
+      "type": "neumann",
+      "boundary_id": "top_edge",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}

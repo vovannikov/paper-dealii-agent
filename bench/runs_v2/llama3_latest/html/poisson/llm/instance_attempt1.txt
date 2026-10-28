@@ -1,0 +1,24 @@
+Here is the extracted ProblemInstance in JSON format:
+
+```
+{
+  "parameter_values": {
+    "k": 2.5,
+    "f": 10,
+    "gN": 3
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [2.0, 1.0],
+    "boundary_ids": {
+      "left": 0,
+      "bottom": 2,
+      "right": 1,
+      "top": 3
+    }
+  },
+  "value_sources": {}
+}
+```
+
+Note that the paper does not provide any information about the value sources, so the `value_sources` field is empty.

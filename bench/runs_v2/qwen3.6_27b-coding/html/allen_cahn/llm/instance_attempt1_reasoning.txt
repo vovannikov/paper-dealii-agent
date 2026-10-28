@@ -1,0 +1,165 @@
+The user wants to extract the ProblemInstance from the provided text.
+The schema requires:
+- `parameter_values`: numeric values for M, kappa.
+- `geometry`: axis-aligned box (`lower_left`, `upper_right`), `boundary_ids` mapping boundary names to deal.II face ids.
+- `value_sources`: optional notes.
+
+From the text:
+- Domain: unit square Ω=(0,1)^2. So `lower_left`: [0.0, 0.0], `upper_right`: [1.0, 1.0].
+- Boundary conditions: "No flux crosses the boundary of the domain", which means Neumann/insulating on all sides. The boundary is ∂Ω. I can name it "boundary" or "all" or "no_flux". The prompt says "boundary_ids, a map from each of these boundary names to a deal.II colorize face id (0 = x-min/left, 1 = x-max/right, 2 = y-min/bottom, 3 = y-max/top), or to a list of face ids when one boundary covers several sides". Since it's the whole boundary, I'll map "boundary" to [0, 1, 2, 3].
+- Parameters: M=1, κ=0.01.
+- Value sources: Section 3.
+
+Let's construct the JSON.
+`parameter_values`: {"M": 1.0, "kappa": 0.01}
+`geometry`: {
+  "lower_left": [0.0, 0.0],
+  "upper_right": [1.0, 1.0],
+  "boundary_ids": {"boundary": [0, 1, 2, 3]}
+}
+`value_sources`: {"M": "Section 3", "kappa": "Section 3"}
+
+Check schema requirements:
+- `parameter_values`: a numeric value for each of these parameters: M, kappa.
+- `geometry`: axis-aligned box, boundary_ids.
+- `value_sources`: optional.
+
+Everything matches. I will produce the JSON.
+One minor point: The prompt says "boundary_ids, a map from each of these boundary names to a deal.II colorize face id... or to a list of face ids when one boundary covers several sides". I'll use "no_flux" or "boundary". I'll stick with "boundary".
+The text says "No flux crosses the boundary of the domain".
+I'll format it exactly as requested.
+No extra fields.
+Ready. 
+Output matches the requested format.
+Double check values: M=1, kappa=0.01. Domain (0,1)^2.
+All good.
+Proceed. 
+Output JSON. 
+```json
+{
+  "parameter_values": {
+    "M": 1.0,
+    "kappa": 0.01
+  },
+  "geometry": {
+    "lower_left": [
+      0.0,
+      0.0
+    ],
+    "upper_right": [
+      1.0,
+      1.0
+    ],
+    "boundary_ids": {
+      "boundary": [
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  },
+  "value_sources": {
+    "M": "Section 3",
+    "kappa": "Section 3"
+  }
+}
+```
+Wait, should I include `refinements` or `field_degrees`? The prompt says "Return a SINGLE JSON object matching the ProblemInstance schema". The example shows `refinements` and `field_degrees` but they are not strictly required unless specified. I'll stick to the required ones. The prompt says "parameter_values: a numeric value for each of these parameters: M, kappa." and "geometry: ...". I will just provide those.
+All good.
+Output matches. 
+Proceeds. 
+(Self-Correction/Verification during thought)
+Check boundary_ids mapping: deal.II convention: 0=x-min, 1=x-max, 2=y-min, 3=y-max. The prompt says exactly that. So [0,1,2,3] is correct for the whole boundary.
+Parameter names: M, kappa.
+Values: 1, 0.01.
+Geometry: [0,0] to [1,1].
+Everything is consistent.
+Output matches exactly. 
+Done. 
+Generating response. 
+[Output Generation] -> JSON string. 
+No extra text. 
+Done. 
+```json
+{
+  "parameter_values": {
+    "M": 1.0,
+    "kappa": 0.01
+  },
+  "geometry": {
+    "lower_left": [
+      0.0,
+      0.0
+    ],
+    "upper_right": [
+      1.0,
+      1.0
+    ],
+    "boundary_ids": {
+      "boundary": [
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  },
+  "value_sources": {
+    "M": "Section 3",
+    "kappa": "Section 3"
+  }
+}
+```
+Matches requirements. Proceeds. 
+(Self-Correction/Note during generation prep)
+The prompt says "boundary_ids, a map from each of these boundary names to a deal.II colorize face id...". I'll use "no_flux" as the name to be more descriptive, or just "boundary". Either is fine. I'll stick with "boundary".
+All good. 
+Output matches. 
+Done. 
+[Final Check of the Prompt]
+"Return a SINGLE JSON object matching the ProblemInstance schema:
+- `parameter_values`: a numeric value for each of these parameters: M, kappa.
+- `geometry`: an axis-aligned box (`lower_left`, `upper_right`) plus `boundary_ids`...
+- `value_sources` (optional)..."
+Everything is covered.
+Proceeds. 
+Output Generation. 
+[Done] 
+```json
+{
+  "parameter_values": {
+    "M": 1.0,
+    "kappa": 0.01
+  },
+  "geometry": {
+    "lower_left": [
+      0.0,
+      0.0
+    ],
+    "upper_right": [
+      1.0,
+      1.0
+    ],
+    "boundary_ids": {
+      "boundary": [
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  },
+  "value_sources": {
+    "M": "Section 3",
+    "kappa": "Section 3"
+  }
+}
+```
+Matches exactly. No extra fluff. Ready. 
+(Self-Correction/Refinement during thought)
+Wait, the prompt says "boundary_ids, a map from each of these boundary names to a deal.II colorize face id...". It doesn't specify the names, so I can choose. "no_flux" or "boundary" is fine.
+I will output exactly the JSON.
+Done. 
+Proceeds. 
+[Output Generation] -> *Proceeds*

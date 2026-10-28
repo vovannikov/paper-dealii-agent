@@ -1,0 +1,216 @@
+{
+  "name": "HeatTransfer-FEM-Stationary-2D-Single-HeatTransfer-0001",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "T",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "temperature",
+      "dimension": {
+        "length": 0,
+        "mass": 0,
+        "time": 0,
+        "temperature": 1,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "k",
+      "rank": "scalar",
+      "description": "thermal conductivity",
+      "dimension": {
+        "length": 1,
+        "mass": 1,
+        "time": -3,
+        "temperature": -1,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    },
+    {
+      "name": "h",
+      "rank": "scalar",
+      "description": "heat transfer coefficient",
+      "dimension": {
+        "length": -1,
+        "mass": 1,
+        "time": -3,
+        "temperature": -1,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    },
+    {
+      "name": "T_amb",
+      "rank": "scalar",
+      "description": "ambient temperature",
+      "dimension": {
+        "length": 0,
+        "mass": 0,
+        "time": 0,
+        "temperature": 1,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Div",
+        "operand": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Grad",
+              "operand": {
+                "type": "Field",
+                "name": "T",
+                "rank": "scalar",
+                "space": "H1",
+                "description": "temperature",
+                "dimension": {
+                  "length": 0,
+                  "mass": 0,
+                  "time": 0,
+                  "temperature": 1,
+                  "amount": 0,
+                  "current": 0,
+                  "luminosity": 0
+                }
+              }
+            },
+            {
+              "type": "Parameter",
+              "name": "k",
+              "rank": "scalar",
+              "description": "thermal conductivity",
+              "dimension": {
+                "length": 1,
+                "mass": 1,
+                "time": -3,
+                "temperature": -1,
+                "amount": 0,
+                "current": 0,
+                "luminosity": 0
+              }
+            }
+          ]
+        }
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "T",
+      "type": "dirichlet",
+      "boundary_id": "bottom",
+      "value": {
+        "type": "Constant",
+        "value": 100
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "T",
+      "type": "robin",
+      "boundary_id": "top_and_right",
+      "value": {
+        "type": "Neg",
+        "operand": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Parameter",
+              "name": "h",
+              "rank": "scalar",
+              "description": "heat transfer coefficient",
+              "dimension": {
+                "length": -1,
+                "mass": 1,
+                "time": -3,
+                "temperature": -1,
+                "amount": 0,
+                "current": 0,
+                "luminosity": 0
+              }
+            },
+            {
+              "type": "Add",
+              "terms": [
+                {
+                  "type": "Field",
+                  "name": "T",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "temperature",
+                  "dimension": {
+                    "length": 0,
+                    "mass": 0,
+                    "time": 0,
+                    "temperature": 1,
+                    "amount": 0,
+                    "current": 0,
+                    "luminosity": 0
+                  }
+                },
+                {
+                  "type": "Neg",
+                  "operand": {
+                    "type": "Parameter",
+                    "name": "T_amb",
+                    "rank": "scalar",
+                    "description": "ambient temperature",
+                    "dimension": {
+                      "length": 0,
+                      "mass": 0,
+                      "time": 0,
+                      "temperature": 1,
+                      "amount": 0,
+                      "current": 0,
+                      "luminosity": 0
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "T",
+      "type": "neumann",
+      "boundary_id": "left",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}

@@ -1,0 +1,487 @@
+Let me carefully extract the PDE model from this paper content about the Allen-Cahn equation.
+
+**Model Description:**
+- The unknown field is c(x, y, t) - a non-conserved order parameter
+- Domain: unit square Ω = (0, 1)²
+- The evolution is modeled as an L² gradient flow of the Ginzburg-Landau free energy
+
+**Free Energy:**
+F[c] = ∫_Ω [f(c) + (κ/2)|∇c|²] dΩ
+
+**Double-well potential:**
+f(c) = (1/4)(c² - 1)²
+
+**Allen-Cahn equation:**
+∂c/∂t = -M [f'(c) - κ∇²c]
+
+Let me compute f'(c):
+f(c) = (1/4)(c² - 1)²
+f'(c) = (1/4) · 2(c² - 1) · 2c = c(c² - 1) = c³ - c
+
+So the equation becomes:
+∂c/∂t = -M [c³ - c - κ∇²c]
+∂c/∂t = M [c - c³ + κ∇²c]
+
+Or equivalently:
+∂c/∂t = M(c - c³) + Mκ∇²c
+
+**Boundary conditions:**
+No flux crosses the boundary: ∇c · n = 0 on ∂Ω
+This is a Neumann (insulated) boundary condition with value 0.
+
+**Initial condition:**
+c(x, y, 0) = (1/2)(2x - 1)(2y - 1)
+
+**Parameters:**
+- M = 1 (mobility)
+- κ = 0.01 (gradient-energy coefficient)
+
+Now let me construct the PDE-IR:
+
+**Fields:**
+- c: scalar field, rank scalar, space H1 (since it appears in gradient and Laplacian)
+
+**Parameters:**
+- M: scalar, mobility
+- κ: scalar, gradient-energy coefficient
+
+**Equation:**
+The strong form is:
+∂c/∂t = M [f'(c) - κ∇²c]
+
+Where f'(c) = c³ - c
+
+So:
+∂c/∂t = M(c³ - c - κ∇²c)
+
+Or:
+∂c/∂t - M(c³ - c) + Mκ∇²c = 0
+
+Let me think about the expression tree structure:
+
+The equation is:
+∂c/∂t = M [f'(c) - κ∇²c]
+
+Which can be written as:
+∂c/∂t - M f'(c) + M κ ∇²c = 0
+
+Or:
+∂c/∂t - M(c³ - c) + Mκ∇²c = 0
+
+Let me build the expression tree for the left-hand side:
+- TimeDerivative of c
+- Minus M times (c³ - c)
+- Plus M times κ times Laplacian of c
+
+Actually, let me be more careful. The equation is:
+∂c/∂t = -M [f'(c) - κ∇²c]
+
+So:
+∂c/∂t = -M f'(c) + M κ ∇²c
+
+Or:
+∂c/∂t + M f'(c) - M κ ∇²c = 0
+
+Where f'(c) = c³ - c
+
+So:
+∂c/∂t + M(c³ - c) - Mκ∇²c = 0
+
+Let me think about the expression tree:
+
+LHS: TimeDerivative(c) + M*(c³ - c) - M*κ*Laplacian(c)
+
+Actually, I need to be careful about the sign. Let me re-read the equation:
+
+∂c/∂t = -M [f'(c) - κ∇²c]
+
+Expanding:
+∂c/∂t = -M f'(c) + M κ ∇²c
+
+So the strong form equation is:
+∂c/∂t + M f'(c) - M κ ∇²c = 0
+
+Where f'(c) = c³ - c
+
+So:
+∂c/∂t + M(c³ - c) - Mκ∇²c = 0
+
+Expression tree for LHS:
+Add(
+  TimeDerivative(c),
+  Add(
+    Mul(M, Sub(Pow(c,3), c)),
+    Neg(Mul(M, κ, Laplacian(c)))
+  )
+)
+
+Wait, let me be more careful. The equation is:
+∂c/∂t = -M [f'(c) - κ∇²c]
+
+Let me expand the right side:
+= -M f'(c) + M κ ∇²c
+
+So:
+∂c/∂t - M κ ∇²c + M f'(c) = 0
+
+Or:
+∂c/∂t + M f'(c) - M κ ∇²c = 0
+
+Hmm, let me just write it as:
+∂c/∂t + M(c³ - c) - Mκ∇²c = 0
+
+Expression tree:
+{
+  "type": "Add",
+  "terms": [
+    {"type": "TimeDerivative", "operand": {"type": "Field", "name": "c", ...}},
+    {"type": "Mul", "factors": [
+      {"type": "Parameter", "name": "M", ...},
+      {"type": "Add", "terms": [
+        {"type": "Pow", "base": {"type": "Field", "name": "c", ...}, "exponent": 3},
+        {"type": "Neg", "operand": {"type": "Field", "name": "c", ...}}
+      ]}
+    ]},
+    {"type": "Neg", "operand": {"type": "Mul", "factors": [
+      {"type": "Parameter", "name": "M", ...},
+      {"type": "Parameter", "name": "κ", ...},
+      {"type": "Laplacian", "operand": {"type": "Field", "name": "c", ...}}
+    ]}}
+  ]
+}
+
+Actually, I realize I should double-check the sign. The paper says:
+∂c/∂t = -M [f'(c) - κ∇²c]
+
+Let me expand:
+∂c/∂t = -M f'(c) + M κ ∇²c
+
+So:
+∂c/∂t + M f'(c) - M κ ∇²c = 0
+
+Yes, that's correct.
+
+Now for the boundary conditions:
+∇c · n = 0 on ∂Ω
+
+This is a Neumann boundary condition with value 0 (no flux).
+
+For the initial condition:
+c(x, y, 0) = (1/2)(2x - 1)(2y - 1)
+
+This is a scalar field initial condition.
+
+Let me also think about dimensions. The paper doesn't explicitly state units, but:
+- c is an order parameter (dimensionless typically)
+- M is mobility (units depend on context, but often dimensionless or with specific units)
+- κ is gradient-energy coefficient (units of length² typically)
+
+Since the paper doesn't specify units explicitly, I'll set dimensions to null for simplicity, or I can try to infer them.
+
+Actually, looking at the equation:
+∂c/∂t = -M [f'(c) - κ∇²c]
+
+For dimensional consistency:
+- ∂c/∂t has units of [c]/[time]
+- f'(c) has units of [f]/[c] = [energy]/[c]² · [c] = [energy]/[c] (if f has units of energy)
+- κ∇²c has units of [κ][c]/[length]²
+
+For the equation to be dimensionally consistent, we need:
+[c]/[time] = M · [energy]/[c] = M · [κ][c]/[length]²
+
+This suggests M has units [c]²·[length]²/([time]·[energy]) and κ has units [length]².
+
+But since the paper doesn't specify units and uses M=1, κ=0.01 as dimensionless parameters, I'll keep dimensions as null.
+
+Let me now write out the full PDE-IR:
+
+```json
+{
+  "name": "allen_cahn",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "c",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "non-conserved order parameter",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "M",
+      "rank": "scalar",
+      "description": "mobility",
+      "dimension": null
+    },
+    {
+      "name": "kappa",
+      "rank": "scalar",
+      "description": "gradient-energy coefficient",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "TimeDerivative",
+            "operand": {
+              "type": "Field",
+              "name": "c",
+              "rank": "scalar",
+              "space": "H1",
+              "description": "non-conserved order parameter",
+              "dimension": null
+            }
+          },
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Parameter",
+                "name": "M",
+                "rank": "scalar",
+                "description": "mobility",
+                "dimension": null
+              },
+              {
+                "type": "Add",
+                "terms": [
+                  {
+                    "type": "Pow",
+                    "base": {
+                      "type": "Field",
+                      "name": "c",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "non-conserved order parameter",
+                      "dimension": null
+                    },
+                    "exponent": 3
+                  },
+                  {
+                    "type": "Neg",
+                    "operand": {
+                      "type": "Field",
+                      "name": "c",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "non-conserved order parameter",
+                      "dimension": null
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Parameter",
+                  "name": "M",
+                  "rank": "scalar",
+                  "description": "mobility",
+                  "dimension": null
+                },
+                {
+                  "type": "Parameter",
+                  "name": "kappa",
+                  "rank": "scalar",
+                  "description": "gradient-energy coefficient",
+                  "dimension": null
+                },
+                {
+                  "type": "Laplacian",
+                  "operand": {
+                    "type": "Field",
+                    "name": "c",
+                    "rank": "scalar",
+                    "space": "H1",
+                    "description": "non-conserved order parameter",
+                    "dimension": null
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [
+    {
+      "field": "c",
+      "value": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Constant",
+            "value": 0.5
+          },
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Add",
+                "terms": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "Neg",
+                    "operand": {
+                      "type": "Constant",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "Field",
+                    "name": "y",
+                    "rank": "scalar",
+                    "space": "H1",
+                    "description": "spatial coordinate y",
+                    "dimension": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Constant",
+                "value": 2
+              },
+              {
+                "type": "Field",
+                "name": "y",
+                "rank": "scalar",
+                "space": "H1",
+                "description": "spatial coordinate y",
+                "dimension": null
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "boundary_conditions": [
+    {
+      "field": "c",
+      "type": "neumann",
+      "boundary_id": "all_boundaries",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      }
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+
+Wait, I need to reconsider the initial condition. The paper says:
+c(x, y, 0) = (1/2)(2x - 1)(2y - 1)
+
+This is a function of x and y. In the PDE-IR, I need to express this properly. The spatial coordinates x and y would typically be represented as fields or parameters.
+
+Let me also reconsider the expression tree structure. Looking at the example in the prompt, I see that expressions are built with specific types. Let me make sure I'm using the correct structure.
+
+Also, I notice that the paper uses κ (kappa) as the symbol. I should use "kappa" as the parameter name since JSON keys need to be strings.
+
+Let me also think about whether I need to include x and y as fields or parameters. Looking at the initial condition, it's a function of spatial coordinates. In many PDE formulations, spatial coordinates are implicit, but for the initial condition expression, I might need to reference them.
+
+Actually, looking more carefully at the problem, I think the initial condition should be expressed as a function. Let me reconsider...
+
+For the initial condition c(x, y, 0) = (1/2)(2x - 1)(2y - 1), I need to express this as an expression tree. The spatial coordinates x and y would typically be represented as fields or parameters in the PDE-IR.
+
+Let me revise my approach. I'll add x and y as scalar fields representing spatial coordinates, or I could treat them as parameters. Looking at the example in the prompt, it seems like fields are used for the unknown and parameters for constants. Spatial coordinates might be treated as fields or as part of the domain specification.
+
+Actually, let me look at the initial condition more carefully. The expression (1/2)(2x - 1)(2y - 1) can be written as:
+(1/2) * (2x - 1) * (2y - 1)
+
+Let me build this expression tree:
+{
+  "type": "Mul",
+  "factors": [
+    {"type": "Constant", "value": 0.5},
+    {
+      "type": "Mul",
+      "factors": [
+        {"type": "Add", "terms": [
+          {"type": "Mul", "factors": [{"type": "Constant", "value": 2}, {"type": "Field", "name": "x", ...}]},
+          {"type": "Neg", "operand": {"type": "Constant", "value": 1}}
+        ]},
+        {"type": "Add", "terms": [
+          {"type": "Mul", "factors": [{"type": "Constant", "value": 2}, {"type": "Field", "name": "y", ...}]},
+          {"type": "Neg", "operand": {"type": "Constant", "value": 1}}
+        ]}
+      ]
+    }
+  ]
+}
+
+But I need to decide whether x and y are fields or parameters. Looking at the problem setup, they are spatial coordinates, which are typically not unknown fields but rather part of the domain geometry. In many FEM formulations, they might be treated as parameters or as implicit coordinates.
+
+Let me check the example again... In the example, there's no explicit mention of spatial coordinates as fields. They might be implicit in the domain specification.
+
+For the initial condition, I think I should include x and y as scalar fields (or parameters) so that the initial condition can be expressed as a function of them.
+
+Let me revise the PDE-IR with x and y as scalar fields representing spatial coordinates.
+
+Actually, I realize I should also double-check the expression for f'(c). The paper says:
+f(c) = (1/4)(c² - 1)²
+
+Let me compute f'(c):
+f(c) = (1/4)(c² - 1)²
+f'(c) = (1/4) * 2(c² - 1) * 2c = c(c² - 1) = c³ - c
+
+Yes, that's correct.
+
+Now let me also verify the boundary condition. The paper says:
+∇c · n = 0 on ∂Ω
+
+This is a Neumann boundary condition with value 0 (no flux).
+
+Let me also think about the domain. The paper says the domain is the unit square Ω = (0, 1)². This would be specified in the domain definition, but since the PDE-IR schema doesn't seem to have a domain field in the example, I'll omit it or note it in the description.
+
+Let me now write out the complete PDE-IR with all the corrections:
+
+Actually, I realize I should also think about whether the initial condition should be in the `initial_conditions` array or somewhere else. Looking at the example schema, there's an `initial_conditions` field, so I'll use that.
+
+Let me also reconsider the structure of the initial condition. The initial condition is a function of x and y, so I need to express it as an expression tree. The spatial coordinates x and y would need to be represented somehow.
+
+Looking at the problem more carefully, I think the cleanest approach is to:
+1. Add x and y as scalar fields representing spatial coordinates
+2. Express the initial condition as a function of these fields
+
+Let me finalize the PDE-IR now.

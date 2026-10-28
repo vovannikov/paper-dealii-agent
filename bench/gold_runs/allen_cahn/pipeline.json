@@ -1,0 +1,22 @@
+{
+ "stages": {
+  "validate": "passed",
+  "generate": "passed",
+  "build": "passed",
+  "run": "passed",
+  "diagnose": "passed",
+  "verify": "skipped"
+ },
+ "details": {
+  "validate": "model and instance consistent",
+  "generate": "deal.II reference program generated",
+  "build": "compiled against deal.II",
+  "run": "ran to completion (64 cells, 289 unknowns); 200 Newton iterations in 100 solves (at most 2 each)",
+  "diagnose": "Newton / linear-solver / time-step diagnostics acceptable",
+  "verify": "verification disabled"
+ },
+ "issues": [],
+ "solution": "/home/vladimir/work/dealii-agent/paper-bench/gold_runs/allen_cahn/solution.vtu",
+ "passed": true,
+ "seconds": 107.42583465576172
+}

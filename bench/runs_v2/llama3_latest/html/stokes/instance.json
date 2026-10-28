@@ -1,0 +1,27 @@
+{
+  "parameter_values": {
+    "ν": 0.1
+  },
+  "geometry": {
+    "lower_left": [
+      0.0,
+      0.0
+    ],
+    "upper_right": [
+      1.0,
+      1.0
+    ],
+    "boundary_ids": {
+      "lid": 1,
+      "no-slip": [
+        0,
+        2,
+        3
+      ]
+    },
+    "refinements": 4
+  },
+  "field_degrees": {},
+  "pin_fields": [],
+  "value_sources": {}
+}

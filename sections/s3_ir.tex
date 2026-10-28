@@ -1,0 +1,72 @@
+\section{The Physics-Aware PDE Intermediate Representation}
+\label{sec:ir}
+
+\subsection{Expressions and models}
+The PDE-IR is a typed, serialisable tree language plus an outer record. Expression nodes are immutable dataclasses; every node can carry optional \code{provenance} and \code{ambiguity} annotations that do not take part in structural equality. Table~\ref{tab:nodes} lists the node families. The vocabulary is deliberately small: it covers the operators of the continuum-mechanics and phase-field problems targeted in the first release, and each node has a defined tensor rank, a printer (text and \LaTeX), a JSON codec, a weak-form rule and, where applicable, a differentiation rule.
+
+\begin{table}[t]
+\centering\small
+\caption{Expression nodes of the PDE-IR.}
+\label{tab:nodes}
+\begin{tabularx}{\textwidth}{@{}p{3.1cm}X@{}}
+\toprule
+Family & Nodes\\
+\midrule
+Leaves & \code{Constant}, \code{Field} (name, rank, function space, SI dimension), \code{Parameter} (name, rank, dimension), \code{SpatialCoordinate}(axis), \code{TimeCoordinate}, \code{Normal}, \code{Identity}\\
+Algebra & \code{Add}, \code{Mul}, \code{Neg}, \code{Pow}, \code{VectorExpr}, \code{Inner}, \code{Transpose}, \code{Trace}\\
+Differential operators & \code{Grad}, \code{Div}, \code{Laplacian}, \code{TimeDerivative}, \code{Convection} ($(\mathbf a\cdot\nabla)\,b$)\\
+Constitutive & \code{Apply}(name, arguments, rank), resolved through named relations $\mathrm{name}(\text{formals})=\text{body}$ with simultaneous substitution\\
+Variational & \code{DomainIntegral}, \code{BoundaryIntegral}, \code{Equation} (lhs, rhs)\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+A \code{PDEModel} bundles \code{fields}, \code{parameters}, \code{equations}, \code{initial\_conditions}, \code{boundary\_conditions} (Dirichlet, Neumann, Robin; each with a field, a boundary name and an expression value), \code{constitutive\_relations}, \code{invariants} (an expression, a behaviour---conserved, non-increasing, non-decreasing, positive---and a tolerance), free-text \code{assumptions}, and model-level provenance and ambiguity. The IR deliberately encodes the \emph{strong} form: the weak form is derived by the compiler.
+
+\paragraph{Boundary-condition convention.}
+A Dirichlet value is the prescribed field value. A Neumann or Robin value is the prescribed \emph{outward normal flux} of the diffusive flux appearing in the equation, so that for $-\nabla\cdot(k\nabla T)=0$ the value is $k\,\partial_n T$. Consequently an insulated boundary is a Neumann condition with value $0$, and Newton's law of cooling $-k\,\partial_n T=h\,(T-T_\infty)$ is a Robin condition with value $-h\,(T-T_\infty)$. This convention is stated in the extraction prompt; Section~\ref{sec:experiments} shows that mistakes against it are the kind of error that actually occurs.
+
+\paragraph{Example.}
+The heat-transfer benchmark of Section~\ref{sec:heat} is represented by the model below, as printed by the IR's text printer (the JSON form is about 150 lines because every \code{Field} and \code{Parameter} leaf carries its metadata):
+\begin{lstlisting}
+fields:       T            (scalar, H1, [temperature])
+parameters:   k  [W/(m K)],  h  [W/(m^2 K)],  T_amb  [K]
+equation:     div(grad(T) * k) = 0
+BC bottom         dirichlet  100
+BC left           neumann    0
+BC top_and_right  robin      -(h * (T - T_amb))
+\end{lstlisting}
+
+\subsection{Function spaces, ranks and dimensions}
+Every \code{Field} declares a function space (H1, H(div), H(curl), L2) and a tensor rank (scalar, vector, tensor). The space is part of the mathematical specification (which regularity does the unknown have?), while the polynomial degree and element family are \emph{discretization} data kept in the plan or the instance. Dimensions are vectors of integer exponents of the seven SI base quantities, with an algebra for products, quotients and powers. Rank inference is shared with the weak-form compiler so that the validator and the compiler agree.
+
+\subsection{Provenance and ambiguity}
+Each node, boundary condition, initial condition, constitutive relation, invariant and model can be annotated with a \code{Provenance} (document, equation label, page, the transformation applied, and a note) and with an \code{Ambiguity} (confidence, reason, textual alternative readings with their own confidence, and a resolved flag). Transformations extend provenance rather than replace it: the weak form derived from the equation labelled (1) carries \code{transformation = integration\_by\_parts} and a note recording why a boundary term vanished (for instance, ``test function vanishes on the Dirichlet part''). This is the basis for answering where a term came from and why a boundary integral was eliminated. At the instance level, \code{value\_sources} records one short note per parameter value (``Governing equation section: $k=52$''). We note honestly that provenance is fully \emph{supported} by the data model but, in the current LLM layer, populated only through these value notes; asking the model to attach page/equation provenance to every node is part of the outlook.
+
+\subsection{The trust boundary: validation}
+\label{sec:validation}
+The validators return structured \code{ValidationIssue} records (code, severity, message, location) rather than raising, so that the same diagnostics serve humans and the repair loop. Table~\ref{tab:validators} lists the categories.
+
+\begin{table}[t]
+\centering\small
+\caption{Deterministic checks at the trust boundary (issue codes in the implementation).}
+\label{tab:validators}
+\begin{tabularx}{\textwidth}{@{}p{2.9cm}p{3.6cm}X@{}}
+\toprule
+Level & Codes & Meaning\\
+\midrule
+Schema & parse errors, \code{missing key} & JSON is not a valid \code{PDEModel}; the message names the offending key or the non-integer dimension exponents\\
+Referential & undeclared field/parameter & every symbol used in an equation, relation, invariant or BC is declared\\
+Rank & \code{rank\_mismatch}, \code{div\_of\_scalar}, \code{trace\_of\_non\_tensor}, \code{convection\_velocity\_not\_vector} & terms of a sum and the two sides of an equation have one tensor rank; operators are applied to admissible ranks\\
+Dimension & \code{dimension\_mismatch} & terms of a sum and equation sides have equal SI dimension; deliberately conservative: only two \emph{known, differing} dimensions are flagged\\
+Time & \code{missing\_time\_plan}, \code{missing\_num\_steps}, time coordinate without a time derivative, missing initial data & the time structure of the model matches the plan\\
+Instance & \code{missing\_parameter\_value}, \code{parameter\_value\_shape}, \code{missing\_boundary\_mapping}, \code{unconstrained\_sides}, \code{overlapping\_boundaries} & every declared parameter has a value of the right shape; every named boundary is mapped to mesh sides without overlap\\
+Well-posedness & \code{inf\_sup\_violation}, \code{multiplier\_not\_pinned}, \code{anti\_dissipative\_boundary} & see below\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The \emph{well-posedness} checks read the model against the discretization plan, statically, without building anything. (i)~For a constraint multiplier such as the pressure of an incompressible flow, the multiplier space must be smaller than the space it constrains (the inf--sup condition \citep{boffi2013}); equal-order pairs such as $Q_2/Q_2$ are rejected, and Taylor--Hood degrees \citep{taylorhood1973} are suggested. (ii)~A multiplier that sees only Dirichlet data on the field it constrains is determined up to a constant, so the instance must pin it; conversely, pinning with an open boundary over-constrains it. (iii)~A Neumann or Robin value $q\cdot n$ of a diffusive flux must not \emph{grow} with the unknown: $-k\,\partial_n u = h(u-u_\infty)$ must be encoded as $-h(u-u_\infty)$; the opposite sign feeds energy through the boundary and is almost always a sign error in the extraction. This last rule is the direct result of an observed failure: when the pipeline was first tried on the heat benchmark with a local model, the model emitted $h\,T - T_\infty$ with the wrong sign, which the generator would have compiled and solved without complaint; the check now reports \code{anti\_dissipative\_boundary} and quotes the correct form in its message. (The message is written for the person who edits \code{model.json}; these static checks currently run at the \code{validate} stage and are not yet part of the model's repair loop, which uses the schema, rank, dimension and instance-completeness checks.)
+
+\subsection{Problem instance}
+The instance carries \code{parameter\_values} (a float, or a list of floats for vector parameters), a \code{RectangleGeometry} (lower-left and upper-right corner, a map from boundary names to \dealii{} colorize ids---$0$/$1$ for $x_{\min}/x_{\max}$, $2$/$3$ for $y_{\min}/y_{\max}$---and the number of global refinements), \code{field\_degrees} and \code{pin\_fields} (the small amount of spatial discretization data that a mixed problem needs), and \code{value\_sources}. \code{check\_problem\_instance} reports missing values and unmapped boundaries as errors and a missing geometry as a warning (a placeholder mesh is used). One boundary name may cover several sides (for example \code{top\_and\_right}$\mapsto[1,3]$), in which case the generator relabels the sides to one mesh id.

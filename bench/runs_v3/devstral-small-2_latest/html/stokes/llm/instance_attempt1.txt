@@ -1,0 +1,33 @@
+```json
+{
+  "parameter_values": {
+    "nu": 0.1,
+    "u_lid": [
+      1.0,
+      0.0
+    ]
+  },
+  "geometry": {
+    "lower_left": [
+      0.0,
+      0.0
+    ],
+    "upper_right": [
+      1.0,
+      1.0
+    ],
+    "boundary_ids": {
+      "lid": 3,
+      "walls": [
+        0,
+        1,
+        2
+      ]
+    }
+  },
+  "value_sources": {
+    "nu": "paper, Section 4",
+    "u_lid": "paper, Section 4"
+  }
+}
+```

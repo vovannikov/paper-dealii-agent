@@ -1,0 +1,15 @@
+{
+ "stages": {
+  "validate": "passed",
+  "generate": "failed"
+ },
+ "details": {
+  "validate": "model and instance consistent",
+  "generate": "unsupported construct: FESystem codegen: no C++ rule for Grad (v0 scope: linear operators)"
+ },
+ "issues": [],
+ "solution": null,
+ "passed": false,
+ "status": "failed",
+ "seconds": 0.0021109580993652344
+}

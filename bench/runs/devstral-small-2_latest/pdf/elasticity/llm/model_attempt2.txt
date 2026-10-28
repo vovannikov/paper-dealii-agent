@@ -1,0 +1,246 @@
+```json
+{
+  "name": "plane_strain_cantilever",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "displacement vector",
+      "dimension": null
+    },
+    {
+      "name": "sigma",
+      "rank": "tensor",
+      "space": "L2",
+      "description": "stress tensor",
+      "dimension": null
+    },
+    {
+      "name": "epsilon",
+      "rank": "tensor",
+      "space": "L2",
+      "description": "strain tensor",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "lambda",
+      "rank": "scalar",
+      "description": "Lamé parameter λ",
+      "dimension": null
+    },
+    {
+      "name": "mu",
+      "rank": "scalar",
+      "description": "Lamé parameter µ",
+      "dimension": null
+    },
+    {
+      "name": "f",
+      "rank": "vector",
+      "description": "body force",
+      "dimension": null
+    },
+    {
+      "name": "gN",
+      "rank": "vector",
+      "description": "prescribed traction on the right end",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Neg",
+        "operand": {
+          "type": "Div",
+          "operand": {
+            "type": "Field",
+            "name": "sigma",
+            "rank": "tensor",
+            "space": "L2",
+            "description": "stress tensor",
+            "dimension": null
+          }
+        }
+      },
+      "rhs": {
+        "type": "Field",
+        "name": "f",
+        "rank": "vector",
+        "description": "body force",
+        "dimension": null
+      },
+      "name": "equilibrium"
+    },
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Field",
+        "name": "sigma",
+        "rank": "tensor",
+        "space": "L2",
+        "description": "stress tensor",
+        "dimension": null
+      },
+      "rhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Parameter",
+                "name": "lambda",
+                "rank": "scalar",
+                "description": "Lamé parameter λ",
+                "dimension": null
+              },
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Apply",
+                    "function": "tr",
+                    "operand": {
+                      "type": "Field",
+                      "name": "epsilon",
+                      "rank": "tensor",
+                      "space": "L2",
+                      "description": "strain tensor",
+                      "dimension": null
+                    }
+                  },
+                  {
+                    "type": "Apply",
+                    "function": "identity",
+                    "operand": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Constant",
+                "value": 2
+              },
+              {
+                "type": "Field",
+                "name": "epsilon",
+                "rank": "tensor",
+                "space": "L2",
+                "description": "strain tensor",
+                "dimension": null
+              }
+            ]
+          }
+        ]
+      },
+      "name": "constitutive_relation"
+    },
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Field",
+        "name": "epsilon",
+        "rank": "tensor",
+        "space": "L2",
+        "description": "strain tensor",
+        "dimension": null
+      },
+      "rhs": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Constant",
+            "value": 0.5
+          },
+          {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Grad",
+                "operand": {
+                  "type": "Field",
+                  "name": "u",
+                  "rank": "vector",
+                  "space": "H1",
+                  "description": "displacement vector",
+                  "dimension": null
+                }
+              },
+              {
+                "type": "Apply",
+                "function": "transpose",
+                "operand": {
+                  "type": "Grad",
+                  "operand": {
+                    "type": "Field",
+                    "name": "u",
+                    "rank": "vector",
+                    "space": "H1",
+                    "description": "displacement vector",
+                    "dimension": null
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "name": "strain_tensor"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "clamped",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "sigma",
+      "type": "neumann",
+      "boundary_id": "right_end",
+      "value": {
+        "type": "Parameter",
+        "name": "gN",
+        "rank": "vector",
+        "description": "prescribed traction on the right end",
+        "dimension": null
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "sigma",
+      "type": "neumann",
+      "boundary_id": "top_and_bottom",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```

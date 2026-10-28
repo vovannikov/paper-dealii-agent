@@ -1,0 +1,163 @@
+The user wants me to extract a PDE model from the provided text and format it as a JSON object conforming to the `PDEModel` schema.
+
+1.  **Analyze the text:**
+    *   **Problem:** Steady diffusion of a scalar quantity `u` in a rectangular domain $\Omega = (0,2) \times (0,1)$.
+    *   **Governing Equation:** $-\nabla \cdot (k \nabla u) = f$ in $\Omega$.
+    *   **Boundary Conditions:**
+        *   Left ($x=0$) and Bottom ($y=0$): $u = 0$ (Dirichlet).
+        *   Right ($x=2$): $k \frac{\partial u}{\partial n} = g_N$ (Neumann). Note: The text says "outward flux $g_N$ leaves the domain" and gives the equation $k \partial u / \partial n = g_N$. The standard Neumann BC in the PDE-IR schema is the prescribed outward normal flux. For $-\nabla \cdot (k \nabla u)$, the flux is $k \nabla u \cdot n = k \partial u / \partial n$. So the value is $g_N$.
+        *   Top ($y=1$): $k \frac{\partial u}{\partial n} = 0$ (Neumann/Insulated).
+    *   **Parameters:**
+        *   $k = 2.5$ (diffusivity)
+        *   $f = 10$ (production rate)
+        *   $g_N = 3$ (outward flux)
+    *   **Units:** "consistent non-dimensional units". So dimensions are null.
+    *   **Fields:** `u` (scalar, H1).
+
+2.  **Construct the PDE-IR:**
+    *   **Name:** "steady_diffusion_mixed_bc"
+    *   **Fields:** `u` (scalar, H1).
+    *   **Parameters:** `k`, `f`, `g_N`.
+    *   **Equations:**
+        *   LHS: $-\nabla \cdot (k \nabla u) - f = 0$ or $-\nabla \cdot (k \nabla u) = f$.
+        *   Let's use the form $-\nabla \cdot (k \nabla u) - f = 0$.
+        *   LHS: `Add` of `Neg(Div(Mul(Grad(u), k)))` and `Neg(f)`.
+        *   RHS: `Constant(0)`.
+    *   **Boundary Conditions:**
+        *   `left_and_bottom`: Dirichlet, value 0.
+        *   `right`: Neumann, value `g_N`.
+        *   `top`: Neumann, value 0.
+    *   **Dimensions:** All null since non-dimensional.
+
+3.  **Refine Expression Trees:**
+    *   Equation:
+        ```json
+        {
+          "type": "Equation",
+          "lhs": {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Div",
+                  "operand": {
+                    "type": "Mul",
+                    "factors": [
+                      { "type": "Grad", "operand": { "type": "Field", "name": "u", "rank": "scalar", "space": "H1", "description": "scalar quantity u", "dimension": null } },
+                      { "type": "Parameter", "name": "k", "rank": "scalar", "description": "diffusivity", "dimension": null }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "Neg",
+                "operand": { "type": "Parameter", "name": "f", "rank": "scalar", "description": "production rate", "dimension": null }
+              }
+            ]
+          },
+          "rhs": { "type": "Constant", "value": 0 },
+          "name": "strong"
+        }
+        ```
+    *   Boundary Conditions:
+        *   `left_and_bottom`: Dirichlet, value 0.
+        *   `right`: Neumann, value `g_N`.
+        *   `top`: Neumann, value 0.
+
+    Wait, check the Neumann BC definition in the prompt: "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+    The text says: $k \frac{\partial u}{\partial n} = g_N$ on $x=2$. So the value is exactly $g_N$.
+    For the top: $k \frac{\partial u}{\partial n} = 0$. So value is 0.
+
+    Let's assemble the JSON carefully.
+
+    Fields:
+    - u: scalar, H1, "scalar quantity u", dimension null.
+
+    Parameters:
+    - k: scalar, "diffusivity", dimension null.
+    - f: scalar, "production rate", dimension null.
+    - g_N: scalar, "outward flux on right boundary", dimension null.
+
+    Equations:
+    - LHS: -div(k grad(u)) - f
+    - RHS: 0
+
+    Boundary Conditions:
+    - field: u, type: dirichlet, boundary_id: left_and_bottom, value: 0
+    - field: u, type: neumann, boundary_id: right, value: g_N
+    - field: u, type: neumann, boundary_id: top, value: 0
+
+    Check dimensions: "All quantities are given in consistent non-dimensional units." -> dimension: null for all.
+
+    One minor point: The prompt says "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". This confirms that the Neumann value is exactly the flux term appearing on the boundary integral after integration by parts, which matches $k \partial u / \partial n$.
+
+    Let's construct the JSON.
+    I will make sure the structure matches exactly.
+    I'll add descriptions to fields/parameters.
+    I'll use `g_N` as the parameter name.
+    I'll verify the equation structure.
+    `-div(k grad(u)) = f` -> `-div(k grad(u)) - f = 0`.
+    LHS: Add([Neg(Div(Mul(Grad(u), k))), Neg(f)])
+    RHS: Constant(0)
+
+    All good.
+    One detail: `g_N` might be better named `g_N` or `gN`. I'll stick to `g_N`.
+    The prompt says "The outward flux through the right side is gN=3." I'll use `g_N`.
+
+    Let's draft it. 
+    Check schema requirements: `fields`, `parameters`, `equations`, `initial_conditions`, `boundary_conditions`, `constitutive_relations`, `invariants`, `assumptions`, `provenance`, `ambiguity`.
+    I will fill in the required ones and leave others as empty arrays/nulls.
+
+    Structure:
+    ```json
+    {
+      "name": "steady_diffusion_mixed_bc",
+      "pde_ir_version": "0.1",
+      "fields": [ ... ],
+      "parameters": [ ... ],
+      "equations": [ ... ],
+      "initial_conditions": [],
+      "boundary_conditions": [ ... ],
+      "constitutive_relations": [],
+      "invariants": [],
+      "assumptions": [],
+      "provenance": null,
+      "ambiguity": null
+    }
+    ```
+    Everything looks solid.
+    I will generate the JSON now. 
+    Self-Correction/Verification during thought:
+    - Check Neumann BC value sign: The prompt says "A `neumann` ... value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+    - The paper says: $k \frac{\partial u}{\partial n} = g_N$ on $x=2$. So value is `g_N`. Correct.
+    - Top side: $k \frac{\partial u}{\partial n} = 0$. Value is 0. Correct.
+    - Left/Bottom: $u=0$. Dirichlet value 0. Correct.
+    - Equation: $-\nabla \cdot (k \nabla u) = f$. LHS: $-\nabla \cdot (k \nabla u) - f$. RHS: 0. Correct.
+    - Dimensions: null. Correct.
+    - All parameters and fields declared. Correct.
+    - JSON format matches example. Correct.
+
+    Proceed. 
+    One minor thing: `g_N` vs `gN`. I'll use `g_N` for clarity, or `gN` as in text. I'll stick to `g_N`.
+    The text says `gN=3`. I'll use `g_N`.
+    I will produce the exact JSON.
+    All set. 
+    Output matches request. 
+    Generating. 
+    [Done] 
+    *Self-Correction/Refinement during generation prep*: 
+    Wait, the prompt says "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". This implies the BC value is exactly what appears on the RHS of the boundary condition equation when written as `flux = value`. Since the paper gives `k du/dn = g_N`, the value is `g_N`. This is consistent.
+    I will make sure the JSON is strictly valid.
+    I'll add `description` fields as requested/implied.
+    Ready. 
+    Output matches the final JSON. 
+    Proceeds. 
+    [Output Generation] -> *See response.* 
+    *(Note: I will carefully format the JSON to match the schema exactly, ensuring all nested objects have the correct keys and types.)*
+    One detail: `dimension` is requested as `null` or an object. I'll use `null`.
+    `space` for `u` is `H1`.
+    `rank` is `scalar`.
+    All good. 
+    Output generation. 
+    `[Done]`

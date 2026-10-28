@@ -1,0 +1,383 @@
+The user wants me to extract the PDE model from the provided text into a specific JSON format (PDE-IR).
+
+1.  **Analyze the text:**
+    *   **Title:** Phase Ordering Described by the Allen–Cahn Equation
+    *   **Field:** `c(x,y,t)` - non-conserved order parameter.
+    *   **Domain:** Unit square $\Omega = (0,1)^2$.
+    *   **Equation:** Allen-Cahn equation: $\frac{\partial c}{\partial t} = -M (f'(c) - \kappa \nabla^2 c)$ in $\Omega, t > 0$.
+    *   **Potential:** $f(c) = \frac{1}{4}(c^2 - 1)^2$.
+    *   **Parameters:** $M$ (mobility), $\kappa$ (gradient-energy coefficient). Values: $M=1$, $\kappa=0.01$.
+    *   **Boundary Conditions:** No flux: $\nabla c \cdot n = 0$ on $\partial \Omega$.
+    *   **Initial Conditions:** $c(x,y,0) = \frac{1}{2}(2x-1)(2y-1)$.
+    *   **Time:** Simulation up to $t=1$, $\Delta t = 0.01$.
+
+2.  **Determine Fields and Parameters:**
+    *   **Fields:**
+        *   `c`: scalar, H1 (since it involves gradients and Laplacian), description: "order parameter". Dimension: null (order parameter is often dimensionless, or concentration, but text doesn't specify units, so null).
+    *   **Parameters:**
+        *   `M`: scalar, description: "mobility". Dimension: null.
+        *   `kappa`: scalar, description: "gradient-energy coefficient". Dimension: null.
+        *   `f_prime_c`: This is a function of `c`. The equation uses $f'(c)$. I should probably define the source term explicitly or use an `Apply` node if supported, but the schema says `Apply` is a valid type. Let's look at the equation: $\frac{\partial c}{\partial t} = -M f'(c) + M \kappa \nabla^2 c$.
+        *   Wait, the equation is $\frac{\partial c}{\partial t} = -M (f'(c) - \kappa \nabla^2 c)$.
+        *   $f(c) = \frac{1}{4}(c^2 - 1)^2$.
+        *   $f'(c) = \frac{1}{4} \cdot 2(c^2 - 1) \cdot 2c = c(c^2 - 1) = c^3 - c$.
+        *   So the equation is $\frac{\partial c}{\partial t} = -M(c^3 - c) + M \kappa \nabla^2 c$.
+        *   Or $\frac{\partial c}{\partial t} - M \kappa \nabla^2 c + M(c^3 - c) = 0$.
+        *   Let's check the sign convention in the text: $\frac{\partial c}{\partial t} = -M (f'(c) - \kappa \nabla^2 c)$.
+        *   So $\frac{\partial c}{\partial t} = -M f'(c) + M \kappa \nabla^2 c$.
+        *   Rearranging to standard form (LHS = 0 or LHS = RHS):
+            $\frac{\partial c}{\partial t} - M \kappa \nabla^2 c + M f'(c) = 0$.
+        *   Let's stick to the text's form for the equation node:
+            LHS: $\frac{\partial c}{\partial t}$
+            RHS: $-M (f'(c) - \kappa \nabla^2 c)$
+            Or LHS: $\frac{\partial c}{\partial t} + M f'(c) - M \kappa \nabla^2 c$, RHS: 0.
+            The prompt asks for the strong form. I will write it as $\frac{\partial c}{\partial t} = -M f'(c) + M \kappa \nabla^2 c$.
+            Actually, usually diffusion terms are written as $-\text{div}(k \nabla u)$. Here it's $+ M \kappa \nabla^2 c$.
+            Let's represent the RHS as an expression.
+            $f'(c) = c^3 - c$.
+            So RHS = $-M(c^3 - c) + M \kappa \nabla^2 c$.
+            Or I can define a parameter `f_prime`? No, it's a function of the field.
+            I will use `Apply` for $f'(c)$ or just expand it to $c^3 - c$. Expanding is safer and more explicit.
+            $f'(c) = c^3 - c$.
+            So the equation is $\frac{\partial c}{\partial t} = -M(c^3 - c) + M \kappa \nabla^2 c$.
+            Let's verify the derivative: $f(c) = \frac{1}{4}(c^2-1)^2$. $f'(c) = \frac{1}{4} \cdot 2(c^2-1) \cdot 2c = c(c^2-1) = c^3 - c$. Correct.
+            So the PDE is $\frac{\partial c}{\partial t} - M \kappa \nabla^2 c + M(c^3 - c) = 0$.
+            I'll structure the equation as:
+            LHS: $\frac{\partial c}{\partial t}$
+            RHS: $-M(c^3 - c) + M \kappa \nabla^2 c$
+            Wait, the text says $\frac{\partial c}{\partial t} = -M(f'(c) - \kappa \nabla^2 c)$.
+            So RHS = $-M f'(c) + M \kappa \nabla^2 c$.
+            I will use `Apply` for $f'(c)$ to be faithful to the text, or just expand it. The prompt says "Expression trees are encoded as nested objects tagged by a 'type' field... Apply". I'll use `Apply` with a function name `f_prime` or just expand it. Expanding is usually better for solvers. I'll expand it to `c^3 - c`.
+            Actually, I can define a parameter `f_prime_c`? No.
+            I'll just write the expanded form: $-M(c^3 - c) + M \kappa \nabla^2 c$.
+            Let's check the sign of the Laplacian term. Text: $-M(-\kappa \nabla^2 c) = + M \kappa \nabla^2 c$.
+            So $\frac{\partial c}{\partial t} = M \kappa \nabla^2 c - M(c^3 - c)$.
+            I will write the equation as:
+            LHS: TimeDerivative(c)
+            RHS: Add( Mul(M, kappa, Laplacian(c)), Neg(Mul(M, Add(Pow(c,3), Neg(c)))) )
+            Wait, $c^3 - c$.
+            Let's refine the RHS expression:
+            `Add`
+              `Mul` -> `M`, `kappa`, `Laplacian(c)`
+              `Neg` -> `Mul` -> `M`, `Add` -> `Pow(c, 3)`, `Neg(c)`
+            This matches $\frac{\partial c}{\partial t} = M \kappa \nabla^2 c - M(c^3 - c)$.
+
+    *   **Boundary Conditions:**
+        *   "No flux crosses the boundary of the domain" -> $\nabla c \cdot n = 0$ on $\partial \Omega$.
+        *   This is a Neumann condition.
+        *   The flux in the PDE is usually associated with the diffusion term. The diffusion term is $M \kappa \nabla^2 c = \text{div}(M \kappa \nabla c)$.
+        *   The outward normal flux is $M \kappa \frac{\partial c}{\partial n}$.
+        *   The condition is $\frac{\partial c}{\partial n} = 0$, so the flux is 0.
+        *   Type: `neumann`, value: 0.
+        *   Boundary ID: `boundary` or `all`. I'll use `boundary`.
+
+    *   **Initial Conditions:**
+        *   $c(x,y,0) = \frac{1}{2}(2x-1)(2y-1)$.
+        *   This depends on spatial coordinates $x, y$.
+        *   In PDE-IR, initial conditions are usually given as an expression. I can use `Apply` with coordinates, or just describe it. The schema doesn't explicitly show coordinate fields, but usually `x` and `y` are available or I can use a `Parameter` for the expression? No, I'll use `Apply` with a function name `initial_c` or just write it out if coordinates are supported. The prompt example doesn't show coordinates. I will use a `Parameter` named `c0` with a description, or just put the expression in the `value` field using `Apply` if possible. Actually, standard practice is to define a function or just state it. I'll use a `Parameter` `c0` and describe it, or better, use an `Apply` node with a function name `initial_condition`. Wait, the prompt says "Expression trees are encoded as nested objects...". I'll just use a `Parameter` `c0` and note it in the description, or construct it with `x` and `y` if I assume they are fields. I'll stick to a simple `Parameter` `c0` for the initial condition value, or just write the expression using `x` and `y` as `Field`s? No, coordinates are usually implicit. I'll use a `Parameter` `c0` and describe it, or just put a placeholder. Actually, I can define `x` and `y` as parameters? No.
+        *   Let's look at the prompt example: it doesn't have initial conditions.
+        *   I will define the initial condition value as an `Apply` node with function name `c0` or just a `Parameter` `c0`. I'll go with `Parameter` `c0` and describe it as $\frac{1}{2}(2x-1)(2y-1)$. Or I can just write the expression using `x` and `y` as `Field`s of rank scalar? No.
+        *   I'll use a `Parameter` named `c0` with description "initial condition: 0.5*(2x-1)*(2y-1)".
+        *   Actually, I can just use a `Constant` 0 if I don't want to overcomplicate, but the text gives a specific function. I'll use `Apply` with `name: "c0"` or similar. Let's stick to `Parameter` `c0`.
+
+    *   **Dimensions:**
+        *   The text doesn't give units. I'll set `dimension: null` for all.
+
+    *   **Constitutive Relations:**
+        *   None explicitly, except the definition of $f(c)$, which is already expanded into the PDE.
+
+    *   **Assumptions:**
+        *   "non-conserved order parameter", "unit square", "smooth saddle-shaped field".
+
+3.  **Construct JSON:**
+    *   `name`: "allen_cahn_phase_ordering"
+    *   `pde_ir_version`: "0.1"
+    *   `fields`: `c` (scalar, H1)
+    *   `parameters`: `M`, `kappa`, `c0`
+    *   `equations`: One equation for Allen-Cahn.
+        *   LHS: `TimeDerivative(c)`
+        *   RHS: `Add` -> `Mul(M, kappa, Laplacian(c))`, `Neg(Mul(M, Add(Pow(c,3), Neg(c))))`
+        *   Wait, $f'(c) = c^3 - c$. So $-M f'(c) = -M(c^3 - c) = M(c - c^3)$.
+        *   Let's check signs carefully.
+        *   Text: $\frac{\partial c}{\partial t} = -M(f'(c) - \kappa \nabla^2 c) = -M f'(c) + M \kappa \nabla^2 c$.
+        *   $f'(c) = c^3 - c$.
+        *   So RHS = $M \kappa \nabla^2 c - M(c^3 - c) = M \kappa \nabla^2 c + M(c - c^3)$.
+        *   I will write RHS as `Add( Mul(M, kappa, Laplacian(c)), Mul(M, Add(c, Neg(Pow(c,3)))) )`.
+    *   `initial_conditions`: One IC for `c` at `t=0`, value `c0`.
+    *   `boundary_conditions`: One BC for `c`, type `neumann`, boundary_id `boundary`, value 0.
+    *   `constitutive_relations`: []
+    *   `invariants`: []
+    *   `assumptions`: ["non-conserved order parameter", "unit square domain"]
+    *   `provenance`: null
+    *   `ambiguity`: null
+
+    Let's refine the expression tree for the equation.
+    LHS: `{"type": "TimeDerivative", "operand": {"type": "Field", "name": "c", ...}}`
+    RHS: `{"type": "Add", "terms": [ {"type": "Mul", "factors": [{"type": "Parameter", "name": "M", ...}, {"type": "Parameter", "name": "kappa", ...}, {"type": "Laplacian", "operand": {"type": "Field", "name": "c", ...}}]}, {"type": "Mul", "factors": [{"type": "Parameter", "name": "M", ...}, {"type": "Add", "terms": [{"type": "Field", "name": "c", ...}, {"type": "Neg", "operand": {"type": "Pow", "base": {"type": "Field", "name": "c", ...}, "exponent": 3}}]}]} ]}`
+    This corresponds to $M \kappa \nabla^2 c + M(c - c^3)$.
+    Check: $-M(c^3 - c) = M(c - c^3)$. Correct.
+
+    Wait, is `Pow` defined as `{"type": "Pow", "base": ..., "exponent": ...}`? The prompt says `Pow` is a valid type. I'll assume standard structure.
+    Actually, the prompt says: `Expression trees are encoded as nested objects tagged by a "type" field (Add, Mul, Neg, Grad, Div, Laplacian, TimeDerivative, Inner, Pow, Apply, Field, Parameter, Constant, Equation, DomainIntegral, BoundaryIntegral).`
+    I will follow this.
+
+    Let's assemble carefully.
+    Fields:
+    - c: scalar, H1, "order parameter", dimension null.
+    Parameters:
+    - M: scalar, "mobility", dimension null.
+    - kappa: scalar, "gradient-energy coefficient", dimension null.
+    - c0: scalar, "initial condition: 0.5*(2x-1)*(2y-1)", dimension null.
+
+    Equation:
+    LHS: TimeDerivative(c)
+    RHS: Add( Mul(M, kappa, Laplacian(c)), Mul(M, Add(c, Neg(Pow(c, 3))) ) )
+    Name: "allen_cahn"
+
+    Initial Conditions:
+    - field: c, type: initial, time: 0, value: c0. (The schema doesn't specify `time` field in IC, just `value`. I'll assume standard IC structure or just put it in `initial_conditions` array. The prompt example doesn't show IC structure, but typically it's `{"field": "c", "value": {...}}`. I'll add a `time` field if needed, or just follow the pattern. I'll stick to `{"field": "c", "value": {"type": "Parameter", "name": "c0", ...}}`.)
+
+    Boundary Conditions:
+    - field: c, type: neumann, boundary_id: "boundary", value: 0.
+
+    Check dimensions: The prompt says "Attach SI base dimensions to fields/parameters when the paper states units". Paper doesn't state units. So null.
+
+    One detail: `Pow` structure. Usually `{"type": "Pow", "base": ..., "exponent": ...}`. I'll use that.
+    Another detail: `Add` and `Mul` take `terms` and `factors` respectively.
+    Let's verify the equation structure matches the prompt's example style.
+    Example uses:
+    ```json
+    {
+      "type": "Add",
+      "terms": [ ... ]
+    }
+    ```
+    I will follow this.
+
+    Let's draft the JSON mentally.
+    ```json
+    {
+      "name": "allen_cahn_phase_ordering",
+      "pde_ir_version": "0.1",
+      "fields": [
+        {
+          "name": "c",
+          "rank": "scalar",
+          "space": "H1",
+          "description": "non-conserved order parameter",
+          "dimension": null
+        }
+      ],
+      "parameters": [
+        {
+          "name": "M",
+          "rank": "scalar",
+          "description": "mobility",
+          "dimension": null
+        },
+        {
+          "name": "kappa",
+          "rank": "scalar",
+          "description": "gradient-energy coefficient",
+          "dimension": null
+        },
+        {
+          "name": "c0",
+          "rank": "scalar",
+          "description": "initial condition: 0.5*(2x-1)*(2y-1)",
+          "dimension": null
+        }
+      ],
+      "equations": [
+        {
+          "type": "Equation",
+          "lhs": {
+            "type": "TimeDerivative",
+            "operand": {
+              "type": "Field",
+              "name": "c",
+              "rank": "scalar",
+              "space": "H1",
+              "description": "non-conserved order parameter",
+              "dimension": null
+            }
+          },
+          "rhs": {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Parameter",
+                    "name": "M",
+                    "rank": "scalar",
+                    "description": "mobility",
+                    "dimension": null
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "kappa",
+                    "rank": "scalar",
+                    "description": "gradient-energy coefficient",
+                    "dimension": null
+                  },
+                  {
+                    "type": "Laplacian",
+                    "operand": {
+                      "type": "Field",
+                      "name": "c",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "non-conserved order parameter",
+                      "dimension": null
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Parameter",
+                    "name": "M",
+                    "rank": "scalar",
+                    "description": "mobility",
+                    "dimension": null
+                  },
+                  {
+                    "type": "Add",
+                    "terms": [
+                      {
+                        "type": "Field",
+                        "name": "c",
+                        "rank": "scalar",
+                        "space": "H1",
+                        "description": "non-conserved order parameter",
+                        "dimension": null
+                      },
+                      {
+                        "type": "Neg",
+                        "operand": {
+                          "type": "Pow",
+                          "base": {
+                            "type": "Field",
+                            "name": "c",
+                            "rank": "scalar",
+                            "space": "H1",
+                            "description": "non-conserved order parameter",
+                            "dimension": null
+                          },
+                          "exponent": 3
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "name": "allen_cahn"
+        }
+      ],
+      "initial_conditions": [
+        {
+          "field": "c",
+          "value": {
+            "type": "Parameter",
+            "name": "c0",
+            "rank": "scalar",
+            "description": "initial condition: 0.5*(2x-1)*(2y-1)",
+            "dimension": null
+          }
+        }
+      ],
+      "boundary_conditions": [
+        {
+          "field": "c",
+          "type": "neumann",
+          "boundary_id": "boundary",
+          "value": {
+            "type": "Constant",
+            "value": 0
+          },
+          "provenance": null,
+          "ambiguity": null
+        }
+      ],
+      "constitutive_relations": [],
+      "invariants": [],
+      "assumptions": [
+        "non-conserved order parameter",
+        "unit square domain Omega = (0,1)^2"
+      ],
+      "provenance": null,
+      "ambiguity": null
+    }
+    ```
+
+    Wait, should I expand $f'(c)$ or keep it as `Apply`? The prompt says `Apply` is a valid type. Using `Apply` might be cleaner: `{"type": "Apply", "function": "f_prime", "arguments": [{"type": "Field", "name": "c", ...}]}`. But I don't have `f_prime` defined. Expanding is safer. I'll stick to expanded form.
+    Also, check the sign of the reaction term again.
+    Equation: $\partial_t c = -M(f'(c) - \kappa \nabla^2 c) = -M f'(c) + M \kappa \nabla^2 c$.
+    $f'(c) = c^3 - c$.
+    So $-M f'(c) = -M(c^3 - c) = M(c - c^3)$.
+    My RHS: $M \kappa \nabla^2 c + M(c - c^3)$. This matches.
+    One minor point: `Pow` exponent should be a number or expression. I'll use `3`.
+    The structure looks solid.
+
+    Let's verify the boundary condition type. "No flux crosses the boundary" -> $\nabla c \cdot n = 0$. This is homogeneous Neumann. Value 0. Correct.
+    Initial condition: $c(x,y,0) = \frac{1}{2}(2x-1)(2y-1)$. I'll put this in the description of `c0`.
+    Parameters: M=1, kappa=0.01. I won't hardcode values into the IR unless asked, but I can mention them in descriptions or just leave as parameters. The prompt says "Declare every field and parameter you reference". I'll declare them.
+    Dimensions: null.
+    All good.
+
+    One thing: `Pow` might expect `exponent` to be an expression tree or a number. I'll use number `3`.
+    I will double check the `Add` and `Mul` structure. The example shows:
+    `"type": "Add", "terms": [ ... ]`
+    `"type": "Mul", "factors": [ ... ]`
+    This matches.
+
+    Final check of the text: "The resulting Allen–Cahn equation reads $\frac{\partial c}{\partial t} = -M(f'(c) - \kappa \nabla^2 c)$".
+    My derivation: $\frac{\partial c}{\partial t} = M \kappa \nabla^2 c - M(c^3 - c)$.
+    Matches.
+
+    I will generate the JSON now.
+    One detail: `initial_conditions` structure in the prompt example is empty `[]`. I'll follow a reasonable structure: `{"field": "c", "value": {...}}`.
+    I'll make sure all keys match the schema.
+    The prompt says: "Return a SINGLE JSON object matching the PDEModel schema."
+    I will produce exactly that.
+    I'll add `provenance` and `ambiguity` as null as per example.
+    I'll ensure `dimension` is null for all.
+    Ready. 
+    One minor adjustment: I'll use `Apply` for the initial condition if possible, but `Parameter` is fine. I'll stick to `Parameter` `c0`.
+    Actually, I can just put the expression directly in the IC value using `x` and `y` as coordinates? The schema doesn't define coordinate fields. I'll stick to `Parameter` `c0`.
+    All set.
+    Output matches request.
+    Proceeds. 
+    Self-Correction/Refinement during thought: 
+    Should I include the potential $f(c)$ as a constitutive relation? The prompt says "constitutive_relations": []. It's not strictly necessary since it's expanded. I'll leave it empty.
+    The equation name: "allen_cahn".
+    Boundary ID: "boundary".
+    Everything looks consistent.
+    I will generate the JSON. 
+    One thing: `Pow` structure in the prompt example isn't shown, but standard is `{"type": "Pow", "base": ..., "exponent": ...}`. I'll use that.
+    I'll make sure the JSON is valid.
+    Output generation. 
+    [Done] 
+    *Self-Correction/Verification during generation prep*:
+    Check `Pow` syntax: usually `{"type": "Pow", "base": {...}, "exponent": 3}`.
+    Check `Add`/`Mul`: `terms`/`factors`.
+    Check `TimeDerivative`: `operand`.
+    Check `Laplacian`: `operand`.
+    Check `Neg`: `operand`.
+    All match standard IR conventions.
+    The prompt says: "Expression trees are encoded as nested objects tagged by a "type" field (Add, Mul, Neg, Grad, Div, Laplacian, TimeDerivative, Inner, Pow, Apply, Field, Parameter, Constant, Equation, DomainIntegral, BoundaryIntegral)."
+    I will strictly follow this.
+    Final JSON construction. 
+    Proceeds. 
+    [Output Generation] -> *See response.* 
+    *(Note: I'll make sure the JSON is properly formatted and matches the requested schema exactly.)*
+    One detail: `initial_conditions` in the example is `[]`. I will provide an array with one object. The structure isn't strictly defined in the prompt, but `{"field": "c", "value": {...}}` is standard. I'll add it.
+    All good. 
+    Output matches. 
+    [Done]

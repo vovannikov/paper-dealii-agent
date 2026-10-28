@@ -1,0 +1,656 @@
+Here's a thinking process:
+
+1.  **Analyze User Input:**
+   - **Paper Content:** Describes the Allen-Cahn equation for phase ordering.
+   - **Domain:** Unit square $\Omega = (0, 1)^2$.
+   - **Field:** $c(x, y, t)$ (order parameter, scalar).
+   - **Equation:** $\frac{\partial c}{\partial t} = -M (f'(c) - \kappa \nabla^2 c)$ in $\Omega, t > 0$.
+   - **Potential:** $f(c) = \frac{1}{4}(c^2 - 1)^2$.
+   - **Derivative of potential:** $f'(c) = \frac{d}{dc} \left[ \frac{1}{4}(c^2 - 1)^2 \right] = \frac{1}{4} \cdot 2(c^2 - 1) \cdot 2c = c(c^2 - 1) = c^3 - c$.
+   - **Equation expanded:** $\frac{\partial c}{\partial t} = -M (c^3 - c - \kappa \nabla^2 c) = -M c^3 + M c + M \kappa \nabla^2 c$.
+   - **Boundary Condition:** No flux: $\nabla c \cdot \mathbf{n} = 0$ on $\partial \Omega$. This is a homogeneous Neumann condition. In the PDE-IR format, for an equation like $\partial_t c - M \kappa \nabla^2 c + M f'(c) = 0$, the flux term associated with the Laplacian is $M \kappa \nabla c \cdot \mathbf{n}$. The paper says $\nabla c \cdot \mathbf{n} = 0$, so the flux is 0. I'll represent it as a Neumann BC with value 0.
+   - **Initial Condition:** $c(x, y, 0) = \frac{1}{2}(2x - 1)(2y - 1)$.
+   - **Parameters:** $M = 1$, $\kappa = 0.01$.
+   - **Dimensions:** The paper doesn't explicitly state SI units, but typically $c$ is dimensionless (order parameter), $M$ has units of mobility, $\kappa$ has units of gradient energy coefficient. Since it's a mathematical model paper, I'll set dimensions to `null` or infer if obvious. I'll stick to `null` as per instructions ("when the paper states units").
+   - **PDE-IR Structure Requirements:**
+     - `fields`: `c` (scalar, H1, time-dependent)
+     - `parameters`: `M`, `kappa` (or `κ`)
+     - `equations`: Strong form. I need to express $\frac{\partial c}{\partial t} + M(c^3 - c) - M \kappa \nabla^2 c = 0$ or similar. The prompt says "strong form". I'll write it as `TimeDerivative(c) + M*(c^3 - c) - M*kappa*Laplacian(c) = 0`. Or keep it as `TimeDerivative(c) = -M*(f'(c) - kappa*Laplacian(c))`. I'll expand $f'(c)$ to $c^3 - c$ for clarity, or keep it as an expression. The prompt says "Expression trees are encoded as nested objects...". I'll construct the tree carefully.
+     - `initial_conditions`: $c(x,y,0) = 0.5*(2x-1)*(2y-1)$. In PDE-IR, spatial coordinates are usually handled via `Field` or `Parameter`? Actually, the schema doesn't explicitly list coordinate fields, but typically initial conditions can use `Apply` or just constants/expressions. I'll use `Mul`, `Add`, `Neg`, `Constant`, and maybe `Field` for coordinates if needed, but the prompt example doesn't show coordinates. I'll just use `Mul`, `Add`, `Neg`, `Constant` to represent the expression. Actually, femagent PDE-IR usually handles spatial dependence in ICs via `Apply` or just assumes it's a function of coordinates. I'll stick to the expression tree format. I'll represent $x$ and $y$ as parameters or fields? The prompt says "Declare every field and parameter you reference". I'll add `x` and `y` as parameters or just use the expression directly. Actually, it's safer to just write the expression using `Mul`, `Add`, `Neg`, `Constant`. I'll assume coordinates are implicit or I'll define them as parameters if needed. But usually, ICs in this IR just take an expression. I'll use `Mul`, `Add`, `Neg`, `Constant`.
+     - `boundary_conditions`: Neumann on `boundary` with value 0.
+     - `pde_ir_version`: "0.1"
+     - `name`: "allen_cahn_phase_ordering"
+
+2.  **Construct Expression Trees:**
+   - Field: `c` (scalar, H1)
+   - Parameters: `M`, `kappa`
+   - Equation LHS: $\frac{\partial c}{\partial t} + M(c^3 - c) - M \kappa \nabla^2 c$
+     Let's build it step-by-step:
+     `TimeDerivative(c)`
+     `Add` terms:
+       1. `TimeDerivative(c)`
+       2. `Mul(M, Add(c^3, Neg(c)))` -> `Mul(M, Add(Pow(c, 3), Neg(c)))`
+       3. `Neg(Mul(M, Mul(kappa, Laplacian(c))))`
+     RHS: `Constant(0)`
+     Wait, the standard form is often $\partial_t c - M \kappa \nabla^2 c + M f'(c) = 0$.
+     Let's stick to: `Add([TimeDerivative(c), Mul(M, Add(Pow(c, 3), Neg(c))), Neg(Mul(M, Mul(kappa, Laplacian(c))))])`
+     Actually, it's cleaner to write: `Add([TimeDerivative(c), Mul(M, Add(Pow(c, 3), Neg(c))), Neg(Mul(M, Mul(kappa, Laplacian(c))))])`
+     Let's verify signs: $\partial_t c = -M(f'(c) - \kappa \nabla^2 c) = -M f'(c) + M \kappa \nabla^2 c$.
+     So $\partial_t c + M f'(c) - M \kappa \nabla^2 c = 0$.
+     $f'(c) = c^3 - c$.
+     So $\partial_t c + M(c^3 - c) - M \kappa \nabla^2 c = 0$.
+     Tree:
+     ```json
+     {
+       "type": "Add",
+       "terms": [
+         {"type": "TimeDerivative", "operand": {"type": "Field", "name": "c", ...}},
+         {"type": "Mul", "factors": [
+           {"type": "Parameter", "name": "M", ...},
+           {"type": "Add", "terms": [
+             {"type": "Pow", "base": {"type": "Field", "name": "c", ...}, "exponent": 3},
+             {"type": "Neg", "operand": {"type": "Field", "name": "c", ...}}
+           ]}
+         ]},
+         {"type": "Neg", "operand": {"type": "Mul", "factors": [
+           {"type": "Parameter", "name": "M", ...},
+           {"type": "Parameter", "name": "kappa", ...},
+           {"type": "Laplacian", "operand": {"type": "Field", "name": "c", ...}}
+         ]}}
+       ]
+     }
+     ```
+     This matches the strong form.
+
+   - Initial Condition: $c(x, y, 0) = \frac{1}{2}(2x - 1)(2y - 1)$.
+     I need to represent this. The IR doesn't explicitly define coordinate fields, but I can use `Parameter` for `x` and `y`, or just assume the expression is evaluated at $t=0$. I'll define `x` and `y` as parameters of rank scalar, or just use the expression directly. Actually, femagent usually handles spatial coordinates implicitly or via `Field` with rank scalar. I'll just use `Parameter` for `x` and `y` to be safe, or omit them if not strictly required. The prompt says "Declare every field and parameter you reference". I'll add `x` and `y` as parameters.
+     Expression: `0.5 * (2*x - 1) * (2*y - 1)`
+     Tree:
+     ```json
+     {
+       "type": "Mul",
+       "factors": [
+         {"type": "Constant", "value": 0.5},
+         {"type": "Add", "terms": [
+           {"type": "Mul", "factors": [{"type": "Constant", "value": 2}, {"type": "Parameter", "name": "x", ...}]},
+           {"type": "Neg", "operand": {"type": "Constant", "value": 1}}
+         ]},
+         {"type": "Add", "terms": [
+           {"type": "Mul", "factors": [{"type": "Constant", "value": 2}, {"type": "Parameter", "name": "y", ...}]},
+           {"type": "Neg", "operand": {"type": "Constant", "value": 1}}
+         ]}
+       ]
+     }
+     ```
+     Actually, I can simplify by not declaring x/y if the IR handles them implicitly, but to be strict, I'll declare them. Or I'll just use the expression as is. I'll stick to declaring `x` and `y` as parameters.
+
+   - Boundary Condition: Neumann on `boundary` (or `domain_boundary`) with value 0.
+     The paper says "No flux crosses the boundary of the domain, $\nabla c \cdot \mathbf{n} = 0$ on $\partial \Omega$".
+     In the context of the PDE $\partial_t c - M \kappa \nabla^2 c + \dots = 0$, the natural BC is $M \kappa \nabla c \cdot \mathbf{n} = 0$. Since $M, \kappa \neq 0$, this is equivalent to $\nabla c \cdot \mathbf{n} = 0$. The IR expects the prescribed outward normal flux. So value is 0.
+     I'll set `boundary_id`: "domain_boundary", `type`: "neumann", `value`: `{"type": "Constant", "value": 0}`.
+
+   - Parameters: `M`, `kappa`. I'll give them descriptions. Dimensions: null.
+   - Fields: `c`. Rank: scalar. Space: H1. Description: order parameter. Dimension: null.
+
+3.  **Refine according to Schema:**
+   Let's carefully construct the JSON.
+   Check types: `Add`, `Mul`, `Neg`, `TimeDerivative`, `Laplacian`, `Pow`, `Field`, `Parameter`, `Constant`, `Equation`.
+   Check field/parameter declarations: must match references.
+   Check BC: `neumann` with value 0.
+   Check IC: matches expression.
+   Check equation: strong form.
+
+   One detail: `Pow` usually has `base` and `exponent`. The prompt says `Pow` is a valid type. I'll use `{"type": "Pow", "base": {...}, "exponent": 3}`.
+   Another detail: `TimeDerivative` takes `operand`.
+   `Laplacian` takes `operand`.
+   `Add` takes `terms` (array).
+   `Mul` takes `factors` (array).
+   `Neg` takes `operand`.
+   `Constant` takes `value`.
+   `Field`/`Parameter` take `name`, `rank`, `space` (for field), `description`, `dimension`.
+
+   Let's draft the JSON structure mentally and verify.
+   ```json
+   {
+     "name": "allen_cahn_phase_ordering",
+     "pde_ir_version": "0.1",
+     "fields": [
+       {
+         "name": "c",
+         "rank": "scalar",
+         "space": "H1",
+         "description": "non-conserved order parameter",
+         "dimension": null
+       }
+     ],
+     "parameters": [
+       {
+         "name": "M",
+         "rank": "scalar",
+         "description": "mobility",
+         "dimension": null
+       },
+       {
+         "name": "kappa",
+         "rank": "scalar",
+         "description": "gradient-energy coefficient",
+         "dimension": null
+       },
+       {
+         "name": "x",
+         "rank": "scalar",
+         "description": "spatial coordinate x",
+         "dimension": null
+       },
+       {
+         "name": "y",
+         "rank": "scalar",
+         "description": "spatial coordinate y",
+         "dimension": null
+       }
+     ],
+     "equations": [
+       {
+         "type": "Equation",
+         "lhs": {
+           "type": "Add",
+           "terms": [
+             {
+               "type": "TimeDerivative",
+               "operand": {
+                 "type": "Field",
+                 "name": "c",
+                 "rank": "scalar",
+                 "space": "H1",
+                 "description": "non-conserved order parameter",
+                 "dimension": null
+               }
+             },
+             {
+               "type": "Mul",
+               "factors": [
+                 {
+                   "type": "Parameter",
+                   "name": "M",
+                   "rank": "scalar",
+                   "description": "mobility",
+                   "dimension": null
+                 },
+                 {
+                   "type": "Add",
+                   "terms": [
+                     {
+                       "type": "Pow",
+                       "base": {
+                         "type": "Field",
+                         "name": "c",
+                         "rank": "scalar",
+                         "space": "H1",
+                         "description": "non-conserved order parameter",
+                         "dimension": null
+                       },
+                       "exponent": 3
+                     },
+                     {
+                       "type": "Neg",
+                       "operand": {
+                         "type": "Field",
+                         "name": "c",
+                         "rank": "scalar",
+                         "space": "H1",
+                         "description": "non-conserved order parameter",
+                         "dimension": null
+                       }
+                     }
+                   ]
+                 }
+               ]
+             },
+             {
+               "type": "Neg",
+               "operand": {
+                 "type": "Mul",
+                 "factors": [
+                   {
+                     "type": "Parameter",
+                     "name": "M",
+                     "rank": "scalar",
+                     "description": "mobility",
+                     "dimension": null
+                   },
+                   {
+                     "type": "Parameter",
+                     "name": "kappa",
+                     "rank": "scalar",
+                     "description": "gradient-energy coefficient",
+                     "dimension": null
+                   },
+                   {
+                     "type": "Laplacian",
+                     "operand": {
+                       "type": "Field",
+                       "name": "c",
+                       "rank": "scalar",
+                       "space": "H1",
+                       "description": "non-conserved order parameter",
+                       "dimension": null
+                     }
+                   }
+                 ]
+               }
+             }
+           ]
+         },
+         "rhs": {
+           "type": "Constant",
+           "value": 0
+         },
+         "name": "allen_cahn_strong"
+       }
+     ],
+     "initial_conditions": [
+       {
+         "field": "c",
+         "value": {
+           "type": "Mul",
+           "factors": [
+             {
+               "type": "Constant",
+               "value": 0.5
+             },
+             {
+               "type": "Add",
+               "terms": [
+                 {
+                   "type": "Mul",
+                   "factors": [
+                     {
+                       "type": "Constant",
+                       "value": 2
+                     },
+                     {
+                       "type": "Parameter",
+                       "name": "x",
+                       "rank": "scalar",
+                       "description": "spatial coordinate x",
+                       "dimension": null
+                     }
+                   ]
+                 },
+                 {
+                   "type": "Neg",
+                   "operand": {
+                     "type": "Constant",
+                     "value": 1
+                   }
+                 }
+               ]
+             },
+             {
+               "type": "Add",
+               "terms": [
+                 {
+                   "type": "Mul",
+                   "factors": [
+                     {
+                       "type": "Constant",
+                       "value": 2
+                     },
+                     {
+                       "type": "Parameter",
+                       "name": "y",
+                       "rank": "scalar",
+                       "description": "spatial coordinate y",
+                       "dimension": null
+                     }
+                   ]
+                 },
+                 {
+                   "type": "Neg",
+                   "operand": {
+                     "type": "Constant",
+                     "value": 1
+                   }
+                 }
+               ]
+             }
+           ]
+         },
+         "provenance": null,
+         "ambiguity": null
+       }
+     ],
+     "boundary_conditions": [
+       {
+         "field": "c",
+         "type": "neumann",
+         "boundary_id": "domain_boundary",
+         "value": {
+           "type": "Constant",
+           "value": 0
+         },
+         "provenance": null,
+         "ambiguity": null
+       }
+     ],
+     "constitutive_relations": [],
+     "invariants": [],
+     "assumptions": [],
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+
+   Wait, let's double check the `Pow` syntax. The prompt says `Pow` is a valid type. It doesn't specify keys, but typically `base` and `exponent` or `operand` and `exponent`. I'll use `base` and `exponent` as it's standard. Alternatively, I could just use `Mul` for $c^3$ to be safe: `Mul(c, Mul(c, c))`. But `Pow` is listed, so I'll stick with `Pow`. I'll use `base` and `exponent`.
+
+   Check `TimeDerivative`: prompt says `TimeDerivative`. I'll use `operand`.
+   Check `Laplacian`: prompt says `Laplacian`. I'll use `operand`.
+   Check `Add`/`Mul`: `terms`/`factors`.
+   Check `Neg`: `operand`.
+   Check `Constant`: `value`.
+   Check `Field`/`Parameter`: `name`, `rank`, `space` (field only), `description`, `dimension`.
+
+   One minor point: The prompt says "Expression trees are encoded as nested objects tagged by a "type" field (Add, Mul, Neg, Grad, Div, Laplacian, TimeDerivative, Inner, Pow, Apply, Field, Parameter, Constant, Equation, DomainIntegral, BoundaryIntegral)."
+   I will ensure all keys match typical femagent IR conventions. Usually, `Pow` has `base` and `exponent`. `TimeDerivative` and `Laplacian` have `operand`. `Add` has `terms`. `Mul` has `factors`. `Neg` has `operand`. `Constant` has `value`. `Field`/`Parameter` have `name`, `rank`, `description`, `dimension`. `Field` also has `space`.
+
+   Let's verify the equation sign convention. The paper says:
+   $\frac{\partial c}{\partial t} = -M (f'(c) - \kappa \nabla^2 c)$
+   $f'(c) = c^3 - c$
+   So $\frac{\partial c}{\partial t} = -M(c^3 - c) + M \kappa \nabla^2 c$
+   $\frac{\partial c}{\partial t} + M(c^3 - c) - M \kappa \nabla^2 c = 0$
+   This matches my LHS.
+
+   Boundary condition: "No flux crosses the boundary of the domain, $\nabla c \cdot \mathbf{n} = 0$ on $\partial \Omega$".
+   In the weak form derivation, the flux term from $-M \kappa \nabla^2 c$ is $M \kappa \nabla c \cdot \mathbf{n}$. Setting this to 0 is correct. So Neumann value 0 is correct.
+
+   Initial condition: $c(x, y, 0) = \frac{1}{2}(2x - 1)(2y - 1)$.
+   I'll represent it exactly.
+
+   Dimensions: The paper doesn't give SI units, so `null` is fine.
+
+   One thing: `x` and `y` as parameters might be overkill if the IR handles coordinates implicitly, but the prompt says "Declare every field and parameter you reference". I'll keep them. Alternatively, I could just use `Apply` or assume coordinates are built-in. I'll stick to declaring them as parameters to be safe. Actually, in many PDE-IRs, spatial coordinates are not declared as parameters but are implicit in the evaluation context. I'll remove `x` and `y` from parameters and just use `Constant` and `Mul`/`Add`? No, the expression explicitly depends on x and y. I'll declare them as parameters. It's safer.
+
+   Wait, the prompt example shows `Field` and `Parameter` objects inside the tree repeating the declaration info. I'll do that.
+
+   Let's carefully construct the JSON. I will make sure it's valid JSON and matches the schema exactly.
+   I'll double-check the `Pow` structure. Sometimes it's `{"type": "Pow", "operand": ..., "exponent": ...}`. I'll use `base` and `exponent` as it's more standard, but if unsure, `operand` might be safer. I'll stick to `base` and `exponent`. Actually, femagent docs often use `base` and `exponent`. I'll use that.
+
+   One detail: `TimeDerivative` and `Laplacian` might just take `operand`. I'll use that.
+   I will structure the JSON carefully.
+
+   Let's draft it out.
+   ```json
+   {
+     "name": "allen_cahn_phase_ordering",
+     "pde_ir_version": "0.1",
+     "fields": [
+       {
+         "name": "c",
+         "rank": "scalar",
+         "space": "H1",
+         "description": "non-conserved order parameter",
+         "dimension": null
+       }
+     ],
+     "parameters": [
+       {
+         "name": "M",
+         "rank": "scalar",
+         "description": "mobility",
+         "dimension": null
+       },
+       {
+         "name": "kappa",
+         "rank": "scalar",
+         "description": "gradient-energy coefficient",
+         "dimension": null
+       },
+       {
+         "name": "x",
+         "rank": "scalar",
+         "description": "spatial coordinate x",
+         "dimension": null
+       },
+       {
+         "name": "y",
+         "rank": "scalar",
+         "description": "spatial coordinate y",
+         "dimension": null
+       }
+     ],
+     "equations": [
+       {
+         "type": "Equation",
+         "lhs": {
+           "type": "Add",
+           "terms": [
+             {
+               "type": "TimeDerivative",
+               "operand": {
+                 "type": "Field",
+                 "name": "c",
+                 "rank": "scalar",
+                 "space": "H1",
+                 "description": "non-conserved order parameter",
+                 "dimension": null
+               }
+             },
+             {
+               "type": "Mul",
+               "factors": [
+                 {
+                   "type": "Parameter",
+                   "name": "M",
+                   "rank": "scalar",
+                   "description": "mobility",
+                   "dimension": null
+                 },
+                 {
+                   "type": "Add",
+                   "terms": [
+                     {
+                       "type": "Pow",
+                       "base": {
+                         "type": "Field",
+                         "name": "c",
+                         "rank": "scalar",
+                         "space": "H1",
+                         "description": "non-conserved order parameter",
+                         "dimension": null
+                       },
+                       "exponent": 3
+                     },
+                     {
+                       "type": "Neg",
+                       "operand": {
+                         "type": "Field",
+                         "name": "c",
+                         "rank": "scalar",
+                         "space": "H1",
+                         "description": "non-conserved order parameter",
+                         "dimension": null
+                       }
+                     }
+                   ]
+                 }
+               ]
+             },
+             {
+               "type": "Neg",
+               "operand": {
+                 "type": "Mul",
+                 "factors": [
+                   {
+                     "type": "Parameter",
+                     "name": "M",
+                     "rank": "scalar",
+                     "description": "mobility",
+                     "dimension": null
+                   },
+                   {
+                     "type": "Parameter",
+                     "name": "kappa",
+                     "rank": "scalar",
+                     "description": "gradient-energy coefficient",
+                     "dimension": null
+                   },
+                   {
+                     "type": "Laplacian",
+                     "operand": {
+                       "type": "Field",
+                       "name": "c",
+                       "rank": "scalar",
+                       "space": "H1",
+                       "description": "non-conserved order parameter",
+                       "dimension": null
+                     }
+                   }
+                 ]
+               }
+             }
+           ]
+         },
+         "rhs": {
+           "type": "Constant",
+           "value": 0
+         },
+         "name": "allen_cahn_strong"
+       }
+     ],
+     "initial_conditions": [
+       {
+         "field": "c",
+         "value": {
+           "type": "Mul",
+           "factors": [
+             {
+               "type": "Constant",
+               "value": 0.5
+             },
+             {
+               "type": "Add",
+               "terms": [
+                 {
+                   "type": "Mul",
+                   "factors": [
+                     {
+                       "type": "Constant",
+                       "value": 2
+                     },
+                     {
+                       "type": "Parameter",
+                       "name": "x",
+                       "rank": "scalar",
+                       "description": "spatial coordinate x",
+                       "dimension": null
+                     }
+                   ]
+                 },
+                 {
+                   "type": "Neg",
+                   "operand": {
+                     "type": "Constant",
+                     "value": 1
+                   }
+                 }
+               ]
+             },
+             {
+               "type": "Add",
+               "terms": [
+                 {
+                   "type": "Mul",
+                   "factors": [
+                     {
+                       "type": "Constant",
+                       "value": 2
+                     },
+                     {
+                       "type": "Parameter",
+                       "name": "y",
+                       "rank": "scalar",
+                       "description": "spatial coordinate y",
+                       "dimension": null
+                     }
+                   ]
+                 },
+                 {
+                   "type": "Neg",
+                   "operand": {
+                     "type": "Constant",
+                     "value": 1
+                   }
+                 }
+               ]
+             }
+           ]
+         },
+         "provenance": null,
+         "ambiguity": null
+       }
+     ],
+     "boundary_conditions": [
+       {
+         "field": "c",
+         "type": "neumann",
+         "boundary_id": "domain_boundary",
+         "value": {
+           "type": "Constant",
+           "value": 0
+         },
+         "provenance": null,
+         "ambiguity": null
+       }
+     ],
+     "constitutive_relations": [],
+     "invariants": [],
+     "assumptions": [],
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+
+   Check against constraints:
+   - "Declare every field and parameter you reference under `fields`/`parameters`." -> Done.
+   - "Give the strong form" -> Done.
+   - "Boundary conditions: ... neumann value is prescribed OUTWARD normal flux ... insulated / zero-flux boundary is neumann with value 0." -> Done.
+   - "Use one `boundary_id` per distinct condition" -> `domain_boundary` covers $\partial \Omega$.
+   - "Attach SI base dimensions ... when the paper states units" -> Paper doesn't state units, so `null`.
+   - Expression tree types match allowed list.
+   - JSON structure matches example.
+
+   One minor adjustment: `Pow` might expect `operand` instead of `base`. I'll change `base` to `operand` to be consistent with other unary operators, or keep `base`. The prompt says `Pow` is in the list. I'll stick with `base` and `exponent` as it's standard, but if I want to be ultra-safe, I'll use `operand` and `exponent`. Actually, many IRs use `base`. I'll keep `base`. It's fine.
+   Another point: `TimeDerivative` and `Laplacian` are unary. `operand` is correct.
+   The initial condition expression uses `x` and `y`. I declared them.
+   All good.
+
+   I will generate the JSON now.
+   One thing: The prompt says "Expression trees are encoded as nested objects tagged by a "type" field (Add, Mul, Neg, Grad, Div, Laplacian, TimeDerivative, Inner, Pow, Apply, Field, Parameter, Constant, Equation, DomainIntegral, BoundaryIntegral)."
+   I'll verify `Pow` keys. I'll use `base` and `exponent`. If it fails, it's a minor schema detail, but usually `base`/`exponent` or `operand`/`exponent` are both fine. I'll stick with `base`.
+   I'll also make sure the JSON is strictly valid.
+   All set. Output matches request.✅
+   I will produce the final JSON. 
+   Self-Correction/Refinement during thought: 
+   Should I include `t` as a parameter? Not needed for IC since it's at t=0.
+   Should I simplify the IC expression? It's fine as is.
+   The equation LHS: `Add` terms order doesn't matter.
+   I'll output exactly the JSON.
+   One detail: `Pow` in some IRs uses `exponent` as a number. I'll keep it as number 3.
+   All good.
+   Proceeds. 
+   Output matches the refined JSON. 
+   [Done] 
+   Generating response. 
+   *(Self-Correction/Verification during drafting)*
+   Wait, the prompt says: "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+   My PDE is $\partial_t c + M(c^3-c) - M\kappa \nabla^2 c = 0$.
+   The diffusion term is $-M\kappa \nabla^2 c$. So the flux is $M\kappa \nabla c \cdot \mathbf{n}$.
+   The BC says $\nabla c \cdot \mathbf{n} = 0$. So flux is 0. Correct.
+   The IC expression: $0.5*(2x-1)*(2y-1)$. Correct.
+   Everything aligns.
+   I will produce the JSON. 
+   One minor thing: `Pow` might be better represented as `Mul` to avoid schema ambiguity, but `Pow` is explicitly listed. I'll keep `Pow`.
+   Final check of the JSON structure matches the example perfectly.
+   Ready. 
+   Output generation. 
+   [Output Generation] -> *Proceeds*

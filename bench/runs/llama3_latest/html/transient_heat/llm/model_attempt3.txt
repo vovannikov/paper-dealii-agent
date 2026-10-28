@@ -1,0 +1,160 @@
+Here is the corrected JSON object:
+
+```json
+{
+  "name": "square_plate_heating",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "T",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "temperature",
+      "dimension": {"temperature": 1}
+    }
+  ],
+  "parameters": [
+    {
+      "name": "κ",
+      "rank": "scalar",
+      "description": "thermal diffusivity",
+      "dimension": {"length": 2, "time": -1, "temperature": -1}
+    },
+    {
+      "name": "β",
+      "rank": "scalar",
+      "description": "heating rate",
+      "dimension": {"temperature": 1, "time": -1}
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "TimeDerivative",
+            "operand": {
+              "type": "Field",
+              "name": "T",
+              "rank": "scalar",
+              "space": "H1",
+              "description": "temperature",
+              "dimension": {"temperature": 1}
+            }
+          },
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Grad",
+                    "operand": {
+                      "type": "Field",
+                      "name": "T",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "temperature",
+                      "dimension": {"temperature": 1}
+                    }
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "κ",
+                    "rank": "scalar",
+                    "description": "thermal diffusivity",
+                    "dimension": {"length": 2, "time": -1, "temperature": -1}
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "type": "Constant",
+            "value": 0
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [
+    {
+      "field": "T",
+      "type": "dirichlet",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "boundary_id": "left"
+    }
+  ],
+  "boundary_conditions": [
+    {
+      "field": "T",
+      "type": "robin",
+      "value": {
+        "type": "Neg",
+        "operand": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Add",
+              "terms": [
+                {
+                  "type": "Field",
+                  "name": "T",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "temperature",
+                  "dimension": {"temperature": 1}
+                },
+                {
+                  "type": "Neg",
+                  "operand": {
+                    "type": "Parameter",
+                    "name": "β",
+                    "rank": "scalar",
+                    "description": "heating rate",
+                    "dimension": {"temperature": 1, "time": -1}
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Parameter",
+              "name": "β",
+              "rank": "scalar",
+              "description": "heating rate",
+              "dimension": {"temperature": 1, "time": -1}
+            }
+          ]
+        }
+      },
+      "boundary_id": "left"
+    },
+    {
+      "field": "T",
+      "type": "neumann",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "boundary_id": "right_and_bottom_and_top"
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```

@@ -1,0 +1,124 @@
+Alright, let's tackle this problem. So, I need to extract the parameter values and geometry from the given paper content. Let me start by reading through the content carefully.
+
+First, the problem is about a 2D stationary heat transfer benchmark. The domain is a rectangle with width 0.6 m and height 1 m. The boundaries have different conditions: the bottom is at 100°C, the top and right have convection with ambient 0°C and h=750, and the left is insulated. The thermal conductivity k is 52 W/(m·°C). 
+
+Looking at the parameters: k, h, and Tamb. The paper states k=52, h=750, and Tamb=0. So those are straightforward.
+
+Now the geometry. The rectangle's lower left is (0,0) and upper right is (0.6,1). The boundaries need to be mapped to deal.II face IDs. The boundaries are:
+
+- Bottom (y=0): temperature 100°C. In the coordinate system, this would be the y-min boundary, which is face ID 2.
+- Top (y=1) and right (x=0.6): convection with h=750 and Tamb=0. The top is y-max (face ID 3), right is x-max (face ID 1). The paper mentions "top and right boundaries" together, so they should be grouped under one boundary name, maybe "top_and_right" or similar. But the problem says each side can have a name, and if one boundary covers multiple sides, use a list of face IDs. So here, top (3) and right (1) are both convection boundaries. The left (x=0) is insulated (face ID 0).
+
+Wait, the left boundary is x=0, which is the x-min (face ID 0). The bottom is y=0 (face ID 2). The top is y=1 (face ID 3), right is x=0.6 (face ID 1). 
+
+So the boundary_ids should map:
+
+- "bottom" to 2 (since it's the y-min)
+- "top_and_right" to [1, 3] (right is x-max, top is y-max)
+- "left" to 0 (x-min)
+
+Wait, the problem says "Each side belongs to at most one name." So the left is insulated, which is one boundary. The bottom is temperature, another. The top and right are convection, so they can be grouped as one boundary name, like "top_right" or "convection". The paper says "Top and right boundaries exchange heat...", so maybe the name is "top_and_right" or "convection". Let me check the example given in the problem statement. The example had "walls" as [1,3], so maybe here it's similar. The user might expect the name to be something like "top_and_right" or "convection". Let me see the exact wording in the paper: "Top and right boundaries... convection to Tamb = 0°C". So perhaps the boundary name is "top_and_right" or "convection". The example in the problem uses "walls" for [1,3], but here the convection is on top and right. Maybe the name is "convection" for those two. Alternatively, maybe "top_right". Let me check the problem's example again. The example had "walls": [1,3], so perhaps here the convection boundaries are grouped under a name like "convection" or "top_right". The paper says "Top and right boundaries... convection", so maybe the name is "top_and_right" or "convection". Let me go with "top_and_right" as the name for the convection boundaries. Alternatively, maybe "top_right" is sufficient. The exact name isn't specified in the problem, but the user probably expects a logical name. Let's see the problem's example: "walls": [1,3]. So perhaps here, the convection boundaries are named "convection" or "top_right". Let me check the problem's instruction again. The user says: "boundary_ids, a map from each of these boundary names to a deal.II colorize face id (0 = x-min/left, 1 = x-max/right, 2 = y-min/bottom, 3 = y-max/top), or to a list of face ids when one boundary covers several sides (e.g. [1, 3]): bottom, top_and_right, left."
+
+Wait, the example in the problem's instruction says: "bottom, top_and_right, left". So maybe the user expects the names to be "bottom", "top_and_right", and "left". Let me check the paper again. The paper says:
+
+- Bottom boundary: T=100°C (y=0)
+- Top and right boundaries: convection (so y=1 and x=0.6)
+- Left boundary: insulated (x=0)
+
+So the boundary names would be:
+
+- "bottom" (face 2)
+- "top_and_right" (faces 1 and 3)
+- "left" (face 0)
+
+That matches the example structure. So the boundary_ids should be:
+
+"bottom": 2,
+
+"top_and_right": [1, 3],
+
+"left": 0.
+
+Wait, but in the problem's example, the example had "walls": [1,3], but here the convection is on top and right. So maybe the name is "convection" instead of "walls". But the problem's instruction says to use the names as per the paper. The paper refers to "Top and right boundaries" as the convection ones. So perhaps the name is "top_and_right" as per the example in the problem's instruction. Let me confirm. The problem's example had "walls": [1,3], but in the user's example, the boundaries were "left", "bottom", "walls". Here, the convection is on top and right, so maybe the name is "top_and_right" or "convection". The problem's instruction says "each of these boundary names" but doesn't specify the exact names. However, the example in the problem's instruction uses "walls" for [1,3], but in the actual problem, the convection is on top and right. So perhaps the correct name here is "top_and_right" as per the paper's description. Alternatively, maybe "convection". Let me check the paper again. The paper says "Top and right boundaries exchange heat with an ambient environment...". So the name could be "top_and_right" or "convection". Since the problem's example uses "walls" for a similar case, but here the convection is on top and right, perhaps the name is "convection". However, the problem's instruction says to use the names as per the paper. The paper refers to them as "Top and right boundaries", so maybe the name is "top_and_right". Alternatively, maybe "convection". Let me check the problem's example again. The example had "walls": [1,3], which in the problem's example was for the right and top. So perhaps here, the name is "convection" for the top and right. But the problem's instruction says to use the names as per the paper. The paper says "Top and right boundaries... convection", so maybe the name is "convection". Alternatively, maybe "top_right". Let me think. The problem's instruction says "each of these boundary names" but doesn't specify the exact names. However, the example in the problem's instruction uses "walls" for [1,3], but in the actual problem, the convection is on top and right. So perhaps the correct name here is "convection" for the top and right boundaries. Alternatively, maybe "top_and_right". Let me check the problem's instruction again. The example in the problem's instruction says: "bottom, top_and_right, left". So perhaps the user expects the names to be "bottom", "top_and_right", and "left". Therefore, the boundary_ids should be:
+
+"bottom": 2,
+
+"top_and_right": [1, 3],
+
+"left": 0.
+
+Yes, that seems to align with the example structure provided in the problem's instruction.
+
+Now, the parameter values: k=52, h=750, Tamb=0. The paper states these values clearly.
+
+The geometry is a rectangle from (0,0) to (0.6,1). So lower_left is [0.0, 0.0], upper_right is [0.6, 1.0].
+
+The value_sources: the problem says to note where in the paper the values came from. For h, it's mentioned in the "Boundary conditions" section under "Top and right boundaries". For k, it's in the "Governing equation" section. Tamb is also in the same section. So the value_sources could be:
+
+"k": "paper, Governing equation",
+
+"h": "paper, Boundary conditions",
+
+"Tamb": "paper, Boundary conditions".
+
+But the problem says "a short note per value recording where in the paper it came from". The example had "h": "paper, Section 2". So perhaps for each parameter, we can note the section or part where it's mentioned. Let me check the paper again.
+
+The thermal conductivity k is mentioned in the "Governing equation" section: "k=52 W/(m·°C)".
+
+The h and Tamb are in the "Boundary conditions" section under "Top and right boundaries": "h=750 W/(m²·°C), Tamb=0°C".
+
+So the value_sources would be:
+
+"k": "paper, Governing equation",
+
+"h": "paper, Boundary conditions",
+
+"Tamb": "paper, Boundary conditions".
+
+Alternatively, maybe more specific, like "paper, Section Boundary conditions" or similar. But the example just says "paper, Section 2", so perhaps just "paper, Boundary conditions" is sufficient.
+
+Putting it all together:
+
+parameter_values: k=52, h=750, Tamb=0.
+
+geometry:
+
+lower_left: [0.0, 0.0]
+
+upper_right: [0.6, 1.0]
+
+boundary_ids:
+
+bottom: 2,
+
+top_and_right: [1, 3],
+
+left: 0.
+
+value_sources:
+
+k: "paper, Governing equation",
+
+h: "paper, Boundary conditions",
+
+Tamb: "paper, Boundary conditions".
+
+I need to make sure that the boundary names are correctly mapped. Let me confirm the face IDs again:
+
+- x-min (left) is 0,
+
+- x-max (right) is 1,
+
+- y-min (bottom) is 2,
+
+- y-max (top) is 3.
+
+Yes. So the left boundary (x=0) is face 0, bottom (y=0) is face 2, right (x=0.6) is face 1, top (y=1) is face 3.
+
+Therefore, the convection boundaries (top and right) are faces 1 and 3, so the list [1,3].
+
+The insulated boundary is left (face 0).
+
+The temperature boundary is bottom (face 2).
+
+Everything seems to check out.

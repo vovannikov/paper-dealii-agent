@@ -1,0 +1,13 @@
+\begin{tabular}{@{}lr@{}}\toprule
+Outcome of a non-correct run & runs \\ \midrule
+\multicolumn{2}{@{}l}{\emph{Rejected at the trust boundary}} \\
+\quad Schema/codec error (missing or mistyped key) & 16 \\
+\quad Rank mismatch (validator) & 2 \\
+\quad Dimension mismatch (validator) & 3 \\
+\quad Output truncated (runaway reasoning) & 5 \\
+\quad Parameter value missing (validator) & 1 \\
+\multicolumn{2}{@{}l}{\emph{Accepted by the validators, but not equivalent to the paper}} \\
+\quad Equation not equivalent to gold & 7 \\
+\quad Initial condition wrong or missing & 2 \\
+\quad Boundary data wrong (value, type or side) & 5 \\
+\bottomrule\end{tabular}

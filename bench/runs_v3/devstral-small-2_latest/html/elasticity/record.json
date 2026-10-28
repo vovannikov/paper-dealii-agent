@@ -1,0 +1,47 @@
+{
+ "model": "devstral-small-2:latest",
+ "case": "elasticity",
+ "modality": "html",
+ "document_chars": 5662,
+ "started": 1793172812.3183186,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 280.9929759502411,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: missing key 'space'",
+  "response JSON did not match PDEModel: missing key 'space'",
+  "response JSON did not match PDEModel: missing key 'space'"
+ ],
+ "total_seconds": 281.0128209590912,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 98.71851420402527,
+   "prompt_tokens": 3985,
+   "completion_tokens": 1415,
+   "answer_chars": 5682,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 91.07072567939758,
+   "prompt_tokens": 5446,
+   "completion_tokens": 1415,
+   "answer_chars": 5682,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 91.19724559783936,
+   "prompt_tokens": 6907,
+   "completion_tokens": 1415,
+   "answer_chars": 5682,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

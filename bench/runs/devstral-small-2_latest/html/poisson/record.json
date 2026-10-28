@@ -1,0 +1,39 @@
+{
+ "model": "devstral-small-2:latest",
+ "case": "poisson",
+ "modality": "html",
+ "document_chars": 4669,
+ "started": 1793131308.7292318,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 48.18443059921265,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 12.956876993179321,
+ "total_seconds": 61.161431074142456,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 48.18275475502014,
+   "prompt_tokens": 3131,
+   "completion_tokens": 746,
+   "answer_chars": 2743,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 12.956390857696533,
+   "prompt_tokens": 2204,
+   "completion_tokens": 174,
+   "answer_chars": 435,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

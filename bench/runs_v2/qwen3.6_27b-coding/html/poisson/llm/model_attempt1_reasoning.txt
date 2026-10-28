@@ -1,0 +1,279 @@
+The user wants me to extract a PDE model from the provided text and format it as a JSON object conforming to the `PDEModel` schema.
+
+1.  **Analyze the text:**
+    *   **Problem:** Steady diffusion of a scalar quantity `u` in a rectangular domain $\Omega = (0,2) \times (0,1)$.
+    *   **Governing Equation:** $-\nabla \cdot (k \nabla u) = f$ in $\Omega$.
+    *   **Boundary Conditions:**
+        *   Left ($x=0$) and Bottom ($y=0$): $u = 0$ (Dirichlet).
+        *   Right ($x=2$): $k \frac{\partial u}{\partial n} = g_N$ (Neumann). Note: The text says "prescribed outward flux $g_N$ leaves the domain" and gives the equation $k \partial u / \partial n = g_N$. The standard Neumann BC for $-\nabla \cdot (k \nabla u)$ is $k \nabla u \cdot n = g$. Here $g_N = 3$.
+        *   Top ($y=1$): $k \frac{\partial u}{\partial n} = 0$ (Neumann/Insulated).
+    *   **Parameters:**
+        *   $k = 2.5$
+        *   $f = 10$
+        *   $g_N = 3$
+        *   Units: "consistent non-dimensional units". So dimensions are null.
+    *   **Fields:**
+        *   `u`: scalar, H1.
+
+2.  **Construct the PDE-IR:**
+    *   **Name:** "steady_diffusion_mixed_bc"
+    *   **Fields:** `u` (scalar, H1).
+    *   **Parameters:** `k`, `f`, `g_N`.
+    *   **Equations:**
+        *   LHS: $-\nabla \cdot (k \nabla u)$
+        *   RHS: $f$
+        *   Structure: `Equation` with `lhs` being `Neg(Div(Mul(Grad(u), k)))` and `rhs` being `Parameter(f)`.
+    *   **Boundary Conditions:**
+        *   `left_and_bottom`: Dirichlet, value 0.
+        *   `right`: Neumann, value `g_N`.
+        *   `top`: Neumann, value 0.
+    *   **Dimensions:** All null since they are non-dimensional.
+
+3.  **Refine the JSON structure:**
+    *   Check types: `Add`, `Mul`, `Neg`, `Grad`, `Div`, `Field`, `Parameter`, `Constant`, `Equation`.
+    *   Equation:
+        ```json
+        {
+          "type": "Equation",
+          "lhs": {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Grad",
+                    "operand": {
+                      "type": "Field",
+                      "name": "u",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "scalar quantity u",
+                      "dimension": null
+                    }
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "k",
+                    "rank": "scalar",
+                    "description": "diffusivity",
+                    "dimension": null
+                  }
+                ]
+              }
+            }
+          },
+          "rhs": {
+            "type": "Parameter",
+            "name": "f",
+            "rank": "scalar",
+            "description": "volumetric production rate",
+            "dimension": null
+          },
+          "name": "steady_diffusion"
+        }
+        ```
+    *   Boundary Conditions:
+        *   Left/Bottom: `boundary_id`: "left_and_bottom", `type`: "dirichlet", `value`: `Constant(0)`.
+        *   Right: `boundary_id`: "right", `type`: "neumann", `value`: `Parameter("g_N")`.
+        *   Top: `boundary_id`: "top", `type`: "neumann", `value`: `Constant(0)`.
+
+4.  **Double check constraints:**
+    *   "A `neumann` ... value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+    *   Text says: "Through the right side, x=2, a prescribed outward flux gN leaves the domain... k du/dn = gN". So the value is indeed `g_N`.
+    *   Text says: "The top side, y=1, is impermeable, i.e. k du/dn = 0 there." So value is 0.
+    *   Text says: "The quantity vanishes on the left and the bottom side... u=0". So Dirichlet 0.
+    *   Parameters: k=2.5, f=10, gN=3. I should include these values in the parameter descriptions or just leave them as parameters. The prompt asks to declare parameters. I will declare them. I won't hardcode the values into the IR unless requested, but usually, parameters are symbolic in the IR. I'll stick to symbolic parameters.
+    *   Dimensions: "consistent non-dimensional units" -> `dimension: null`.
+
+5.  **Drafting the JSON:**
+    *   Assemble pieces.
+    *   Ensure strict JSON syntax.
+    *   Verify field/parameter references match exactly.
+    *   Check `pde_ir_version`: "0.1".
+
+    Let's write out the JSON carefully.
+    Fields: u
+    Parameters: k, f, g_N
+    Equation: -div(k grad(u)) = f
+    BCs:
+      - left_and_bottom: dirichlet 0
+      - right: neumann g_N
+      - top: neumann 0
+
+    One detail: "The quantity vanishes on the left and the bottom side of the domain". I'll group them as `left_and_bottom`.
+    "Through the right side, x=2...". `right`.
+    "The top side, y=1...". `top`.
+
+    Looks solid.
+    I will generate the JSON now.
+    One minor point: `g_N` vs `gN`. The text uses $g_N$. I'll use `g_N` as the parameter name.
+    Dimensions are null.
+    All good.
+    Proceed. 
+    Self-Correction/Verification during thought:
+    - Check Neumann sign convention in prompt: "A `neumann` ... value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+    - Text: "k du/dn = g_N". So value is `g_N`. Correct.
+    - Text: "k du/dn = 0". So value is 0. Correct.
+    - Equation: `-div(k grad(u)) = f`. Correct.
+    - Structure matches example.
+    - Ready. 
+    Output matches the requested format.
+    I will produce the JSON. 
+    One thing: `g_N` might be better as `g_N` or `gN`. I'll use `g_N`.
+    Parameters description: "diffusivity", "volumetric production rate", "outward flux on right boundary".
+    Fields description: "scalar quantity u".
+    All set. 
+    Generating. 
+    [Output Generation] -> JSON string. 
+    (Note: I'll make sure to escape quotes if necessary, but standard JSON formatting handles it. I'll output raw JSON.)
+    Checking `pde_ir_version`: "0.1".
+    Checking `fields`: array of objects.
+    Checking `parameters`: array of objects.
+    Checking `equations`: array of objects.
+    Checking `boundary_conditions`: array of objects.
+    Checking `initial_conditions`: empty array (steady state).
+    Checking `constitutive_relations`: empty array.
+    Checking `invariants`: empty array.
+    Checking `assumptions`: empty array.
+    Checking `provenance`/`ambiguity`: null.
+    All good. 
+    Proceeds. 
+    [Final Check of the Prompt]: "Return a SINGLE JSON object matching the PDEModel schema."
+    I will output exactly that.
+    One detail: `g_N` in the text is written as `g_N` in MathML (`<msub><mi>g</mi><mi>N</mi></msub>`). I will use `g_N`.
+    The prompt says "A convective condition ... is robin ...". Not applicable here.
+    Everything is standard.
+    Done. 
+    Output Generation. 
+    ```json
+    {
+      "name": "steady_diffusion_mixed_bc",
+      "pde_ir_version": "0.1",
+      "fields": [
+        {
+          "name": "u",
+          "rank": "scalar",
+          "space": "H1",
+          "description": "scalar quantity u (e.g., solute concentration)",
+          "dimension": null
+        }
+      ],
+      "parameters": [
+        {
+          "name": "k",
+          "rank": "scalar",
+          "description": "diffusivity",
+          "dimension": null
+        },
+        {
+          "name": "f",
+          "rank": "scalar",
+          "description": "uniform volumetric production rate",
+          "dimension": null
+        },
+        {
+          "name": "g_N",
+          "rank": "scalar",
+          "description": "prescribed outward flux on the right boundary",
+          "dimension": null
+        }
+      ],
+      "equations": [
+        {
+          "type": "Equation",
+          "lhs": {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Grad",
+                    "operand": {
+                      "type": "Field",
+                      "name": "u",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "scalar quantity u (e.g., solute concentration)",
+                      "dimension": null
+                    }
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "k",
+                    "rank": "scalar",
+                    "description": "diffusivity",
+                    "dimension": null
+                  }
+                ]
+              }
+            }
+          },
+          "rhs": {
+            "type": "Parameter",
+            "name": "f",
+            "rank": "scalar",
+            "description": "uniform volumetric production rate",
+            "dimension": null
+          },
+          "name": "steady_diffusion"
+        }
+      ],
+      "initial_conditions": [],
+      "boundary_conditions": [
+        {
+          "field": "u",
+          "type": "dirichlet",
+          "boundary_id": "left_and_bottom",
+          "value": {
+            "type": "Constant",
+            "value": 0
+          },
+          "provenance": null,
+          "ambiguity": null
+        },
+        {
+          "field": "u",
+          "type": "neumann",
+          "boundary_id": "right",
+          "value": {
+            "type": "Parameter",
+            "name": "g_N",
+            "rank": "scalar",
+            "description": "prescribed outward flux on the right boundary",
+            "dimension": null
+          },
+          "provenance": null,
+          "ambiguity": null
+        },
+        {
+          "field": "u",
+          "type": "neumann",
+          "boundary_id": "top",
+          "value": {
+            "type": "Constant",
+            "value": 0
+          },
+          "provenance": null,
+          "ambiguity": null
+        }
+      ],
+      "constitutive_relations": [],
+      "invariants": [],
+      "assumptions": [],
+      "provenance": null,
+      "ambiguity": null
+    }
+    ```
+    Looks correct and complete. Matches schema. Covers all equations and BCs. Handles non-dimensional units correctly. Uses correct sign conventions for Neumann. Ready. 
+    Output matches response. 
+    [Done] 
+    *Self-Correction/Refinement during generation prep*: 
+    I should verify the `Mul` factors order. It doesn't strictly matter for commutative multiplication, but `Grad(u)` then `k` is fine. 
+    The prompt example shows `Mul` factors as `[Grad(u), k]`. I'll stick to that.
+    All good. 
+    Proceeds. 
+    [Output Generation] -> *Proceeds*

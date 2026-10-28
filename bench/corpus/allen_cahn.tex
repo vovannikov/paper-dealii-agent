@@ -1,0 +1,40 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}\usepackage{amsmath,amssymb}\usepackage[margin=2.5cm]{geometry}
+\title{Phase Ordering Described by the Allen--Cahn Equation}\author{I. Phase and J. Field}\date{}
+\begin{document}\maketitle
+\section*{1. Model}
+The evolution of a non-conserved order parameter $c(x,y,t)$ in the unit square $\Omega=(0,1)^2$ is modelled as an $L^2$ gradient flow of the Ginzburg--Landau free energy
+
+\begin{equation}
+F[c] = \int_\Omega \left( f(c) + \frac{\kappa}{2}\,|\nabla c|^2 \right) d\Omega ,
+\end{equation}
+with the double-well potential
+
+\begin{equation}
+f(c) = \frac14\left(c^2-1\right)^2 .
+\end{equation}
+The resulting Allen--Cahn equation reads
+
+\begin{equation}
+\frac{\partial c}{\partial t} = -M\left( f'(c) - \kappa\,\nabla^2 c \right) \quad \text{in } \Omega,\ t>0 ,
+\end{equation}
+where $M$ is the mobility and $\kappa$ the gradient-energy coefficient.
+
+\section*{2. Boundary and initial conditions}
+No flux crosses the boundary of the domain,
+
+\begin{equation}
+\nabla c\cdot n = 0 \quad \text{on } \partial\Omega ,
+\end{equation}
+and the initial state is a smooth saddle-shaped field between the two wells,
+
+\begin{equation}
+c(x,y,0) = \tfrac12\,(2x-1)(2y-1) .
+\end{equation}
+\section*{3. Parameters}
+We use $M=1$ and $\kappa=0.01$. The simulation runs up to $t=1$ with the time step $\Delta t=0.01$.
+
+\section*{4. Discussion}
+Because the flow is not conservative the mean of $c$ is not preserved, whereas the free energy $F$ decreases monotonically in time.
+
+\end{document}

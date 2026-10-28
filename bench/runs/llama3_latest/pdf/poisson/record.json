@@ -1,0 +1,50 @@
+{
+ "model": "llama3:latest",
+ "case": "poisson",
+ "modality": "pdf",
+ "document_chars": 1306,
+ "started": 1793130547.5385265,
+ "model_ok": true,
+ "model_attempts": 2,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 36.2477593421936,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [
+  "unconstrained_sides: no boundary condition on side(s) 2 bottom (y-min): they get the natural zero-flux condition (insulated / traction-free); map them to a boundary if the problem prescribes something there"
+ ],
+ "instance_seconds": 3.322803020477295,
+ "total_seconds": 39.58922052383423,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 18.54179883003235,
+   "prompt_tokens": 1725,
+   "completion_tokens": 906,
+   "answer_chars": 3394,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 17.703539848327637,
+   "prompt_tokens": 2693,
+   "completion_tokens": 854,
+   "answer_chars": 3180,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 3.322053909301758,
+   "prompt_tokens": 832,
+   "completion_tokens": 152,
+   "answer_chars": 467,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

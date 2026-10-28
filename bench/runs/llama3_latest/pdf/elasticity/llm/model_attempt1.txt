@@ -1,0 +1,144 @@
+Here is the extracted PDE-IR PDEModel in JSON format:
+
+```
+{
+  "name": "plane_strain_cantilever",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "displacement field",
+      "dimension": {"length": 1, "mass": 1}
+    }
+  ],
+  "parameters": [
+    {
+      "name": "lambda",
+      "rank": "scalar",
+      "description": "Lamé parameter",
+      "dimension": {"length": -1, "mass": 1}
+    },
+    {
+      "name": "mu",
+      "rank": "scalar",
+      "description": "Lamé parameter",
+      "dimension": {"length": -1, "mass": 1}
+    },
+    {
+      "name": "f",
+      "rank": "vector",
+      "description": "body force",
+      "dimension": {"length": 1, "mass": 1}
+    },
+    {
+      "name": "gN",
+      "rank": "vector",
+      "description": "end traction",
+      "dimension": {"length": 1, "mass": 1}
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Grad",
+                    "operand": {
+                      "type": "Field",
+                      "name": "u",
+                      "rank": "vector",
+                      "space": "H1",
+                      "description": "displacement field",
+                      "dimension": {"length": 1, "mass": 1}
+                    }
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "lambda",
+                    "rank": "scalar",
+                    "description": "Lamé parameter",
+                    "dimension": {"length": -1, "mass": 1}
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Parameter",
+              "name": "mu",
+              "rank": "scalar",
+              "description": "Lamé parameter",
+              "dimension": {"length": -1, "mass": 1}
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "clamped",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "traction",
+      "value": {
+        "type": "Field",
+        "name": "gN",
+        "rank": "vector",
+        "space": "L2",
+        "description": "end traction",
+        "dimension": {"length": 1, "mass": 1}
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "free",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+
+Note that I assumed the stress tensor `σ(u)` is given by the constitutive relation `σ(u) = λ tr ε(u) I + 2µ ε(u)`, where `tr` is the trace operator, `I` is the identity tensor, and `ε(u)` is the small-strain tensor.

@@ -1,0 +1,489 @@
+Here's a thinking process:
+
+1.  **Understand the Goal**: Extract a mathematical model from the provided scientific paper/benchmark description into a specific JSON format (PDE-IR). The format requires fields, parameters, equations, initial conditions, boundary conditions, etc., with specific expression tree structures.
+
+2.  **Analyze the Input Text**:
+   - **Problem**: 2D Stationary Heat Transfer Benchmark.
+   - **Domain**: Rectangle, width 0.6 m, height 1 m. Coordinates: $0 \le x \le 0.6$, $0 \le y \le 1$.
+   - **Governing Equation**: $\nabla \cdot (k \nabla T) = 0$ in $\Omega$. Steady-state, no source, homogeneous material.
+   - **Parameters**:
+     - $k = 52$ W/(m·°C) (thermal conductivity)
+     - $h = 750$ W/(m²·°C) (heat transfer coefficient)
+     - $T_{amb} = 0$ °C (ambient temperature)
+   - **Boundary Conditions**:
+     - Bottom ($y=0$): Dirichlet, $T = 100$ °C.
+     - Top and Right: Robin (convection), $-k \frac{\partial T}{\partial n} = h(T - T_{amb})$. Outward normal flux is prescribed. The text says $-k \frac{\partial T}{\partial n} = h(T - T_{amb})$. In the PDE-IR spec, a Robin value is the prescribed outward normal flux. For $-k \frac{\partial T}{\partial n} = h(T - T_{amb})$, the outward flux is $-k \frac{\partial T}{\partial n}$. So the Robin value should be $h(T - T_{amb})$. Wait, let's check the spec carefully: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)` (mind the minus sign: the outflow grows with u)." Wait, the spec says: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". Let's re-read carefully: "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`. An insulated / zero-flux boundary is neumann with value 0. A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)` (mind the minus sign: the outflow grows with u)."
+     Actually, the standard heat equation is often written as $-\nabla \cdot (k \nabla T) = 0$ or $\nabla \cdot (k \nabla T) = 0$. The spec says for `-div(k grad(u))` the value is `k du/dn`. But our equation is `div(k grad(T)) = 0`. The outward flux for heat is usually $-k \nabla T \cdot n$. The spec says: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". I will follow the spec's explicit instruction for Robin: value is `-h*(u - u_amb)`. Wait, the spec says: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". This implies the Robin value in the IR is the RHS of the flux condition when moved to the other side, or it's just defining the sign convention. I will strictly follow: `value: -h*(T - T_amb)`.
+     Let's double check the exact wording: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". So I will use `-h*(T - T_amb)`.
+     - Left ($x=0$): Insulated, Neumann, value 0.
+   - **Fields**: $T$ (temperature), scalar, H1 space.
+   - **Dimensions**:
+     - $T$: temperature -> `{"temperature": 1}`
+     - $k$: W/(m·°C) = J/(s·m·K) = (kg·m²/s²)/(s·m·K) = kg·m/(s³·K) -> `{"mass": 1, "length": 1, "time": -3, "temperature": -1}`
+     - $h$: W/(m²·°C) -> `{"mass": 1, "time": -3, "temperature": -1}`
+     - $T_{amb}$: temperature -> `{"temperature": 1}`
+     - Domain dimensions: length -> `{"length": 1}` (not strictly needed for fields/params, but good to know)
+   - **Equation**: $\nabla \cdot (k \nabla T) = 0$. In IR: `Div(Mul(Grad(Field(T)), Parameter(k)))` equals 0. Or `Neg(Div(...))`? The spec example uses `Neg(Div(...))` for `-div(k grad(u))`. I'll stick to `Div(Mul(Grad(T), k))` = 0, or `Neg(Div(...))` = 0. It doesn't matter much as long as it's consistent. I'll use `Div(Mul(Grad(T), k))` = 0. Actually, the standard strong form in FEM is often $-\nabla \cdot (k \nabla T) = 0$. I'll just write `Div(Mul(Grad(T), k))` = 0. Or to match the example style: `Neg(Div(Mul(Grad(T), k)))` = 0. I'll stick to `Div(Mul(Grad(T), k))` = 0. Wait, the example has `Neg(Div(...))` and `Neg(f)`. I'll just use `Div(Mul(Grad(T), k))` = 0. It's fine.
+   - **Initial Conditions**: None (steady state).
+   - **Boundary Conditions**:
+     - `bottom`: dirichlet, value 100.
+     - `top_and_right`: robin, value `-h*(T - T_amb)`.
+     - `left`: neumann, value 0.
+   - **Check Dimensions**:
+     - T: `{"temperature": 1}`
+     - k: `{"mass": 1, "length": 1, "time": -3, "temperature": -1}`
+     - h: `{"mass": 1, "time": -3, "temperature": -1}`
+     - T_amb: `{"temperature": 1}`
+   - **Check Expression Trees**:
+     - Equation LHS: `{"type": "Div", "operand": {"type": "Mul", "factors": [{"type": "Grad", "operand": {"type": "Field", "name": "T", ...}}, {"type": "Parameter", "name": "k", ...}]}}`
+     - Equation RHS: `{"type": "Constant", "value": 0}`
+     - Robin value: `{"type": "Neg", "operand": {"type": "Mul", "factors": [{"type": "Parameter", "name": "h", ...}, {"type": "Add", "terms": [{"type": "Field", "name": "T", ...}, {"type": "Neg", "operand": {"type": "Parameter", "name": "T_amb", ...}}]}]}}`
+     Wait, the spec says: `-h*(u - u_amb)`. So `Neg(Mul(h, Add(T, Neg(T_amb))))`.
+     Let's verify the sign convention in the spec again: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". So yes, `-h*(T - T_amb)`.
+     I will construct it carefully.
+
+3.  **Construct JSON Structure**:
+   - `name`: "2D_Stationary_Heat_Transfer_Benchmark"
+   - `pde_ir_version`: "0.1"
+   - `fields`: T (scalar, H1, temperature)
+   - `parameters`: k, h, T_amb
+   - `equations`: one equation for strong form
+   - `initial_conditions`: []
+   - `boundary_conditions`: bottom (dirichlet), top_and_right (robin), left (neumann)
+   - `constitutive_relations`: []
+   - `invariants`: []
+   - `assumptions`: []
+   - `provenance`: null
+   - `ambiguity`: null
+
+   Let's draft the fields/parameters carefully with dimensions.
+   T: rank scalar, space H1, dimension {"temperature": 1}
+   k: rank scalar, dimension {"mass": 1, "length": 1, "time": -3, "temperature": -1}
+   h: rank scalar, dimension {"mass": 1, "time": -3, "temperature": -1}
+   T_amb: rank scalar, dimension {"temperature": 1}
+
+   Equation:
+   LHS: Div(Mul(Grad(T), k))
+   RHS: 0
+   Name: "steady_heat_equation"
+
+   Boundary Conditions:
+   1. field: T, type: dirichlet, boundary_id: "bottom", value: Constant(100)
+   2. field: T, type: robin, boundary_id: "top_and_right", value: Neg(Mul(h, Add(T, Neg(T_amb))))
+   3. field: T, type: neumann, boundary_id: "left", value: Constant(0)
+
+   Check dimensions for constants: 100 has dimension temperature. 0 has dimension temperature (or null, but usually matches field). I'll leave constant dimensions as null or match field. The spec says `Constant` just has `value`. I'll stick to `{"type": "Constant", "value": 100}`.
+
+   Let's verify the Robin value expression tree matches the spec example exactly.
+   Spec example for robin value:
+   ```json
+   {
+     "type": "Neg",
+     "operand": {
+       "type": "Mul",
+       "factors": [
+         {
+           "type": "Add",
+           "terms": [
+             {"type": "Field", "name": "u", ...},
+             {"type": "Neg", "operand": {"type": "Parameter", "name": "u_amb", ...}}
+           ]
+         },
+         {"type": "Parameter", "name": "h", ...}
+       ]
+     }
+   }
+   ```
+   I will replicate this structure for T and T_amb.
+
+   Check equation structure:
+   The spec example uses `Neg(Div(...))` and `Neg(f)`. I'll just use `Div(Mul(Grad(T), k))` = 0. It's mathematically equivalent. To be safe, I'll follow the exact structure requested: `Div` operand is `Mul` of `Grad(T)` and `k`.
+
+   Let's assemble carefully.
+
+   Fields:
+   ```json
+   {
+     "name": "T",
+     "rank": "scalar",
+     "space": "H1",
+     "description": "Temperature field",
+     "dimension": {"temperature": 1}
+   }
+   ```
+
+   Parameters:
+   ```json
+   {
+     "name": "k",
+     "rank": "scalar",
+     "description": "Thermal conductivity",
+     "dimension": {"mass": 1, "length": 1, "time": -3, "temperature": -1}
+   },
+   {
+     "name": "h",
+     "rank": "scalar",
+     "description": "Heat transfer coefficient",
+     "dimension": {"mass": 1, "time": -3, "temperature": -1}
+   },
+   {
+     "name": "T_amb",
+     "rank": "scalar",
+     "description": "Ambient temperature",
+     "dimension": {"temperature": 1}
+   }
+   ```
+
+   Equation:
+   ```json
+   {
+     "type": "Equation",
+     "lhs": {
+       "type": "Div",
+       "operand": {
+         "type": "Mul",
+         "factors": [
+           {
+             "type": "Grad",
+             "operand": {
+               "type": "Field",
+               "name": "T",
+               "rank": "scalar",
+               "space": "H1",
+               "description": "Temperature field",
+               "dimension": {"temperature": 1}
+             }
+           },
+           {
+             "type": "Parameter",
+             "name": "k",
+             "rank": "scalar",
+             "description": "Thermal conductivity",
+             "dimension": {"mass": 1, "length": 1, "time": -3, "temperature": -1}
+           }
+         ]
+       }
+     },
+     "rhs": {
+       "type": "Constant",
+       "value": 0
+     },
+     "name": "steady_heat_conduction"
+   }
+   ```
+
+   Boundary Conditions:
+   Bottom:
+   ```json
+   {
+     "field": "T",
+     "type": "dirichlet",
+     "boundary_id": "bottom",
+     "value": {"type": "Constant", "value": 100},
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+   Top and Right:
+   ```json
+   {
+     "field": "T",
+     "type": "robin",
+     "boundary_id": "top_and_right",
+     "value": {
+       "type": "Neg",
+       "operand": {
+         "type": "Mul",
+         "factors": [
+           {
+             "type": "Add",
+             "terms": [
+               {"type": "Field", "name": "T", "rank": "scalar", "space": "H1", "description": "Temperature field", "dimension": {"temperature": 1}},
+               {"type": "Neg", "operand": {"type": "Parameter", "name": "T_amb", "rank": "scalar", "description": "Ambient temperature", "dimension": {"temperature": 1}}}
+             ]
+           },
+           {"type": "Parameter", "name": "h", "rank": "scalar", "description": "Heat transfer coefficient", "dimension": {"mass": 1, "time": -3, "temperature": -1}}
+         ]
+       }
+     },
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+   Left:
+   ```json
+   {
+     "field": "T",
+     "type": "neumann",
+     "boundary_id": "left",
+     "value": {"type": "Constant", "value": 0},
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+
+   Check dimensions: W/(m·°C) -> kg·m/(s³·K) -> mass:1, length:1, time:-3, temperature:-1. Correct.
+   W/(m²·°C) -> kg/(s³·K) -> mass:1, time:-3, temperature:-1. Correct.
+   Temperature -> temperature:1. Correct.
+
+   One minor point: The spec says "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". My expression matches this.
+   The equation in the paper is `∇· ( 𝑘∇𝑇) = 0`. I'll use `Div` directly.
+   I should ensure all field/parameter references in the expression trees match the declarations exactly.
+   I will copy the field/parameter objects into the expression trees as required by the schema example.
+
+   Let's verify the structure matches the prompt's example exactly.
+   The example has:
+   ```json
+   "fields": [ { "name": "u", "rank": "scalar", "space": "H1", "description": "...", "dimension": null } ],
+   "parameters": [ ... ],
+   "equations": [ { "type": "Equation", "lhs": ..., "rhs": ..., "name": "strong" } ],
+   ...
+   ```
+   I will follow this.
+
+   One detail: `dimension` for constants? The spec says `Constant` just has `value`. I'll leave it as is.
+   I'll make sure the JSON is valid and strictly follows the schema.
+   I will double-check the Robin value sign. The paper says: `-k ∂T/∂n = h(T - T_amb)`. The outward normal flux is `-k ∂T/∂n`. So the prescribed flux is `h(T - T_amb)`. But the spec explicitly says: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". This is a bit confusing physically (usually Robin BC in FEM is `k du/dn + h u = h u_amb`, so flux `k du/dn = -h(u - u_amb)`), but I must follow the spec's explicit instruction for the IR format. I will use `-h*(T - T_amb)`.
+
+   Wait, let's re-read carefully: "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`. ... A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`".
+   This implies that in their convention, the Robin value is the RHS of the flux equation when written as `Flux = Value`. If `-k du/dn = h(u - u_amb)`, then `k du/dn = -h(u - u_amb)`. Since the outward flux for `-div(k grad u)` is `k du/dn`, the value is indeed `-h(u - u_amb)`. This matches perfectly. I will stick with `-h*(T - T_amb)`.
+
+   All set. I will generate the JSON.
+   I'll make sure to include all required fields.
+   One thing: `dimension` for `T` is `{"temperature": 1}`.
+   `k`: `{"mass": 1, "length": 1, "time": -3, "temperature": -1}`
+   `h`: `{"mass": 1, "time": -3, "temperature": -1}`
+   `T_amb`: `{"temperature": 1}`
+   All good.
+
+   Structure check:
+   - name
+   - pde_ir_version
+   - fields
+   - parameters
+   - equations
+   - initial_conditions
+   - boundary_conditions
+   - constitutive_relations
+   - invariants
+   - assumptions
+   - provenance
+   - ambiguity
+
+   I will produce the JSON now.
+   One minor adjustment: The prompt says "Expression trees are encoded as nested objects tagged by a "type" field...". I will ensure every node has the correct structure.
+   I'll copy the field/parameter definitions into the expression trees exactly as in the example.
+   Ready.✅
+   Output matches request.✅
+   Proceeds. 
+   Self-Correction/Verification during thought:
+   - Check `Div` vs `Neg(Div)`: The paper says `∇·(k∇T) = 0`. I'll use `Div`. It's fine.
+   - Check boundary IDs: "bottom", "top_and_right", "left". Matches paper.
+   - Check dimensions: W/(m·°C) -> kg·m/(s³·K) -> mass:1, length:1, time:-3, temperature:-1. Correct.
+   - Check Robin value: `-h*(T - T_amb)`. Correct per spec.
+   - All good.
+   Output generation. 
+   [Output Generation] -> JSON string. 
+   I will carefully format it. 
+   One detail: `dimension` for `T` in the expression tree should match the declaration. I'll reuse the exact object.
+   All set. 
+   Proceeds. 
+   [Output Generation] (matches the final JSON)
+   ```json
+   {
+     "name": "2D_Stationary_Heat_Transfer_Benchmark",
+     "pde_ir_version": "0.1",
+     "fields": [
+       {
+         "name": "T",
+         "rank": "scalar",
+         "space": "H1",
+         "description": "Temperature field",
+         "dimension": {
+           "temperature": 1
+         }
+       }
+     ],
+     "parameters": [
+       {
+         "name": "k",
+         "rank": "scalar",
+         "description": "Thermal conductivity",
+         "dimension": {
+           "mass": 1,
+           "length": 1,
+           "time": -3,
+           "temperature": -1
+         }
+       },
+       {
+         "name": "h",
+         "rank": "scalar",
+         "description": "Heat transfer coefficient",
+         "dimension": {
+           "mass": 1,
+           "time": -3,
+           "temperature": -1
+         }
+       },
+       {
+         "name": "T_amb",
+         "rank": "scalar",
+         "description": "Ambient temperature",
+         "dimension": {
+           "temperature": 1
+         }
+       }
+     ],
+     "equations": [
+       {
+         "type": "Equation",
+         "lhs": {
+           "type": "Div",
+           "operand": {
+             "type": "Mul",
+             "factors": [
+               {
+                 "type": "Grad",
+                 "operand": {
+                   "type": "Field",
+                   "name": "T",
+                   "rank": "scalar",
+                   "space": "H1",
+                   "description": "Temperature field",
+                   "dimension": {
+                     "temperature": 1
+                   }
+                 }
+               },
+               {
+                 "type": "Parameter",
+                 "name": "k",
+                 "rank": "scalar",
+                 "description": "Thermal conductivity",
+                 "dimension": {
+                   "mass": 1,
+                   "length": 1,
+                   "time": -3,
+                   "temperature": -1
+                 }
+               }
+             ]
+           }
+         },
+         "rhs": {
+           "type": "Constant",
+           "value": 0
+         },
+         "name": "steady_heat_conduction"
+       }
+     ],
+     "initial_conditions": [],
+     "boundary_conditions": [
+       {
+         "field": "T",
+         "type": "dirichlet",
+         "boundary_id": "bottom",
+         "value": {
+           "type": "Constant",
+           "value": 100
+         },
+         "provenance": null,
+         "ambiguity": null
+       },
+       {
+         "field": "T",
+         "type": "robin",
+         "boundary_id": "top_and_right",
+         "value": {
+           "type": "Neg",
+           "operand": {
+             "type": "Mul",
+             "factors": [
+               {
+                 "type": "Add",
+                 "terms": [
+                   {
+                     "type": "Field",
+                     "name": "T",
+                     "rank": "scalar",
+                     "space": "H1",
+                     "description": "Temperature field",
+                     "dimension": {
+                       "temperature": 1
+                     }
+                   },
+                   {
+                     "type": "Neg",
+                     "operand": {
+                       "type": "Parameter",
+                       "name": "T_amb",
+                       "rank": "scalar",
+                       "description": "Ambient temperature",
+                       "dimension": {
+                         "temperature": 1
+                       }
+                     }
+                   }
+                 ]
+               },
+               {
+                 "type": "Parameter",
+                 "name": "h",
+                 "rank": "scalar",
+                 "description": "Heat transfer coefficient",
+                 "dimension": {
+                   "mass": 1,
+                   "time": -3,
+                   "temperature": -1
+                 }
+               }
+             ]
+           }
+         },
+         "provenance": null,
+         "ambiguity": null
+       },
+       {
+         "field": "T",
+         "type": "neumann",
+         "boundary_id": "left",
+         "value": {
+           "type": "Constant",
+           "value": 0
+         },
+         "provenance": null,
+         "ambiguity": null
+       }
+     ],
+     "constitutive_relations": [],
+     "invariants": [],
+     "assumptions": [],
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+   All checks passed. Output matches exactly.✅
+   One minor point: The prompt says "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". My expression tree for Robin value is `Neg(Mul(Add(T, Neg(T_amb)), h))`, which is `-h*(T - T_amb)`. This matches.
+   I will produce the JSON. 
+   Note: I'll make sure the JSON is strictly valid and follows the schema. No extra text.
+   Done. 
+   Output Generation. 
+   [Proceeds] -> *Self-Correction/Refinement during generation prep*: 
+   I should verify the `dimension` for `k` and `h`. 
+   W = J/s = (kg m^2/s^2)/s = kg m^2 s^-3.
+   k: W/(m K) -> kg m^2 s^-3 / (m K) = kg m s^-3 K^-1. So `{"mass": 1, "length": 1, "time": -3, "temperature": -1}`. Correct.
+   h: W/(m^2 K) -> kg m^2 s^-3 / (m^2 K) = kg s^-3 K^-1. So `{"mass": 1, "time": -3, "temperature": -1}`. Correct.
+   T: K -> `{"temperature": 1}`. Correct.
+   All dimensions are correct.
+   The structure matches the prompt's example.
+   Ready. 
+   Output matches response. 
+   [Done] 
+   *(Self-Correction/Verification during thought)*: I notice the prompt example uses `Neg(Div(...))` for the equation. I'll stick to `Div(...)` as it's mathematically identical to `0`, but to be perfectly aligned with standard FEM strong forms often written as `-div(k grad u) = f`, I could use `Neg(Div(...))`. It doesn't matter much. I'll keep `Div`. The prompt says "Give the strong form". `div(k grad T) = 0` is fine.
+   I will output the JSON now. 
+   [Output Generation] -> *Proceeds*. 
+   *(Final Check of the Prompt)*: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". My tree: `Neg(Mul(Add(T, Neg(T_amb)), h))`. This is `-h*(T - T_amb)`. Correct.
+   All good. 
+   Output matches. 
+   [Done]

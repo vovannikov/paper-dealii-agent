@@ -1,0 +1,36 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}\usepackage{amsmath,amssymb}\usepackage[margin=2.5cm]{geometry}
+\title{Transient Heating of a Square Plate with a Ramped Wall Temperature}\author{C. Author and D. Engineer}\date{}
+\begin{document}\maketitle
+\section*{1. Problem description}
+We consider the unsteady heat conduction in a thin square plate $\Omega=(0,1)\times(0,1)$ over the time interval $0\le t\le 1$. The plate is initially at the reference temperature $T=0$. At $t=0$ the left edge starts to be heated such that its temperature rises linearly with time; the three other edges are thermally insulated.
+
+\section*{2. Governing equation}
+With the constant thermal diffusivity $\kappa$ and no internal heat sources, the temperature $T(x,y,t)$ obeys the heat equation
+
+\begin{equation}
+\frac{\partial T}{\partial t} - \nabla\cdot\left(\kappa\,\nabla T\right) = 0 \quad \text{in } \Omega,\ t>0 .
+\end{equation}
+\section*{3. Initial and boundary conditions}
+The initial condition is
+
+\begin{equation}
+T(x,y,0) = 0 .
+\end{equation}
+On the left edge, $x=0$, the temperature follows the ramp
+
+\begin{equation}
+T(0,y,t) = \beta\, t ,
+\end{equation}
+where $\beta$ is the heating rate. The right, bottom and top edges are insulated, so that the normal heat flux vanishes there:
+
+\begin{equation}
+\kappa\,\frac{\partial T}{\partial n} = 0 \quad \text{on } x=1,\ y=0,\ y=1 .
+\end{equation}
+\section*{4. Parameters}
+We use $\kappa=0.5$ and a heating rate of $\beta=2$. Time is measured in seconds and temperature in kelvin above the reference temperature. The computations in Section 5 use the time step $\Delta t=0.01$.
+
+\section*{5. Notes}
+After the initial transient the interior follows the wall with a constant lag; at $t=1$ the temperature at the centre of the plate is of the order of one kelvin.
+
+\end{document}

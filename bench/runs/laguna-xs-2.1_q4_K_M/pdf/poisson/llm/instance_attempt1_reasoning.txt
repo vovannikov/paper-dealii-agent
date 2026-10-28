@@ -1,0 +1,101 @@
+Alright, let's tackle this problem. So, I need to extract the parameter values and geometry from the given paper content. Let me start by reading through the paper carefully.
+
+First, the problem is about steady diffusion with a volumetric source and mixed boundary conditions. The domain is a rectangle Ω = (0, 2) × (0, 1). That gives me the geometry. The lower left corner is (0, 0) and the upper right is (2, 1). So the geometry part should be straightforward.
+
+Now, the parameters mentioned in section 4 are k = 2.5, f = 10, and gN = 3. These are the values I need to put into the parameter_values object. The units are non-dimensional, so I don't have to worry about converting units here.
+
+Next, the boundary conditions. The left (x=0) and bottom (y=0) sides have u=0. The right side (x=2) has a Neumann condition with gN=3, and the top (y=1) is impermeable, meaning the flux is zero there. 
+
+For the boundary_ids, I need to map each boundary name to deal.II face IDs. The face IDs are 0 for x-min (left), 1 for x-max (right), 2 for y-min (bottom), 3 for y-max (top). 
+
+So, left (x=0) is face 0, bottom (y=0) is face 2, right (x=2) is face 1, and top (y=1) is face 3. The boundary conditions are:
+
+- left and bottom: Dirichlet (u=0)
+- right: Neumann (gN=3)
+- top: Neumann (0 flux)
+
+But the problem says to map each boundary name to the face IDs. The names here would be "left", "bottom", "right", and "top". Each of these corresponds to a single face. So:
+
+- "left" → 0
+- "bottom" → 2
+- "right" → 1
+- "top" → 3
+
+Wait, but the problem statement mentions "boundary_ids" as a map from each boundary name to a deal.II colorize face id. Each side is a single face here, so each name maps to a single ID. 
+
+So the boundary_ids should be:
+
+{
+  "left": 0,
+  "bottom": 2,
+  "right": 1,
+  "top": 3
+}
+
+But let me double-check. The paper says:
+
+- u=0 on x=0 (left) and y=0 (bottom)
+- Neumann on x=2 (right) with gN=3
+- Neumann on y=1 (top) with 0 flux
+
+So all four boundaries are present, each as a single face. Therefore, each boundary name (left, bottom, right, top) maps to their respective face IDs.
+
+Now, the parameter_values are k=2.5, f=10, gN=3. The problem mentions that these are in consistent non-dimensional units, so no conversion needed.
+
+The geometry is the rectangle from (0,0) to (2,1). So lower_left is [0.0, 0.0], upper_right is [2.0, 1.0].
+
+I need to check if there's any mention of value_sources. The problem says to include a short note per value recording where in the paper it came from. The parameters k, f, gN are all in section 4, so the sources would be "paper, Section 4".
+
+Putting it all together:
+
+parameter_values:
+- k: 2.5
+- f: 10
+- gN: 3
+
+geometry:
+- lower_left: [0.0, 0.0]
+- upper_right: [2.0, 1.0]
+- boundary_ids:
+  - left: 0
+  - bottom: 2
+  - right: 1
+  - top: 3
+
+value_sources:
+- k: "paper, Section 4"
+- f: "paper, Section 4"
+- gN: "paper, Section 4"
+
+Wait, the problem says "value_sources (optional): a short note per value recording where in the paper it came from." So for each parameter in parameter_values, I need to note the source. Since all three parameters are in section 4, that's where they come from.
+
+I should also check if there are any other parameters mentioned. The problem mentions k, f, gN. The other parameters like the domain dimensions are part of the geometry, not the parameters. So the parameter_values should only include k, f, gN.
+
+Yes, the problem says "parameter_values: a numeric value for each of these parameters: k, f, gN." So those three are the only ones needed.
+
+So the final JSON should look like this:
+
+{
+  "parameter_values": {
+    "k": 2.5,
+    "f": 10,
+    "gN": 3
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [2.0, 1.0],
+    "boundary_ids": {
+      "left": 0,
+      "bottom": 2,
+      "right": 1,
+      "top": 3
+    }
+  },
+  "value_sources": {
+    "k": "paper, Section 4",
+    "f": "paper, Section 4",
+    "gN": "paper, Section 4"
+  }
+}
+
+I think that's all. Let me just verify once more. The domain is (0,2) x (0,1), so lower_left (0,0) and upper_right (2,1). The boundaries are correctly mapped. The parameters are all from section 4. The value_sources are correctly noted. The boundary_ids are correctly assigned. Yes, this should be correct.

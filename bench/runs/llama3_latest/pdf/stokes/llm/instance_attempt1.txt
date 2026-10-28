@@ -1,0 +1,19 @@
+Here is the extracted ProblemInstance:
+
+{
+  "parameter_values": {
+    "ν": 0.1,
+    "ulid": [1, 0]
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [1.0, 1.0],
+    "boundary_ids": {
+      "lid": [1, 3],
+      "no-slip": [0, 2]
+    }
+  },
+  "value_sources": {}
+}
+
+Note that I did not include any refinements, field degrees, or pin fields as these are not mentioned in the paper.

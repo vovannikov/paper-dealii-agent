@@ -1,0 +1,336 @@
+The user wants me to extract the PDE model from the provided text into a specific JSON format (PDE-IR).
+
+1.  **Understand the Problem**:
+    *   **Domain**: Rectangle $\Omega = (0,4) \times (0,1)$.
+    *   **Physics**: Plane-strain linear elasticity.
+    *   **Unknown**: Displacement field $\mathbf{u} = (u_x, u_y)$.
+    *   **Governing Equation**: $-\nabla \cdot \boldsymbol{\sigma}(\mathbf{u}) = \mathbf{f}$ in $\Omega$.
+    *   **Constitutive Law**: $\boldsymbol{\sigma}(\mathbf{u}) = \lambda \text{tr}(\boldsymbol{\varepsilon}(\mathbf{u})) \mathbf{I} + 2\mu \boldsymbol{\varepsilon}(\mathbf{u})$.
+    *   **Strain Definition**: $\boldsymbol{\varepsilon}(\mathbf{u}) = \frac{1}{2}(\nabla \mathbf{u} + \nabla \mathbf{u}^T)$.
+    *   **Parameters**: $\lambda = 1.5$, $\mu = 1.0$, $\mathbf{f} = (0,0)$, $\mathbf{g}_N = (0, -0.05)$.
+    *   **Boundary Conditions**:
+        *   $x=0$: $\mathbf{u} = \mathbf{0}$ (Dirichlet).
+        *   $x=4$: $\boldsymbol{\sigma}(\mathbf{u})\mathbf{n} = \mathbf{g}_N$ (Neumann).
+        *   $y=0, y=1$: $\boldsymbol{\sigma}(\mathbf{u})\mathbf{n} = \mathbf{0}$ (Neumann/Insulated).
+
+2.  **Define Fields and Parameters**:
+    *   **Field**: `u` (displacement), rank: vector, space: H1 (vector-valued H1).
+    *   **Parameters**:
+        *   `lambda` (Lamé parameter 1), rank: scalar.
+        *   `mu` (Lamé parameter 2), rank: scalar.
+        *   `f` (body force), rank: vector.
+        *   `g_N` (traction), rank: vector.
+    *   **Dimensions**: The problem states parameters are non-dimensional. I will set dimensions to null.
+
+3.  **Construct the Strong Form Equation**:
+    *   The equation is $-\nabla \cdot \boldsymbol{\sigma}(\mathbf{u}) = \mathbf{f}$.
+    *   In PDE-IR, this is `Neg(Div(sigma(u)))` equals `f`.
+    *   How to represent $\boldsymbol{\sigma}(\mathbf{u})$?
+        *   Option A: Define a constitutive relation `sigma` and use `Apply`.
+        *   Option B: Write the expression inline.
+        *   The prompt suggests: "Named constitutive laws: 'constitutive_relations': ... the equations then use the matching Apply node. Writing the expression inline is also allowed."
+        *   Let's write it inline for simplicity, or define it if it makes the structure cleaner. Given the explicit formulas for stress and strain, defining them might be cleaner, but inline is often safer for strict adherence to "strong form" without extra definitions unless necessary. However, the prompt explicitly mentions constitutive relations. Let's look at the structure.
+        *   $\boldsymbol{\sigma} = \lambda \text{tr}(\boldsymbol{\varepsilon}) \mathbf{I} + 2\mu \boldsymbol{\varepsilon}$.
+        *   $\boldsymbol{\varepsilon} = \frac{1}{2}(\nabla \mathbf{u} + \nabla \mathbf{u}^T)$.
+        *   Let's construct the expression for $\boldsymbol{\sigma}(\mathbf{u})$ directly in the equation.
+        *   `Div` takes a tensor operand.
+        *   `Grad` of a vector field `u` is a tensor.
+        *   `Transpose` of `Grad(u)` is `Grad(u)^T`.
+        *   `Add` of `Grad(u)` and `Transpose(Grad(u))`.
+        *   `Mul` by `0.5` (or `Div` by 2).
+        *   `Trace` of that sum.
+        *   `Mul` by `lambda`.
+        *   `Mul` by `Identity`.
+        *   `Add` to `Mul(2*mu, epsilon)`.
+        *   This is getting complex. Let's use the `Apply` node for `sigma` and `epsilon` if possible, or just inline it. The prompt says "Writing the expression inline is also allowed." I will inline it to avoid defining extra fields/parameters that aren't strictly requested, but I need to be careful with the tensor algebra representation.
+        *   Actually, defining `sigma` as a constitutive relation is very standard in FEM. Let's try to inline it to keep the JSON self-contained in the equation.
+        *   Wait, the prompt says: "Named constitutive laws: ... the equations then use the matching Apply node." This implies I *can* use them. It might be cleaner.
+        *   Let's stick to inline for the main equation to ensure the "strong form" is explicit.
+        *   Expression for $\boldsymbol{\sigma}$:
+            *   `epsilon`: `Mul(0.5, Add(Grad(u), Transpose(Grad(u))))`
+            *   `trace_epsilon`: `Trace(epsilon)`
+            *   `term1`: `Mul(Mul(lambda, trace_epsilon), Identity)`
+            *   `term2`: `Mul(Mul(2, mu), epsilon)`
+            *   `sigma`: `Add(term1, term2)`
+            *   `lhs`: `Neg(Div(sigma))`
+            *   `rhs`: `f`
+    *   Wait, `f` is a parameter. The equation is `lhs = rhs`.
+    *   Let's refine the expression tree.
+    *   `Grad` of `u` (vector) -> Tensor.
+    *   `Transpose` of Tensor -> Tensor.
+    *   `Add` -> Tensor.
+    *   `Mul` (scalar 0.5) -> Tensor.
+    *   `Trace` -> Scalar.
+    *   `Mul` (scalar lambda) -> Scalar.
+    *   `Mul` (scalar, Identity) -> Tensor.
+    *   `Mul` (scalar 2*mu) -> Tensor.
+    *   `Add` -> Tensor.
+    *   `Div` -> Vector.
+    *   `Neg` -> Vector.
+    *   `f` -> Vector.
+    *   This looks correct.
+
+4.  **Boundary Conditions**:
+    *   **Left ($x=0$)**: Dirichlet. Value is zero vector.
+        *   `VectorExpr` with components `Constant(0)`.
+    *   **Right ($x=4$)**: Neumann. Value is $\mathbf{g}_N = (0, -0.05)$.
+        *   `VectorExpr` with components `Constant(0)` and `Constant(-0.05)`.
+    *   **Top/Bottom ($y=0, y=1$)**: Neumann. Value is zero vector.
+        *   `VectorExpr` with components `Constant(0)`.
+
+5.  **Refining Dimensions**:
+    *   The text says "non-dimensional". So `dimension: null` for everything.
+
+6.  **Refining Parameters**:
+    *   `lambda`: 1.5
+    *   `mu`: 1.0
+    *   `f`: (0,0) - wait, `f` is a parameter in the equation. I should declare it.
+    *   `g_N`: (0, -0.05) - this is used in BCs. I should declare it.
+
+7.  **Drafting the JSON**:
+
+    *   **Fields**:
+        *   `u`: vector, H1.
+    *   **Parameters**:
+        *   `lambda`: scalar.
+        *   `mu`: scalar.
+        *   `f`: vector.
+        *   `g_N`: vector.
+    *   **Equations**:
+        *   Name: "equilibrium"
+        *   LHS: `Neg(Div(sigma_expr))`
+        *   RHS: `f`
+        *   `sigma_expr`:
+            *   `Add`
+                *   `Mul`
+                    *   `Mul`
+                        *   `lambda`
+                        *   `Trace`
+                            *   `Mul`
+                                *   `0.5`
+                                *   `Add`
+                                    *   `Grad(u)`
+                                    *   `Transpose(Grad(u))`
+                    *   `Identity`
+                *   `Mul`
+                    *   `Mul`
+                        *   `2`
+                        *   `mu`
+                    *   `Mul`
+                        *   `0.5`
+                        *   `Add`
+                            *   `Grad(u)`
+                            *   `Transpose(Grad(u))`
+    *   **Boundary Conditions**:
+        *   `left`: Dirichlet, `u`, `VectorExpr([0, 0])`.
+        *   `right`: Neumann, `u`, `g_N`.
+        *   `top_and_bottom`: Neumann, `u`, `VectorExpr([0, 0])`.
+
+8.  **Double Check Rules**:
+    *   "Boundary conditions: a `dirichlet` value is the prescribed field value." -> Correct.
+    *   "A `neumann` ... value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`." -> For elasticity, the flux is $\boldsymbol{\sigma} \mathbf{n}$. The equation is $-\nabla \cdot \boldsymbol{\sigma} = \mathbf{f}$. The natural BC is $\boldsymbol{\sigma} \mathbf{n} = \mathbf{g}$. So the Neumann value is $\mathbf{g}$. Correct.
+    *   "An insulated / zero-flux boundary is neumann with value 0." -> Correct.
+    *   "Use one `boundary_id` per distinct condition". -> `left`, `right`, `top_and_bottom`.
+    *   "Attach SI base dimensions ... when the paper states units". -> Paper says non-dimensional. So null.
+    *   "Expression trees ... tagged by a 'type' field".
+    *   "VectorExpr ... builds a vector from scalar components".
+    *   "Identity ... is the identity tensor".
+    *   "Trace ... takes operand".
+    *   "Transpose ... takes operand".
+    *   "Grad ... takes operand".
+    *   "Div ... takes operand".
+    *   "Mul ... factors".
+    *   "Add ... terms".
+    *   "Neg ... operand".
+    *   "Constant ... value".
+    *   "Parameter ... name".
+    *   "Field ... name".
+
+9.  **Constructing the Expression Tree Details**:
+    *   `epsilon` part: `Mul(0.5, Add(Grad(u), Transpose(Grad(u))))`.
+    *   `trace_epsilon`: `Trace(epsilon)`.
+    *   `term1`: `Mul(Mul(lambda, trace_epsilon), Identity)`.
+    *   `term2`: `Mul(Mul(2, mu), epsilon)`.
+    *   `sigma`: `Add(term1, term2)`.
+    *   `lhs`: `Neg(Div(sigma))`.
+    *   `rhs`: `f`.
+
+    Wait, `Mul` takes `factors`. `Mul(lambda, trace_epsilon)` is `Mul([lambda, trace_epsilon])`.
+    `Mul(Mul(lambda, trace_epsilon), Identity)` is `Mul([Mul([lambda, trace_epsilon]), Identity])`.
+    This is getting nested.
+    Let's check `Mul` definition: `{"type": "Mul", "factors": [<Expr>, ...]}`.
+    So `Mul([lambda, trace_epsilon, Identity])` is valid if associative.
+    However, `trace_epsilon` is scalar, `lambda` is scalar, `Identity` is tensor.
+    Scalar * Scalar * Tensor = Tensor.
+    So `Mul([lambda, trace_epsilon, Identity])` works.
+    Similarly for `term2`: `Mul([2, mu, epsilon])`.
+    `epsilon` is `Mul([0.5, Add([Grad(u), Transpose(Grad(u))])])`.
+    So `term2` is `Mul([2, mu, Mul([0.5, Add([Grad(u), Transpose(Grad(u))])])])`.
+    This simplifies to `Mul([mu, Add([Grad(u), Transpose(Grad(u))])])` because $2 \times 0.5 = 1$.
+    Let's keep it explicit to match the formula $\lambda \text{tr}(\varepsilon) \mathbf{I} + 2\mu \varepsilon$.
+    So `term2` factors: `2`, `mu`, `epsilon`.
+    `epsilon` factors: `0.5`, `Add(...)`.
+    This is fine.
+
+    One detail: `Grad(u)` where `u` is a vector field. The result is a tensor.
+    `Transpose` of a tensor is a tensor.
+    `Add` of tensors is a tensor.
+    `Trace` of a tensor is a scalar.
+    `Identity` is a tensor.
+    `Mul` of scalars and tensor is a tensor.
+    `Div` of a tensor is a vector.
+    `Neg` of a vector is a vector.
+    `f` is a vector.
+    Equation matches.
+
+    Boundary conditions:
+    `g_N` is a parameter.
+    Value for right BC is `g_N`.
+    Value for left BC is `VectorExpr([Constant(0), Constant(0)])`.
+    Value for top/bottom BC is `VectorExpr([Constant(0), Constant(0)])`.
+
+    Parameters:
+    `lambda`, `mu`, `f`, `g_N`.
+    `f` is (0,0). `g_N` is (0, -0.05).
+    The prompt says "Declare every field and parameter you reference".
+    I reference `f` in the equation.
+    I reference `g_N` in the BC.
+    I reference `lambda`, `mu` in the equation.
+
+    Dimensions:
+    All null.
+
+    Initial conditions:
+    None mentioned (static problem).
+
+    Provenance/Ambiguity:
+    Null.
+
+    Let's assemble.
+
+    One check on `Div`: `Div` usually takes a tensor and returns a vector (divergence of stress).
+    `Grad` usually takes a vector and returns a tensor (gradient of displacement).
+    This matches standard elasticity notation.
+
+    One check on `Identity`: `{"type": "Identity"}`.
+    One check on `Trace`: `{"type": "Trace", "operand": ...}`.
+    One check on `Transpose`: `{"type": "Transpose", "operand": ...}`.
+
+    Structure of `epsilon`:
+    `{"type": "Mul", "factors": [{"type": "Constant", "value": 0.5}, {"type": "Add", "terms": [{"type": "Grad", "operand": {"type": "Field", "name": "u", ...}}, {"type": "Transpose", "operand": {"type": "Grad", "operand": {"type": "Field", "name": "u", ...}}}]}`
+    Wait, `Grad(u)` appears twice. I can't reuse the node object directly in JSON without duplication or referencing. I must duplicate the `Grad(u)` node in the tree.
+
+    Structure of `sigma`:
+    `{"type": "Add", "terms": [term1, term2]}`
+    `term1`: `{"type": "Mul", "factors": [{"type": "Parameter", "name": "lambda", ...}, {"type": "Trace", "operand": epsilon_node}, {"type": "Identity"}]}`
+    `term2`: `{"type": "Mul", "factors": [{"type": "Constant", "value": 2}, {"type": "Parameter", "name": "mu", ...}, epsilon_node]}`
+    Note: `epsilon_node` must be duplicated in `term1` and `term2` if I don't use a variable. The prompt doesn't support variables in the expression tree, only fields/parameters. So I must duplicate the expression for epsilon.
+
+    Let's refine the duplication.
+    `epsilon_expr` = `{"type": "Mul", "factors": [{"type": "Constant", "value": 0.5}, {"type": "Add", "terms": [{"type": "Grad", "operand": u_field}, {"type": "Transpose", "operand": {"type": "Grad", "operand": u_field}}]}]}`
+    `term1` uses `epsilon_expr`.
+    `term2` uses `epsilon_expr`.
+    I will copy-paste the JSON structure for `epsilon_expr` in both places.
+
+    Boundary IDs:
+    `left` (x=0)
+    `right` (x=4)
+    `top_and_bottom` (y=0, y=1)
+
+    Field `u`:
+    `{"name": "u", "rank": "vector", "space": "H1", "description": "displacement field", "dimension": null}`
+
+    Parameters:
+    `lambda`: `{"name": "lambda", "rank": "scalar", "description": "Lamé parameter 1", "dimension": null}`
+    `mu`: `{"name": "mu", "rank": "scalar", "description": "Lamé parameter 2", "dimension": null}`
+    `f`: `{"name": "f", "rank": "vector", "description": "body force", "dimension": null}`
+    `g_N`: `{"name": "g_N", "rank": "vector", "description": "prescribed traction", "dimension": null}`
+
+    Equation:
+    `{"type": "Equation", "name": "equilibrium", "lhs": ..., "rhs": {"type": "Parameter", "name": "f", ...}}`
+
+    BCs:
+    1. `{"field": "u", "type": "dirichlet", "boundary_id": "left", "value": {"type": "VectorExpr", "components": [{"type": "Constant", "value": 0}, {"type": "Constant", "value": 0}]}}`
+    2. `{"field": "u", "type": "neumann", "boundary_id": "right", "value": {"type": "Parameter", "name": "g_N", ...}}`
+    3. `{"field": "u", "type": "neumann", "boundary_id": "top_and_bottom", "value": {"type": "VectorExpr", "components": [{"type": "Constant", "value": 0}, {"type": "Constant", "value": 0}]}}`
+
+    One detail: `f` is (0,0). The equation uses `f`. The parameter `f` is declared. The value (0,0) is not explicitly used in the equation structure, it's just the parameter `f`. The solver would assign the value. The prompt asks to "Declare every field and parameter you reference". It doesn't ask to put the numerical values into the expression tree unless they are constants. `f` is a parameter. `g_N` is a parameter.
+    However, the prompt says "The body force vanishes, f=(0,0)".
+    Should I replace `f` with `VectorExpr([0,0])` in the equation?
+    "Declare every field and parameter you reference".
+    If I declare `f`, I should use it.
+    If I use `VectorExpr([0,0])`, I don't need `f`.
+    Usually, parameters are kept as parameters. I will keep `f` and `g_N` as parameters.
+
+    Wait, `g_N` is used in the BC.
+    `f` is used in the equation.
+    This is consistent.
+
+    Final check on dimensions.
+    "non-dimensional".
+    So `dimension: null`.
+
+    Final check on `Div` and `Grad`.
+    `Div` of `sigma` (tensor) -> vector.
+    `Grad` of `u` (vector) -> tensor.
+    This is standard.
+
+    One minor point: `Identity` tensor.
+    `{"type": "Identity"}`.
+
+    One minor point: `Trace`.
+    `{"type": "Trace", "operand": ...}`.
+
+    One minor point: `Transpose`.
+    `{"type": "Transpose", "operand": ...}`.
+
+    One minor point: `Mul`.
+    `{"type": "Mul", "factors": [...]}`.
+
+    One minor point: `Add`.
+    `{"type": "Add", "terms": [...]}`.
+
+    One minor point: `Neg`.
+    `{"type": "Neg", "operand": ...}`.
+
+    One minor point: `Constant`.
+    `{"type": "Constant", "value": ...}`.
+
+    One minor point: `Parameter`.
+    `{"type": "Parameter", "name": ..., "rank": ..., "description": ..., "dimension": ...}`.
+
+    One minor point: `Field`.
+    `{"type": "Field", "name": ..., "rank": ..., "space": ..., "description": ..., "dimension": ...}`.
+
+    One minor point: `VectorExpr`.
+    `{"type": "VectorExpr", "components": [...]}`.
+
+    Looks solid.
+
+    Wait, `epsilon` definition: $\varepsilon = \frac{1}{2}(\nabla u + \nabla u^T)$.
+    My tree: `Mul(0.5, Add(Grad(u), Transpose(Grad(u))))`.
+    This is correct.
+
+    `sigma` definition: $\sigma = \lambda \text{tr}(\varepsilon) I + 2\mu \varepsilon$.
+    My tree: `Add(Mul(lambda, Trace(epsilon), Identity), Mul(2, mu, epsilon))`.
+    This is correct.
+
+    Equation: $-\nabla \cdot \sigma = f$.
+    My tree: `Neg(Div(sigma))` equals `f`.
+    This is correct.
+
+    BCs:
+    Left: $u=0$. Dirichlet.
+    Right: $\sigma n = g_N$. Neumann.
+    Top/Bottom: $\sigma n = 0$. Neumann.
+    This is correct.
+
+    One detail: "A uniform shear traction acts downwards on the right end".
+    $g_N = (0, -0.05)$.
+    This matches the parameter value.
+
+    One detail: "Body forces are neglected".
+    $f = (0,0)$.
+    This matches the parameter value.
+
+    I will generate the JSON now.

@@ -1,0 +1,47 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "elasticity",
+ "modality": "html",
+ "document_chars": 5662,
+ "started": 1793130856.0207338,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 47.64346385002136,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: missing key 'name'",
+  "response JSON did not match PDEModel: missing key 'name'",
+  "response JSON did not match PDEModel: missing key 'name'"
+ ],
+ "total_seconds": 47.650588274002075,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 15.641470670700073,
+   "prompt_tokens": 3453,
+   "completion_tokens": 1070,
+   "answer_chars": 4491,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 15.563599586486816,
+   "prompt_tokens": 4576,
+   "completion_tokens": 1070,
+   "answer_chars": 4491,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 16.434203624725342,
+   "prompt_tokens": 5699,
+   "completion_tokens": 1070,
+   "answer_chars": 4491,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

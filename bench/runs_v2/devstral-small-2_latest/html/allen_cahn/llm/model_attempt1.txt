@@ -1,0 +1,257 @@
+```json
+{
+  "name": "allen_cahn",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "c",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "order parameter",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "M",
+      "rank": "scalar",
+      "description": "mobility",
+      "dimension": null
+    },
+    {
+      "name": "kappa",
+      "rank": "scalar",
+      "description": "gradient-energy coefficient",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "name": "allen_cahn",
+      "lhs": {
+        "type": "TimeDerivative",
+        "operand": {
+          "type": "Field",
+          "name": "c",
+          "rank": "scalar",
+          "space": "H1",
+          "description": "order parameter",
+          "dimension": null
+        }
+      },
+      "rhs": {
+        "type": "Neg",
+        "operand": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Parameter",
+              "name": "M",
+              "rank": "scalar",
+              "description": "mobility",
+              "dimension": null
+            },
+            {
+              "type": "Add",
+              "terms": [
+                {
+                  "type": "Apply",
+                  "name": "f_prime",
+                  "args": [
+                    {
+                      "type": "Field",
+                      "name": "c",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "order parameter",
+                      "dimension": null
+                    }
+                  ],
+                  "rank": "scalar"
+                },
+                {
+                  "type": "Neg",
+                  "operand": {
+                    "type": "Mul",
+                    "factors": [
+                      {
+                        "type": "Parameter",
+                        "name": "kappa",
+                        "rank": "scalar",
+                        "description": "gradient-energy coefficient",
+                        "dimension": null
+                      },
+                      {
+                        "type": "Laplacian",
+                        "operand": {
+                          "type": "Field",
+                          "name": "c",
+                          "rank": "scalar",
+                          "space": "H1",
+                          "description": "order parameter",
+                          "dimension": null
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "initial_conditions": [
+    {
+      "field": "c",
+      "value": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Constant",
+            "value": 0.5
+          },
+          {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "SpatialCoordinate",
+                    "axis": 0
+                  }
+                ]
+              },
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Constant",
+                  "value": 1
+                }
+              }
+            ]
+          },
+          {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "SpatialCoordinate",
+                    "axis": 1
+                  }
+                ]
+              },
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Constant",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "boundary_conditions": [
+    {
+      "field": "c",
+      "type": "neumann",
+      "boundary_id": "boundary",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [
+    {
+      "name": "f_prime",
+      "definition": {
+        "type": "Equation",
+        "name": "f_prime",
+        "lhs": {
+          "type": "Apply",
+          "name": "f_prime",
+          "args": [
+            {
+              "type": "Field",
+              "name": "c",
+              "rank": "scalar",
+              "space": "H1",
+              "description": "order parameter",
+              "dimension": null
+            }
+          ],
+          "rank": "scalar"
+        },
+        "rhs": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Constant",
+              "value": 0.25
+            },
+            {
+              "type": "Mul",
+              "factors": [
+              {
+                "type": "Add",
+                "terms": [
+                  {
+                    "type": "Pow",
+                    "base": {
+                      "type": "Field",
+                      "name": "c",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "order parameter",
+                      "dimension": null
+                    },
+                    "exponent": {
+                      "type": "Constant",
+                      "value": 2
+                    }
+                  },
+                  {
+                    "type": "Neg",
+                    "operand": {
+                      "type": "Constant",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "Constant",
+                "value": 2
+              }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```

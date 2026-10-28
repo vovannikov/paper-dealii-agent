@@ -1,0 +1,76 @@
+\section{Introduction}
+\label{sec:intro}
+
+Most of the quantitative knowledge of computational science is published as papers: a partial differential equation (PDE), a set of boundary and initial conditions, a handful of material parameters, a geometry, and, if the authors are generous, a reference value to compare with. Turning such a description into a working, trustworthy simulation code is a recurring, expensive and error-prone activity. The mathematical content has to be understood, a weak formulation derived, an element and a solver chosen, the boundary treatment implemented, and the result checked against something. Each step is a place where a sign, a factor or a boundary condition can silently go wrong, and a simulation that compiles, runs and converges can still solve a different problem from the one in the paper.
+
+Large language models (LLMs) have changed what can be automated in this chain. They read scientific text well, they write code in many languages, and they can be embedded in loops that compile, run and repair. A series of recent systems apply this to simulation (Section~\ref{sec:review}). Yet the evidence collected so far points to a structural weakness of the dominant architecture, in which the model is asked to produce the simulation code (or the solver input deck) directly: execution success is a poor proxy for scientific correctness \citep{wrongphysics2026,fembench2025}, and the harder and more performance-oriented the target library, the lower the success rate \citep{pdeagentbench2026}.
+
+This paper presents \femagent{}, a research framework that takes a different route. The central design decision is \emph{not} to let a language model write the solver. The model is used for the one task that really needs language understanding, namely reading the paper and filling in a \emph{typed, physics-aware intermediate representation} (the PDE-IR). Everything downstream, i.e.\ the derivation of the weak form, time discretization, linearization, code generation for \dealii{} \citep{arndt2023}, and verification, is deterministic computation on that representation. The representation is also the contract at which the model's output is accepted or rejected: it is checked for referential, rank, dimensional, boundary-completeness and well-posedness consistency, and any inconsistency is returned to the model as a compact structured diagnostic. The principle can be summarised as \emph{the LLM proposes, the deterministic layer disposes}.
+
+\subsection{Existing agentic workflows for scientific software}
+\label{sec:review}
+
+\paragraph{General-purpose code agents.}
+Code-generation models \citep{codex2021} made program synthesis practical, and agent loops that interleave reasoning with tool use and observation \citep{react2023,reflexion2023} made it iterative. Repository-level benchmarks such as SWE-bench \citep{swebench2024} measure whether an agent can resolve real software issues, where the acceptance criterion is a test-suite that already exists. Closest in spirit to our starting point are systems that turn \emph{papers} into software: Paper2Code/PaperCoder \citep{paper2code2025} transforms machine-learning papers into repositories through planning, analysis and generation agents, and PaperBench \citep{paperbench2025} evaluates the replication of 20 ICML papers against hierarchical rubrics. Their domain is machine learning, where the paper describes an algorithm and the ground truth is a program or a metric; for numerical PDE software the paper describes \emph{mathematics}, and correctness is a property of the discrete solution, which no rubric on source code can establish.
+
+\paragraph{Agents that operate simulation packages.}
+A second family lets an LLM \emph{drive} an existing simulation tool. MechAgents \citep{mechagents2023} uses collaborating LLM agents to write, run and self-correct finite-element code for elasticity problems. MetaOpenFOAM \citep{metaopenfoam2024} and Foam-Agent \citep{foamagent2026} generate OpenFOAM cases from natural language, combining retrieval over tutorials and reviewer loops; Foam-Agent additionally exposes its capabilities through the Model Context Protocol (MCP) \citep{mcp2024}. FEABench \citep{feabench2025} evaluates agents that operate the commercial COMSOL Multiphysics package through its API. AutoMOOSE \citep{automoose2026} orchestrates six specialised agents for phase-field simulations in the MOOSE framework \citep{permann2020}, including a ``Skeptic'' that tests results against conservation laws and asymptotic limits. These systems demonstrate that agentic automation of the simulation lifecycle is feasible, and AutoMOOSE in particular shows the value of physics-grounded falsification. Their input is, however, a natural-language request, not the mathematics of a paper, and the artefact the LLM produces is a configuration or input deck for a mature package that already contains the discretization.
+
+\paragraph{LLMs that write finite-element code.}
+ALL-FEM \citep{allfem2026} fine-tunes open-weight models (3B--120B parameters) on a corpus of verified FEniCS scripts and embeds them in a multi-agent workflow with runtime feedback; it reports 71.8\% code-level success on 39 benchmarks and shows that fine-tuned, smaller models can compete with a non-agentic frontier model. LLM-PDEveloper \citep{pdeveloper2025} targets \emph{secondary developers}: it translates mathematical and algorithmic descriptions into new solvers or modules of a PDE library and analyses syntactic and semantic failure mechanisms. CodePDE \citep{codepde2025} frames PDE solving as code generation and studies reasoning, debugging, self-refinement and test-time scaling. All three let the model write the numerical code, at the level of scripts or library modules. PDEAgent-Bench \citep{pdeagentbench2026} provides 645 instances for DOLFINx, Firedrake and \dealii{} and evaluates generated solvers in stages: executability, accuracy and efficiency. Its central finding is that models often produce runnable code, but pass rates fall substantially once accuracy and efficiency are required; \dealii{} yields the lowest pass rates of the three libraries: in the single-shot setting the best model reaches $54.1\%$ on the DOLFINx track but only $32.3\%$ on the \dealii{} track, and three attempts with execution feedback raise one strong model on \dealii{} from $19.2\%$ to $26.8\%$. FEM-Bench \citep{fembench2025} evaluates function and unit-test writing for computational mechanics and treats self-verification as a capability of its own.
+
+\paragraph{Verification of generated simulation code.}
+The most direct evidence for the problem we address is the \emph{comprehension--generation gap} described by Song et al.\ \citep{wrongphysics2026}: on MooseBench (220 multiphysics cases), 39--40\% of all cases remained runnable but still encoded the wrong physics after execution-only repair, so executability and intent fidelity are separable failure modes. Their remedy reconstructs the PDE encoded by the generated MOOSE objects and compares it with an intended contract (the Intent Fidelity Score). This is a \emph{post hoc} audit of generated code; it presupposes the contract and the code, and works on a structure (Kernels and BCs) that maps compositionally to weak-form terms. Classical computational science has long had the necessary tools for deterministic verification---the method of manufactured solutions (MMS) \citep{roache1998,salari2000,oberkampf2010}, convergence-order tests, and conservation checks---and software engineering has mutation testing as a measure of test-suite quality \citep{demillo1978,jia2011}. What has not been done is to \emph{generate} such verification from a typed mathematical specification extracted from a paper and to use it as the acceptance gate of an LLM-assisted pipeline.
+
+\subsection{Gaps and motivation}
+\label{sec:gaps}
+
+Table~\ref{tab:landscape} places these lines of work along the axes that matter for our goal. We read the entries from the cited abstracts and use ``not reported'' where the cited work does not claim the property.
+
+\begin{table}[t]
+\centering\small
+\caption{Positioning of recent work along the axes relevant to paper-to-solver translation. Entries are taken from the cited publications; ``--'' means the property is not part of the reported approach.}
+\label{tab:landscape}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabularx}{\textwidth}{@{}p{2.55cm}p{2.25cm}p{2.5cm}p{2.5cm}p{2.7cm}p{1.8cm}@{}}
+\toprule
+ & Input & LLM output & Target & Verification & Typed math IR\\
+\midrule
+Paper2Code \citep{paper2code2025} & ML paper & code repository & ML code & model-based and human evaluation & --\\
+MetaOpenFOAM, Foam-Agent \citep{metaopenfoam2024,foamagent2026} & NL request & OpenFOAM case files & OpenFOAM & run success, reviewer loop & --\\
+AutoMOOSE \citep{automoose2026} & NL request & MOOSE input & MOOSE & physics ``Skeptic'' & --\\
+FEABench \citep{feabench2025} & NL problem & API calls & COMSOL & numeric answers & --\\
+ALL-FEM \citep{allfem2026} & PDE statement & FEniCS script & FEniCS & runtime feedback & --\\
+LLM-PDEveloper \citep{pdeveloper2025} & math/algorithm text & solver/module code & PDE library & success rates, error analysis & --\\
+CodePDE \citep{codepde2025} & PDE task & solver code & numerical solvers & reference solution & --\\
+PDEAgent-Bench \citep{pdeagentbench2026} & PDE spec & solver code & DOLFINx, Firedrake, \dealii{} & accuracy, runtime targets & --\\
+Intent verification \citep{wrongphysics2026} & intended PDE contract & MOOSE input & MOOSE & IFS on encoded PDE & reconstructed\\
+\midrule
+\textbf{\femagent{} (this work)} & \textbf{scientific paper (web page or PDF text)} & \textbf{typed PDE-IR as JSON; no solver code} & \textbf{\dealii{} C++ (generated)} & \textbf{generated from the IR: MMS, tangent, invariants, mutation} & \textbf{yes}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+From the survey we distil five gaps.
+\begin{enumerate}[label=\textbf{G\arabic*.},leftmargin=*]
+\item \textbf{The input is rarely a paper.} Most pipelines start from a curated prompt or a PDE statement; the extraction of governing equations, boundary conditions and numerical data from the publication, with its notational and structural variety, is left to the user.
+\item \textbf{There is no enforceable mathematical contract.} When the model writes code, the only artefact that can be inspected is the code. A typed representation of the mathematics, with rank, dimension and referential rules, turns many extraction errors into immediate, machine-readable diagnostics.
+\item \textbf{Mathematical derivations are delegated to the model.} Integration by parts, boundary-term bookkeeping, time discretization and linearization are deterministic transformations. Asking the model to perform them freely invites precisely the sign and factor errors that are so hard to see in code.
+\item \textbf{Verification is not derived from the mathematics.} Tests are either given by the benchmark or written by the model, and \emph{passing code} is weak evidence \citep{fembench2025}. Physics-aware checks (convergence order against a manufactured solution, tangent consistency, conservation and dissipation, operator symmetry) can be generated mechanically from the specification, and their power can be quantified by mutation testing.
+\item \textbf{Production C++ libraries are neglected.} Python-level libraries dominate the literature, while \dealii{} is reported to be substantially harder for current agents \citep{pdeagentbench2026} (lowest pass rates of the three libraries; see above). A solver for a production C++ library with distributed linear algebra, adaptive meshes and Newton solvers is not a script that an LLM can reliably write monolithically.
+\end{enumerate}
+A sixth, practical concern cuts across all five: \textbf{auditability and cost.} If every extracted equation, boundary condition and value can be traced to the paper, and if a repair step costs a few hundred tokens of structured diagnostics instead of a whole program and a compiler log, then local open-weight models become realistic for a task that currently invites frontier-model budgets.
+
+\subsection{Contributions}
+\label{sec:contrib}
+The contributions of this paper are as follows.
+\begin{itemize}
+\item We present a \textbf{physics-aware PDE intermediate representation} with expression trees, tensor ranks, function spaces, SI dimensions, boundary and initial conditions, constitutive relations, invariants, provenance and ambiguity, strictly separated from the \emph{problem instance} (numbers, geometry) and from discretization choices (Sections~\ref{sec:ir} and \ref{sec:overview}).
+\item We describe a \textbf{deterministic mathematical compiler} (strong-to-weak form, time stepping, Gateaux linearization with Newton/Picard) and a \textbf{\dealii{} reference backend} that generates complete C++ programs for steady and transient, scalar, vector-valued, nonlinear and coupled problems, including adaptive mesh and time-step control and block preconditioning (Sections~\ref{sec:compiler} and \ref{sec:backend}).
+\item We describe a \textbf{verification framework generated from the IR}: MMS and convergence orders, tangent consistency, declared invariants, structural operator tests, static well-posedness checks and physics mutation testing (Section~\ref{sec:verification}).
+\item We define an \textbf{LLM extraction layer} with a provider-agnostic model interface, validation--repair loop and an explicit trust boundary, which works with local open-weight models (Section~\ref{sec:llm}).
+\item We report an \textbf{empirical study} of the paper-to-IR step: an end-to-end run on a NAFEMS-derived heat-transfer benchmark with a mesh study against its published reference value, and a 60-run extraction benchmark (five LLMs, six documents, two input formats) scored by \emph{evaluating} the extracted mathematics rather than by string matching, together with an experiment on how much the prompt contract matters (Section~\ref{sec:experiments}).
+\end{itemize}
+We are explicit about scope. The present implementation targets rectangular two-dimensional domains, polynomial data, continuous Lagrange elements, and a transparent assembled reference backend. The matrix-free/MPI backend, the MCP interface, a curated library of \dealii{} recipes, and the full ablation across architectures are planned but not yet implemented (Section~\ref{sec:outlook}); we do not claim results for them.
+
+The remainder of the paper is organised as follows. Section~\ref{sec:overview} gives the architecture. Sections~\ref{sec:ir}--\ref{sec:verification} describe the representation, the compiler, the backend and the verification. Section~\ref{sec:llm} describes the LLM layer. Section~\ref{sec:experiments} presents the experiments, Section~\ref{sec:discussion} discusses what distinguishes the approach and how to apply it, and Section~\ref{sec:conclusions} concludes with an outlook.

@@ -1,0 +1,14 @@
+\subsection{A toy direct-generation baseline}
+\label{sec:baseline}
+The research plan names ``direct LLM $\to$ \dealii{}'' as the reference architecture (baseline A). We did not run the full ablation, but we ran its smallest meaningful instance, on the heat page of Section~\ref{sec:heat}, to calibrate the claim that direct generation is hard for \dealii{}. Three of the locally served models were asked to write a complete \code{main.cc} from the same page text (continuous Lagrange elements on a structured mesh, print the value at the reference point, free choice of the mesh), with up to four attempts; after a failed attempt the model received the first compiler errors (or the run failure), the feedback protocol of PDEAgent-Bench \citep{pdeagentbench2026}. A run succeeds if the printed value at $P$ is within $10^{-2}$ of $18.25$. The build used the same \dealii{} installation as all other experiments.
+
+\begin{table}[t]
+\centering\small
+\caption{Direct generation of a \dealii{} program for the heat page (one document, temperature $0$, at most four attempts with compiler feedback). Tokens are summed over all calls.}
+\label{tab:baseline}
+\input{tables/tab_baseline}
+\end{table}
+
+None of the three models produced a program that compiled (Table~\ref{tab:baseline}). The failures are the typical API errors of a large C++ library: constructing a \code{SparseMatrix} directly from a \code{DynamicSparsityPattern}, calling a non-const member of a const \code{FEValues}, a wrong \code{Quadrature} constructor, and include files that do not exist in this version of the library (\code{constraints.h}, \code{matrix\_tools.h}); the repair rounds repeated the same class of error in three of the four attempts for two of the models, and the reasoning model exhausted its budget of $12\,000$ output tokens on the third attempt. For the same page and models, the \femagent{} extraction needed one model call and one instance call, about $6\cdot10^3$ tokens for Devstral and $1.1\cdot10^4$ for Qwen3.6, and produced a valid, correct specification in one attempt with both models; Qwen3-Coder failed this page with the original prompt (a schema error in three attempts) and passed it with the extended one.
+
+This comparison is deliberately small and favours no one strongly: it is one document and one sample per model, our direct-generation prompt is minimal (no library API guide, no template, which PDEAgent-Bench shows to help), and stronger or larger models would very likely do better; in that benchmark the best single-shot pass rate on \dealii{} is $32.3\%$ even for frontier models. What it does show is the \emph{kind} of failure the architecture avoids: the unit of failure is a missing JSON key, which is named in one line and repaired cheaply, not a compiler error in a library API that the model does not know.

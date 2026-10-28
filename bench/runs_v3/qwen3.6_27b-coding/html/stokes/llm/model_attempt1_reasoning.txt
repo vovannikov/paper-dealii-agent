@@ -1,0 +1,382 @@
+The user wants me to extract the PDE model from the provided text into a specific JSON format (PDE-IR).
+
+1.  **Analyze the text:**
+    *   **Problem:** Steady flow of incompressible Newtonian fluid in a unit square cavity $\Omega = (0,1) \times (0,1)$.
+    *   **Governing Equations:** Stokes equations.
+        *   Momentum: $-\nabla \cdot (2\nu \varepsilon(u)) + \nabla p = 0$ in $\Omega$.
+        *   Continuity: $\nabla \cdot u = 0$ in $\Omega$.
+        *   Strain rate tensor: $\varepsilon(u) = \frac{1}{2}(\nabla u + \nabla u^T)$.
+    *   **Boundary Conditions:**
+        *   Top wall ($y=1$): $u = u_{lid} = (1, 0)$.
+        *   Other walls ($x=0, x=1, y=0$): $u = 0$ (no-slip).
+    *   **Parameters:**
+        *   $\nu = 0.1$ (kinematic viscosity).
+        *   $u_{lid} = (1, 0)$.
+    *   **Fields:**
+        *   $u$: velocity vector field.
+        *   $p$: pressure scalar field.
+
+2.  **Define Fields:**
+    *   `u`: vector field, rank "vector", space "H1" (or H(div), but instructions say use H1 for all). Description: velocity. Dimension: length/time -> `{"length": 1, "time": -1}`.
+    *   `p`: scalar field, rank "scalar", space "H1". Description: pressure. Dimension: mass/(length * time^2) -> `{"mass": 1, "length": -1, "time": -2}`.
+
+3.  **Define Parameters:**
+    *   `nu`: scalar, kinematic viscosity. Value 0.1. Dimension: length^2/time -> `{"length": 2, "time": -1}`.
+    *   `u_lid`: vector, lid velocity. Value (1, 0). Dimension: length/time -> `{"length": 1, "time": -1}`.
+
+4.  **Define Equations:**
+    *   Momentum: $-\nabla \cdot (2\nu \varepsilon(u)) + \nabla p = 0$.
+        *   $\varepsilon(u) = \frac{1}{2}(\nabla u + \nabla u^T)$.
+        *   So $2\nu \varepsilon(u) = \nu (\nabla u + \nabla u^T)$.
+        *   Equation: $-\nabla \cdot (\nu (\nabla u + \nabla u^T)) + \nabla p = 0$.
+        *   Let's construct the expression tree.
+        *   `lhs`: `Add` of `Neg(Div(...))` and `Grad(p)`.
+        *   `Div` operand: `Mul` of `nu` and `Add` of `Grad(u)` and `Transpose(Grad(u))`.
+        *   `rhs`: `Constant(0)`.
+    *   Continuity: $\nabla \cdot u = 0$.
+        *   `lhs`: `Div(u)`.
+        *   `rhs`: `Constant(0)`.
+
+5.  **Define Boundary Conditions:**
+    *   Top ($y=1$): Dirichlet for `u`, value `u_lid`.
+    *   Bottom ($y=0$), Left ($x=0$), Right ($x=1$): Dirichlet for `u`, value `0` (vector zero).
+    *   I can group the stationary walls into one boundary_id or separate them. The prompt says "one id may cover several sides". I'll use `stationary_walls` for $x=0, x=1, y=0$ and `lid` for $y=1$.
+
+6.  **Refine Dimensions:**
+    *   `u`: velocity -> L T^-1 -> `{"length": 1, "time": -1}`.
+    *   `p`: pressure -> M L^-1 T^-2 -> `{"mass": 1, "length": -1, "time": -2}`.
+    *   `nu`: kinematic viscosity -> L^2 T^-1 -> `{"length": 2, "time": -1}`.
+    *   `u_lid`: velocity -> L T^-1 -> `{"length": 1, "time": -1}`.
+
+7.  **Construct JSON:**
+    *   Check structure against schema.
+    *   Fields: `u` (vector), `p` (scalar).
+    *   Parameters: `nu` (scalar), `u_lid` (vector).
+    *   Equations: Momentum, Continuity.
+    *   Boundary conditions: `lid` (dirichlet, `u_lid`), `stationary_walls` (dirichlet, 0).
+    *   Initial conditions: None (steady state).
+    *   Constitutive relations: None needed if I inline $\varepsilon(u)$. I'll inline it for simplicity, or define it. Inlining is fine. $2\nu \varepsilon(u) = \nu(\nabla u + \nabla u^T)$.
+    *   Let's build the expression carefully.
+    *   Momentum LHS:
+        ```json
+        {
+          "type": "Add",
+          "terms": [
+            {
+              "type": "Neg",
+              "operand": {
+                "type": "Div",
+                "operand": {
+                  "type": "Mul",
+                  "factors": [
+                    { "type": "Parameter", "name": "nu", ... },
+                    {
+                      "type": "Add",
+                      "terms": [
+                        { "type": "Grad", "operand": { "type": "Field", "name": "u", ... } },
+                        { "type": "Transpose", "operand": { "type": "Grad", "operand": { "type": "Field", "name": "u", ... } } }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Grad",
+              "operand": { "type": "Field", "name": "p", ... }
+            }
+          ]
+        }
+        ```
+    *   Continuity LHS: `{ "type": "Div", "operand": { "type": "Field", "name": "u", ... } }`
+    *   RHS for both: `{ "type": "Constant", "value": 0 }`
+    *   Boundary conditions:
+        *   `lid`: dirichlet, value `{ "type": "Parameter", "name": "u_lid", ... }`
+        *   `stationary_walls`: dirichlet, value `{ "type": "Constant", "value": 0 }` (vector zero)
+    *   Check dimensions again. The prompt says "Attach SI base dimensions to fields/parameters when the paper states units". The paper doesn't explicitly state units, but it's a standard fluid dynamics problem. I will attach standard SI dimensions as requested ("Produce your best guess even when a reading is uncertain").
+    *   `u`: velocity -> `{"length": 1, "time": -1}`
+    *   `p`: pressure -> `{"mass": 1, "length": -1, "time": -2}`
+    *   `nu`: kinematic viscosity -> `{"length": 2, "time": -1}`
+    *   `u_lid`: velocity -> `{"length": 1, "time": -1}`
+
+    Let's assemble carefully.
+    Fields:
+    - u: vector, H1, velocity, dim L T^-1
+    - p: scalar, H1, pressure, dim M L^-1 T^-2
+    Parameters:
+    - nu: scalar, kinematic viscosity, dim L^2 T^-1
+    - u_lid: vector, lid velocity, dim L T^-1
+    Equations:
+    - momentum: lhs as above, rhs 0
+    - continuity: lhs Div(u), rhs 0
+    BCs:
+    - lid: dirichlet, u, value u_lid
+    - stationary_walls: dirichlet, u, value 0
+
+    One detail: `Grad` of a vector field yields a tensor. `Transpose` of a tensor yields a tensor. `Add` of tensors yields a tensor. `Mul` of scalar and tensor yields a tensor. `Div` of a tensor yields a vector. `Grad` of scalar yields a vector. `Add` of vectors yields a vector. This matches the momentum equation structure.
+    The continuity equation `Div(u)` where `u` is a vector yields a scalar. Matches.
+
+    Check `Grad` definition in PDE-IR: usually `Grad` of scalar is vector, `Grad` of vector is tensor (Jacobian). The prompt says `Grad` takes an operand. I'll assume standard behavior.
+    I will explicitly define dimensions as objects.
+    `{"length": 1, "time": -1}` etc.
+
+    Let's draft the JSON.
+    I'll make sure to follow the exact schema.
+    `fields`: array of objects.
+    `parameters`: array of objects.
+    `equations`: array of objects.
+    `boundary_conditions`: array of objects.
+    `initial_conditions`: []
+    `constitutive_relations`: []
+    `invariants`: []
+    `assumptions`: []
+    `provenance`: null
+    `ambiguity`: null
+
+    One minor point: The prompt says "A zero vector value ... is simply {"type": "Constant", "value": 0}."
+    I will use that for the stationary walls BC.
+
+    Structure check:
+    ```json
+    {
+      "name": "stokes_lid_driven_cavity",
+      "pde_ir_version": "0.1",
+      "fields": [
+        {
+          "name": "u",
+          "rank": "vector",
+          "space": "H1",
+          "description": "velocity field",
+          "dimension": {"length": 1, "time": -1}
+        },
+        {
+          "name": "p",
+          "rank": "scalar",
+          "space": "H1",
+          "description": "pressure field",
+          "dimension": {"mass": 1, "length": -1, "time": -2}
+        }
+      ],
+      "parameters": [
+        {
+          "name": "nu",
+          "rank": "scalar",
+          "description": "kinematic viscosity",
+          "dimension": {"length": 2, "time": -1}
+        },
+        {
+          "name": "u_lid",
+          "rank": "vector",
+          "description": "lid velocity",
+          "dimension": {"length": 1, "time": -1}
+        }
+      ],
+      "equations": [
+        {
+          "type": "Equation",
+          "lhs": {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Div",
+                  "operand": {
+                    "type": "Mul",
+                    "factors": [
+                      {
+                        "type": "Parameter",
+                        "name": "nu",
+                        "rank": "scalar",
+                        "description": "kinematic viscosity",
+                        "dimension": {"length": 2, "time": -1}
+                      },
+                      {
+                        "type": "Add",
+                        "terms": [
+                          {
+                            "type": "Grad",
+                            "operand": {
+                              "type": "Field",
+                              "name": "u",
+                              "rank": "vector",
+                              "space": "H1",
+                              "description": "velocity field",
+                              "dimension": {"length": 1, "time": -1}
+                            }
+                          },
+                          {
+                            "type": "Transpose",
+                            "operand": {
+                              "type": "Grad",
+                              "operand": {
+                                "type": "Field",
+                                "name": "u",
+                                "rank": "vector",
+                                "space": "H1",
+                                "description": "velocity field",
+                                "dimension": {"length": 1, "time": -1}
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "Grad",
+                "operand": {
+                  "type": "Field",
+                  "name": "p",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "pressure field",
+                  "dimension": {"mass": 1, "length": -1, "time": -2}
+                }
+              }
+            ]
+          },
+          "rhs": {
+            "type": "Constant",
+            "value": 0
+          },
+          "name": "momentum"
+        },
+        {
+          "type": "Equation",
+          "lhs": {
+            "type": "Div",
+            "operand": {
+              "type": "Field",
+              "name": "u",
+              "rank": "vector",
+              "space": "H1",
+              "description": "velocity field",
+              "dimension": {"length": 1, "time": -1}
+            }
+          },
+          "rhs": {
+            "type": "Constant",
+            "value": 0
+          },
+          "name": "continuity"
+        }
+      ],
+      "initial_conditions": [],
+      "boundary_conditions": [
+        {
+          "field": "u",
+          "type": "dirichlet",
+          "boundary_id": "lid",
+          "value": {
+            "type": "Parameter",
+            "name": "u_lid",
+            "rank": "vector",
+            "description": "lid velocity",
+            "dimension": {"length": 1, "time": -1}
+          },
+          "provenance": null,
+          "ambiguity": null
+        },
+        {
+          "field": "u",
+          "type": "dirichlet",
+          "boundary_id": "stationary_walls",
+          "value": {
+            "type": "Constant",
+            "value": 0
+          },
+          "provenance": null,
+          "ambiguity": null
+        }
+      ],
+      "constitutive_relations": [],
+      "invariants": [],
+      "assumptions": [],
+      "provenance": null,
+      "ambiguity": null
+    }
+    ```
+    Wait, should I include `provenance` and `ambiguity` in fields/parameters? The schema example doesn't show them there, only in BCs. I'll stick to the example structure for fields/parameters.
+    The example shows:
+    ```json
+    "fields": [
+      {
+        "name": "u",
+        "rank": "scalar",
+        "space": "H1",
+        "description": "scalar unknown",
+        "dimension": null
+      }
+    ],
+    ```
+    I will follow that.
+
+    One detail: `Grad` of a vector field in some contexts might be defined differently, but `Transpose(Grad(u))` is standard for the symmetric gradient part. The equation uses $\varepsilon(u) = \frac{1}{2}(\nabla u + \nabla u^T)$. So $2\nu \varepsilon(u) = \nu(\nabla u + \nabla u^T)$. This matches my construction.
+
+    Check dimensions again:
+    u: velocity -> L T^-1
+    p: pressure -> M L^-1 T^-2
+    nu: kinematic viscosity -> L^2 T^-1
+    u_lid: velocity -> L T^-1
+    All good.
+
+    One minor point: The prompt says "Attach SI base dimensions to fields/parameters when the paper states units". The paper doesn't explicitly state units, but it's standard. I'll include them as best guess. If I'm unsure, I could set to null, but the prompt says "Produce your best guess even when a reading is uncertain." So I'll keep them.
+
+    Let's verify the `Div` operator on a tensor. In continuum mechanics, `Div` of a stress tensor $\sigma$ is a vector. Here $\sigma = 2\nu \varepsilon(u)$. So `Div` of that tensor is correct.
+    The `Grad` of a scalar `p` is a vector.
+    The `Add` of two vectors is a vector.
+    The `Neg` of a vector is a vector.
+    So LHS is a vector. RHS is 0 (vector zero). Matches.
+
+    Continuity: `Div` of vector `u` is scalar. RHS is 0 (scalar zero). Matches.
+
+    Everything looks consistent.
+    I will generate the JSON now.
+    One thing: `provenance` and `ambiguity` in BCs are requested to be null unless filled. I'll set them to null.
+    I'll make sure the JSON is valid.
+    I will double check the `Grad` and `Transpose` usage. The prompt says: "Unary nodes Transpose, Trace take "operand"". So `{"type": "Transpose", "operand": ...}` is correct.
+    `{"type": "Grad", "operand": ...}` is correct.
+    `{"type": "Div", "operand": ...}` is correct.
+    `{"type": "Mul", "factors": [...]}` is correct.
+    `{"type": "Add", "terms": [...]}` is correct.
+    `{"type": "Neg", "operand": ...}` is correct.
+    `{"type": "Constant", "value": 0}` is correct.
+    `{"type": "Field", "name": "...", "rank": "...", "space": "...", "description": "...", "dimension": ...}` is correct.
+    `{"type": "Parameter", "name": "...", "rank": "...", "description": "...", "dimension": ...}` is correct.
+
+    All set.
+    I will produce the JSON. 
+    One minor adjustment: I'll remove `provenance` and `ambiguity` from fields/parameters if they aren't in the example, but the prompt says "Optional metadata ("provenance", "ambiguity") must be null unless you can fill it exactly; omit it otherwise." So I'll omit them from fields/parameters. I'll keep them in BCs as null per example.
+    Actually, the example includes them in BCs. I'll follow that.
+    Ready. 
+    Output matches request.✅
+    Let's generate. 
+    Self-Correction/Verification during thought:
+    Check `Div` of tensor vs `Div` of vector. In PDE-IR, `Div` usually handles both. The prompt doesn't specify, but it's standard.
+    Check `Grad` of vector. It produces a tensor (Jacobian). `Transpose` of that tensor is valid.
+    Check dimensions format: `{"length": 1, "time": -1}` etc. Matches prompt example.
+    Check `u_lid` value: `(1,0)`. I declared it as a parameter. The BC uses the parameter. That's fine. Alternatively, I could put the vector directly in the BC value, but using a parameter is cleaner and matches the paper's definition.
+    The paper says `u_lid = (1,0)`. I'll keep it as a parameter.
+    All good.
+    Output generation. 
+    [Done] 
+    Proceeds. 
+    *Self-Correction/Refinement during generation prep*: 
+    I should ensure that the `dimension` field in `fields` and `parameters` matches the exact key names from SI base units: length, mass, time, temperature, amount, current, luminosity. I used `length`, `time`, `mass`. That's correct.
+    I will format the JSON carefully.
+    One detail: `Grad` of a vector field in some FEM contexts might be defined as the gradient tensor. I'll assume standard mathematical definition.
+    The prompt says: "Unary nodes Transpose, Trace take "operand"; {"type": "Identity"} is the identity tensor; {"type": "Convection", "velocity": <Expr>, "operand": <Expr>} is (velocity . grad) operand."
+    Everything aligns.
+    Final check of the JSON structure against the prompt's example.
+    Matches.
+    Output matches. 
+    Proceeds. 
+    [Output Generation] -> *See response.* 
+    *(Note: I will make sure to strictly follow the JSON structure requested.)*
+    All good. 
+    `{ "name": "stokes_lid_driven_cavity", ... }`
+    Done. 
+    [Output Generation]

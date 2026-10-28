@@ -1,0 +1,103 @@
+Here's a thinking process:
+
+1.  **Analyze User Input:**
+   - **Task:** Extract concrete run data for a PDE model from a scientific paper.
+   - **Output Format:** Single JSON object matching `ProblemInstance` schema.
+   - **Required Fields:**
+     - `parameter_values`: numeric values for M, kappa, x, y.
+     - `geometry`: axis-aligned box (`lower_left`, `upper_right`), `boundary_ids` (map from boundary names to deal.II face ids or lists), `refinements` (optional but in example), `field_degrees` (optional), `pin_fields` (optional).
+     - `value_sources` (optional): notes on where values came from.
+   - **Constraints:** Use values/units from paper. Omit if not given. Match schema exactly.
+   - **Input Text:** A short paper excerpt about the Allen-Cahn equation.
+     - Domain: unit square $\Omega = (0, 1)^2$
+     - Equation: $\partial c / \partial t = -M (f'(c) - \kappa \nabla^2 c)$
+     - Parameters: $M = 1$, $\kappa = 0.01$
+     - Boundary conditions: No flux $\nabla c \cdot n = 0$ on $\partial \Omega$ (Neumann/insulating on all sides)
+     - Initial condition: $c(x,y,0) = \frac{1}{2}(2x-1)(2y-1)$
+     - Time: $t=1$, $\Delta t = 0.01$ (not requested in parameters, but good to note)
+     - Parameters requested: M, kappa, x, y. Wait, the prompt says "a numeric value for each of these parameters: M, kappa, x, y." This is a bit odd. Usually x and y are spatial coordinates, not parameters. But the prompt explicitly lists them. I should check if the paper gives specific values for x and y, or if it's a template instruction. The prompt says "a numeric value for each of these parameters: M, kappa, x, y." This might be a generic instruction from a system prompt. I will only include parameters that are actually in the paper. If x and y are not parameters, I'll omit them or set them to null/omit as per "If the paper does not give a value, omit it". I'll stick to M and kappa.
+     - Geometry: unit square (0,1)^2 -> lower_left: [0.0, 0.0], upper_right: [1.0, 1.0]
+     - Boundary IDs: The boundary is $\partial \Omega$ with no-flux condition. In deal.II, face ids are 0 (left/x-min), 1 (right/x-max), 2 (bottom/y-min), 3 (top/y-max). Since the whole boundary has the same condition, I can map "domain_boundary" or "no_flux" to [0, 1, 2, 3]. The prompt says: "boundary_ids, a map from each of these boundary names to a deal.II colorize face id (0 = x-min/left, 1 = x-max/right, 2 = y-min/bottom, 3 = y-max/top), or to a list of face ids when one boundary covers several sides (e.g. [1, 3]): domain_boundary. Each side belongs to at most one name."
+     - So I'll use `"domain_boundary": [0, 1, 2, 3]` or `"no_flux": [0, 1, 2, 3]`. The prompt example uses `"walls": [1, 3]`. I'll use `"domain_boundary": [0, 1, 2, 3]` as suggested by the prompt text.
+     - Let's verify the exact wording: "boundary_ids, a map from each of these boundary names to a deal.II colorize face id ... or to a list of face ids when one boundary covers several sides (e.g. [1, 3]): domain_boundary." This implies the key should be `domain_boundary`.
+     - I will construct the JSON carefully.
+
+2.  **Extract Data:**
+   - `M`: 1
+   - `kappa`: 0.01
+   - `x`, `y`: Not parameters in the paper. Omit.
+   - `geometry`:
+     - `lower_left`: [0.0, 0.0]
+     - `upper_right`: [1.0, 1.0]
+     - `boundary_ids`: `{"domain_boundary": [0, 1, 2, 3]}` (since all sides have no-flux)
+   - `value_sources`:
+     - `M`: "Section 3. Parameters"
+     - `kappa`: "Section 3. Parameters"
+     - `geometry`: "Section 1. Model"
+
+3.  **Construct JSON:**
+   ```json
+   {
+     "parameter_values": {
+       "M": 1.0,
+       "kappa": 0.01
+     },
+     "geometry": {
+       "lower_left": [0.0, 0.0],
+       "upper_right": [1.0, 1.0],
+       "boundary_ids": {
+         "domain_boundary": [0, 1, 2, 3]
+       }
+     },
+     "value_sources": {
+       "M": "Section 3",
+       "kappa": "Section 3",
+       "geometry": "Section 1"
+     }
+   }
+   ```
+   Wait, the prompt says: "a numeric value for each of these parameters: M, kappa, x, y." This is likely a fixed list from a template. I will just include M and kappa. If x and y are expected, maybe they refer to domain bounds? But geometry covers that. I'll stick to M and kappa.
+   Check deal.II face ids: 0=x-min, 1=x-max, 2=y-min, 3=y-max. The prompt says "domain_boundary" covers several sides. So `[0, 1, 2, 3]` is correct.
+   Check schema: The prompt example includes `refinements`, `field_degrees`, `pin_fields` but says they are optional or part of the example structure. I'll stick to the required ones.
+   I will make sure the JSON matches exactly.
+   One detail: `kappa` vs `κ`. I'll use `kappa` as requested.
+   `parameter_values`: `{"M": 1.0, "kappa": 0.01}`
+   `geometry`: `{"lower_left": [0.0, 0.0], "upper_right": [1.0, 1.0], "boundary_ids": {"domain_boundary": [0, 1, 2, 3]}}`
+   `value_sources`: `{"M": "Section 3", "kappa": "Section 3", "geometry": "Section 1"}`
+   All good.
+
+   Let's double check the prompt: "a numeric value for each of these parameters: M, kappa, x, y." This might be a copy-paste artifact from a different problem. I will ignore x and y as they are spatial coordinates, not parameters, and the prompt says "If the paper does not give a value, omit it".
+   I will produce the JSON.
+   One minor thing: The prompt says `boundary_ids` map from boundary names to face ids. I'll use `"no_flux"` or `"domain_boundary"`. The prompt explicitly says `domain_boundary` in the description: "...or to a list of face ids when one boundary covers several sides (e.g. [1, 3]): domain_boundary." This implies the key should be `domain_boundary`.
+   I'll format it carefully.
+   Ready.✅
+   Output matches request.✅
+   Proceeds. 
+   Self-Correction/Refinement during thought: 
+   Should I include `x` and `y` as parameters? The prompt says "a numeric value for each of these parameters: M, kappa, x, y." It's likely a template instruction. I'll just omit x and y as they aren't parameters in the text. The instruction "If the paper does not give a value, omit it" covers this.
+   I will ensure the JSON is valid and strictly follows the schema.
+   Structure:
+   {
+     "parameter_values": { "M": 1.0, "kappa": 0.01 },
+     "geometry": { "lower_left": [0.0, 0.0], "upper_right": [1.0, 1.0], "boundary_ids": { "domain_boundary": [0, 1, 2, 3] } },
+     "value_sources": { "M": "Section 3", "kappa": "Section 3", "geometry": "Section 1" }
+   }
+   Matches perfectly. Output matches.✅
+   One thing: deal.II face ids are integers. I'll use integers.
+   All set. 
+   Output generation. 
+   [Done] 
+   *Self-Correction/Verification during generation prep*:
+   The prompt says: `boundary_ids`, a map from each of these boundary names to a deal.II colorize face id ... or to a list of face ids when one boundary covers several sides (e.g. [1, 3]): domain_boundary.
+   This phrasing is slightly ambiguous. It might mean the key is `domain_boundary`. I'll use that.
+   I will produce the exact JSON.
+   All good. 
+   Output matches response. 
+   Proceeds. 
+   [Output Generation] -> *See response.* 
+   *(Note: I'll make sure the JSON is strictly formatted and contains only the requested fields.)* 
+   `{ "parameter_values": { "M": 1.0, "kappa": 0.01 }, "geometry": { "lower_left": [0.0, 0.0], "upper_right": [1.0, 1.0], "boundary_ids": { "domain_boundary": [0, 1, 2, 3] } }, "value_sources": { "M": "Section 3", "kappa": "Section 3", "geometry": "Section 1" } }` -> Valid.✅
+   Final Check of the prompt: "a numeric value for each of these parameters: M, kappa, x, y." -> I'll just list M and kappa. If x and y are strictly required by some automated grader, I might add them as null or omit. The prompt says "If the paper does not give a value, omit it". So omitting is correct.
+   All good. 
+   Output matches. 
+   [Done]

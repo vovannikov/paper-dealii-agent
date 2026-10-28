@@ -1,0 +1,17 @@
+{
+ "stages": {
+  "validate": "passed",
+  "generate": "passed",
+  "build": "failed"
+ },
+ "details": {
+  "validate": "model and instance consistent",
+  "generate": "deal.II reference program generated",
+  "build": "compilation failed: main.cc:183:60: error: \u2018grad_phi_j\u2019 was not declared in this scope (full log: runs_v2/llama3_latest/html/poisson/work/steady_diffusion/build.log)"
+ },
+ "issues": [],
+ "solution": null,
+ "passed": false,
+ "status": "failed",
+ "seconds": 25.896013498306274
+}

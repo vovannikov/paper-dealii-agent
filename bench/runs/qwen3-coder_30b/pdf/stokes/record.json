@@ -1,0 +1,48 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "stokes",
+ "modality": "pdf",
+ "document_chars": 1161,
+ "started": 1793131131.5334482,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 10.429960012435913,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 2,
+ "instance_first_ok": false,
+ "instance_issues": [],
+ "instance_seconds": 4.010184049606323,
+ "total_seconds": 14.455176591873169,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 10.426580667495728,
+   "prompt_tokens": 1666,
+   "completion_tokens": 805,
+   "answer_chars": 3214,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 2.1014046669006348,
+   "prompt_tokens": 769,
+   "completion_tokens": 142,
+   "answer_chars": 368,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 1.9079439640045166,
+   "prompt_tokens": 958,
+   "completion_tokens": 152,
+   "answer_chars": 393,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

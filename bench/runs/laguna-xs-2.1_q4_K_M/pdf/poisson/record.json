@@ -1,0 +1,39 @@
+{
+ "model": "laguna-xs-2.1:q4_K_M",
+ "case": "poisson",
+ "modality": "pdf",
+ "document_chars": 1306,
+ "started": 1793141331.4217324,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 29.957311153411865,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 17.7562472820282,
+ "total_seconds": 47.75018835067749,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 29.95571780204773,
+   "prompt_tokens": 1850,
+   "completion_tokens": 2460,
+   "answer_chars": 2890,
+   "reasoning_chars": 5131,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 17.75578546524048,
+   "prompt_tokens": 866,
+   "completion_tokens": 1499,
+   "answer_chars": 362,
+   "reasoning_chars": 4242,
+   "finish": "stop"
+  }
+ ]
+}

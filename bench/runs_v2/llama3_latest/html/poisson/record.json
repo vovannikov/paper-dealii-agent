@@ -1,0 +1,59 @@
+{
+ "model": "llama3:latest",
+ "case": "poisson",
+ "modality": "html",
+ "document_chars": 4669,
+ "started": 1793168583.6374662,
+ "model_ok": true,
+ "model_attempts": 2,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 36.028738021850586,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: Dimension.__init__() got an unexpected keyword argument 'scalar'"
+ ],
+ "instance_ok": true,
+ "instance_attempts": 2,
+ "instance_first_ok": false,
+ "instance_issues": [],
+ "instance_seconds": 6.634266376495361,
+ "total_seconds": 42.67797613143921,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 17.548353672027588,
+   "prompt_tokens": 3384,
+   "completion_tokens": 808,
+   "answer_chars": 3295,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 18.477945804595947,
+   "prompt_tokens": 4252,
+   "completion_tokens": 867,
+   "answer_chars": 3316,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 3.832512617111206,
+   "prompt_tokens": 2113,
+   "completion_tokens": 152,
+   "answer_chars": 453,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 2.800845146179199,
+   "prompt_tokens": 2308,
+   "completion_tokens": 136,
+   "answer_chars": 349,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

@@ -1,0 +1,47 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "heat_nafems",
+ "modality": "html",
+ "document_chars": 4806,
+ "started": 1793130752.6644392,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 73.12224912643433,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: 4 validation errors for PDEModel\nconstitutive_relations.0.definition\n  Field required [type=missing, input_value={'type': 'Equation', 'lhs... 'thermal_conductivity'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\nconstitutive_relations.1.definition\n  Field required [type=missing, input_value={'type': 'Equation', 'lhs...t_transfer_coefficient'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\nconstitutive_relations.2.definition\n  Field required [type=missing, input_value={'type': 'Equation', 'lhs...: 'ambient_temperature'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\nprovenance\n  Input should be a dictionary or an instance of Provenance [type=dataclass_type, input_value='Wolfram Heat Transfer Model Verification Tests', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/dataclass_type",
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\nprovenance.document\n  Field required [type=missing, input_value={'source': 'Wolfram Heat ...del Verification Tests'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing",
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\nprovenance.document\n  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type"
+ ],
+ "total_seconds": 73.13330173492432,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 23.76037311553955,
+   "prompt_tokens": 2880,
+   "completion_tokens": 1236,
+   "answer_chars": 4747,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 23.853981971740723,
+   "prompt_tokens": 4409,
+   "completion_tokens": 1633,
+   "answer_chars": 6577,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 25.504963636398315,
+   "prompt_tokens": 6152,
+   "completion_tokens": 1639,
+   "answer_chars": 6609,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

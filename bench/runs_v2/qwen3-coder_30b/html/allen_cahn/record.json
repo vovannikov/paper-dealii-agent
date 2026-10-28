@@ -1,0 +1,39 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "allen_cahn",
+ "modality": "html",
+ "document_chars": 4767,
+ "started": 1793168972.1293187,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 19.522697925567627,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 2.9582810401916504,
+ "total_seconds": 22.491411209106445,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 19.51937747001648,
+   "prompt_tokens": 3528,
+   "completion_tokens": 1334,
+   "answer_chars": 6806,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 2.957939386367798,
+   "prompt_tokens": 2252,
+   "completion_tokens": 142,
+   "answer_chars": 368,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

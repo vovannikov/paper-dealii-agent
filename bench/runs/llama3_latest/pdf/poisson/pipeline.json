@@ -1,0 +1,5 @@
+{
+ "status": "crashed",
+ "error": "TypeError: float() argument must be a string or a real number, not 'dict'",
+ "seconds": 0.0007975101470947266
+}

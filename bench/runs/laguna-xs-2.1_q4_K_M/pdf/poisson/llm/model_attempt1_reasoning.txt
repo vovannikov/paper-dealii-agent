@@ -1,0 +1,200 @@
+Let me carefully extract the PDE model from this paper content.
+
+**Problem Description:**
+- Steady diffusion of a scalar quantity u (e.g., solute concentration)
+- Domain: Ω = (0, 2) × (0, 1) (rectangular domain)
+- Quantity is produced inside the domain at a uniform volumetric rate f
+- Transport by diffusion only
+- Diffusivity k is constant in space
+
+**Governing Equation:**
+- Balance of diffusive flux -k∇u against production rate gives Poisson equation
+- -∇·(k∇u) = f in Ω
+
+**Boundary Conditions:**
+1. Left side (x = 0): u = 0 (Dirichlet)
+2. Bottom side (y = 0): u = 0 (Dirichlet)
+3. Right side (x = 2): prescribed outward flux gN leaves the domain, so k ∂u/∂n = gN (Neumann)
+4. Top side (y = 1): impermeable, i.e., k ∂u/∂n = 0 (Neumann, insulated)
+
+**Parameters:**
+- k = 2.5 (diffusivity)
+- f = 10 (production rate)
+- gN = 3 (outward flux through right side)
+
+Now let me construct the PDE-IR:
+
+**Fields:**
+- u: scalar unknown, rank scalar, space H1
+
+**Parameters:**
+- k: scalar, diffusivity
+- f: scalar, source term
+- gN: scalar, outward flux
+
+**Equation:**
+-∇·(k∇u) = f
+
+In the PDE-IR format:
+- LHS: -∇·(k∇u) = -div(k * grad(u))
+- RHS: f
+
+**Boundary Conditions:**
+1. Dirichlet on left (x=0): u = 0
+2. Dirichlet on bottom (y=0): u = 0
+3. Neumann on right (x=2): k ∂u/∂n = gN, so the value is gN
+4. Neumann on top (y=1): k ∂u/∂n = 0, so the value is 0
+
+Let me now write the JSON structure:
+
+```json
+{
+  "name": "steady_diffusion_with_source",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "scalar unknown (e.g., solute concentration)",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "k",
+      "rank": "scalar",
+      "description": "diffusivity",
+      "dimension": null
+    },
+    {
+      "name": "f",
+      "rank": "scalar",
+      "description": "uniform volumetric production rate",
+      "dimension": null
+    },
+    {
+      "name": "gN",
+      "rank": "scalar",
+      "description": "prescribed outward flux through right side",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Neg",
+        "operand": {
+          "type": "Div",
+          "operand": {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Grad",
+                "operand": {
+                  "type": "Field",
+                  "name": "u",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "scalar unknown (e.g., solute concentration)",
+                  "dimension": null
+                }
+              },
+              {
+                "type": "Parameter",
+                "name": "k",
+                "rank": "scalar",
+                "description": "diffusivity",
+                "dimension": null
+              }
+            ]
+          }
+        }
+      },
+      "rhs": {
+        "type": "Parameter",
+        "name": "f",
+        "rank": "scalar",
+        "description": "uniform volumetric production rate",
+        "dimension": null
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "left",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "bottom",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "right",
+      "value": {
+        "type": "Parameter",
+        "name": "gN",
+        "rank": "scalar",
+        "description": "prescribed outward flux through right side",
+        "dimension": null
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "top",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+
+Wait, I need to reconsider the boundary conditions. The paper says:
+- "Through the right side, x = 2, a prescribed outward flux gN leaves the domain, k ∂u/∂n = gN on x = 2"
+
+For the Neumann condition, the value should be the outward normal flux. The paper states k ∂u/∂n = gN, so the value is gN.
+
+For the top side, it says "k ∂u/∂n = 0", so the value is 0.
+
+Let me also think about the boundary IDs. The paper mentions:
+- Left side (x = 0): u = 0
+- Bottom side (y = 0): u = 0
+- Right side (x = 2): k ∂u/∂n = gN
+- Top side (y = 1): k ∂u/∂n = 0
+
+I'll use "left", "bottom", "right", and "top" as boundary IDs.
+
+Actually, looking at the example in the prompt, it seems like the boundary_id should be a string that identifies the boundary. Let me use more descriptive names like "left", "bottom", "right", "top".
+
+Let me finalize the JSON structure.

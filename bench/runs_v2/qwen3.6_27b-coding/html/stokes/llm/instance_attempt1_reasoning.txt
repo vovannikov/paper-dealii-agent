@@ -1,0 +1,176 @@
+The user wants to extract the ProblemInstance from the provided text.
+The schema requires:
+- `parameter_values`: numeric values for `nu`, `u_lid`.
+- `geometry`: `lower_left`, `upper_right`, `boundary_ids` mapping boundary names to deal.II face ids.
+- `value_sources`: optional notes.
+
+From the text:
+- Domain: unit square cavity Ω=(0,1)×(0,1). So `lower_left`: [0.0, 0.0], `upper_right`: [1.0, 1.0].
+- Parameters: `nu` = 0.1. `u_lid` = (1, 0). Wait, `u_lid` is a vector. The prompt says "numeric value for each of these parameters: nu, u_lid." I will put `u_lid` as 1.0 or [1.0, 0.0]. Usually, lid-driven cavity uses a scalar for the x-velocity, or a vector. I'll use 1.0 or [1.0, 0.0]. The prompt says "numeric value", so maybe 1.0. I'll stick to 1.0 or [1.0, 0.0]. Let's use 1.0. Actually, the prompt says `u_lid`, I'll put 1.0. Or maybe `[1.0, 0.0]`. I'll just put 1.0.
+- Boundaries:
+  - top: y=1 (face id 3)
+  - stationary_walls: x=0, x=1, y=0 (face ids 0, 1, 2)
+  - The prompt says: "boundary_ids, a map from each of these boundary names to a deal.II colorize face id (0 = x-min/left, 1 = x-max/right, 2 = y-min/bottom, 3 = y-max/top), or to a list of face ids when one boundary covers several sides (e.g. [1, 3]): top, stationary_walls."
+  - So `top`: 3
+  - `stationary_walls`: [0, 1, 2]
+
+Let's verify deal.II face ids:
+0 = x-min/left
+1 = x-max/right
+2 = y-min/bottom
+3 = y-max/top
+
+So:
+`top`: 3
+`stationary_walls`: [0, 1, 2]
+
+Parameters:
+`nu`: 0.1
+`u_lid`: 1.0 (or [1.0, 0.0], but I'll use 1.0 as it's the magnitude in x-direction, or just 1.0)
+
+Wait, the prompt says "numeric value for each of these parameters: nu, u_lid."
+I will use `nu`: 0.1, `u_lid`: 1.0.
+
+Geometry:
+`lower_left`: [0.0, 0.0]
+`upper_right`: [1.0, 1.0]
+`boundary_ids`: { "top": 3, "stationary_walls": [0, 1, 2] }
+
+Check value sources:
+"nu": "Section 4"
+"u_lid": "Section 4"
+"geometry": "Section 1"
+
+Let's assemble the JSON.
+```json
+{
+  "parameter_values": {
+    "nu": 0.1,
+    "u_lid": 1.0
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [1.0, 1.0],
+    "boundary_ids": {
+      "top": 3,
+      "stationary_walls": [0, 1, 2]
+    }
+  },
+  "value_sources": {
+    "nu": "Section 4",
+    "u_lid": "Section 4",
+    "geometry": "Section 1"
+  }
+}
+```
+Wait, `u_lid` is given as `(1,0)`. I'll put `1.0` as the numeric value, or maybe `[1.0, 0.0]`. The prompt says "numeric value", so `1.0` is fine. I'll stick to `1.0`.
+
+Check boundary names: "top, stationary_walls". The prompt explicitly lists them: "top, stationary_walls".
+So `boundary_ids` should map exactly those names.
+
+Everything matches.
+One minor point: `u_lid` might be expected as a vector `[1.0, 0.0]`. I'll use `1.0` since it's the x-velocity magnitude, but to be safe, I'll use `1.0`. Actually, many lid-driven cavity implementations use a scalar for the lid velocity. I'll use `1.0`.
+
+Let's double check the prompt: "numeric value for each of these parameters: nu, u_lid."
+I will output `1.0`.
+
+Final JSON structure:
+```json
+{
+  "parameter_values": {
+    "nu": 0.1,
+    "u_lid": 1.0
+  },
+  "geometry": {
+    "lower_left": [
+      0.0,
+      0.0
+    ],
+    "upper_right": [
+      1.0,
+      1.0
+    ],
+    "boundary_ids": {
+      "top": 3,
+      "stationary_walls": [
+        0,
+        1,
+        2
+      ]
+    }
+  },
+  "value_sources": {
+    "nu": "Section 4",
+    "u_lid": "Section 4",
+    "geometry": "Section 1"
+  }
+}
+```
+Looks solid. I will produce this.
+One detail: `u_lid` is `(1,0)`. I'll just put `1.0`. If it expects a vector, it would say so, but "numeric value" implies scalar. I'll stick with `1.0`.
+All good.
+Proceed. 
+Output matches requested format.
+No extra text.
+Done. 
+Self-Correction/Verification during thought:
+The prompt says: "boundary_ids, a map from each of these boundary names to a deal.II colorize face id ... : top, stationary_walls."
+So keys are exactly "top" and "stationary_walls".
+Values: top -> 3, stationary_walls -> [0, 1, 2].
+Parameters: nu -> 0.1, u_lid -> 1.0.
+Geometry: [0,0] to [1,1].
+All correct.
+Output matches. 
+Proceeds. 
+Generating response. 
+[Done] 
+Output Generation. 
+```json
+{
+  "parameter_values": {
+    "nu": 0.1,
+    "u_lid": 1.0
+  },
+  "geometry": {
+    "lower_left": [
+      0.0,
+      0.0
+    ],
+    "upper_right": [
+      1.0,
+      1.0
+    ],
+    "boundary_ids": {
+      "top": 3,
+      "stationary_walls": [
+        0,
+        1,
+        2
+      ]
+    }
+  },
+  "value_sources": {
+    "nu": "Section 4",
+    "u_lid": "Section 4",
+    "geometry": "Section 1"
+  }
+}
+```
+Matches exactly. No extra fluff. Ready. 
+Note: I'll make sure the JSON is valid and strictly follows the schema. The prompt asks for a SINGLE JSON object. I will provide exactly that.
+All good. 
+Proceeds. 
+[Output Generation] -> *Self-Correction/Refinement during generation prep*: 
+Wait, `u_lid` is a vector `(1,0)`. Sometimes these extractors expect the vector. But the prompt says "numeric value". I'll stick to `1.0`. It's fine.
+The prompt says: "parameter_values: a numeric value for each of these parameters: nu, u_lid."
+I will use `1.0`.
+Done. 
+Output matches. 
+Proceeds. 
+[Final Check of the Prompt]
+"boundary_ids, a map from each of these boundary names to a deal.II colorize face id (0 = x-min/left, 1 = x-max/right, 2 = y-min/bottom, 3 = y-max/top), or to a list of face ids when one boundary covers several sides (e.g. [1, 3]): top, stationary_walls."
+Yes.
+All correct.
+Output matches.
+Done. 
+[Output Generation] (Proceeds)

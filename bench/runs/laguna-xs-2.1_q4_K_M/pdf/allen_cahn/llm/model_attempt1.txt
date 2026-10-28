@@ -1,0 +1,237 @@
+Looking at this paper about the Allen-Cahn equation, I need to extract the mathematical model and convert it to PDE-IR format.
+
+Let me analyze the key components:
+
+1. **Unknown field**: c(x, y, t) - non-conserved order parameter
+2. **Equation**: ∂c/∂t = -M[f'(c) - κ∇²c] where f(c) = (1/4)(c² - 1)²
+3. **Boundary conditions**: ∇c · n = 0 (Neumann, no flux)
+4. **Initial condition**: c(x, y, 0) = (1/2)(2x - 1)(2y - 1)
+5. **Parameters**: M = 1, κ = 0.01
+
+Let me compute f'(c) = c(c² - 1) = c³ - c
+
+Now I'll construct the PDE-IR:
+
+```json
+{
+  "name": "allen_cahn",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "c",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "non-conserved order parameter",
+      "dimension": null
+    },
+    {
+      "name": "x",
+      "rank": "scalar",
+      "space": "L2",
+      "description": "spatial coordinate x",
+      "dimension": null
+    },
+    {
+      "name": "y",
+      "rank": "scalar",
+      "space": "L2",
+      "description": "spatial coordinate y",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "M",
+      "rank": "scalar",
+      "description": "mobility",
+      "dimension": null
+    },
+    {
+      "name": "kappa",
+      "rank": "scalar",
+      "description": "gradient-energy coefficient",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "TimeDerivative",
+        "operand": {
+          "type": "Field",
+          "name": "c",
+          "rank": "scalar",
+          "space": "H1",
+          "description": "non-conserved order parameter",
+          "dimension": null
+        }
+      },
+      "rhs": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Parameter",
+              "name": "M",
+              "rank": "scalar",
+              "description": "mobility",
+              "dimension": null
+            }
+          },
+          {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Field",
+                    "name": "c",
+                    "rank": "scalar",
+                    "space": "H1",
+                    "description": "non-conserved order parameter",
+                    "dimension": null
+                  },
+                  {
+                    "type": "Pow",
+                    "base": {
+                      "type": "Field",
+                      "name": "c",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "non-conserved order parameter",
+                      "dimension": null
+                    },
+                    "exponent": 2
+                  }
+                ]
+              },
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Field",
+                  "name": "c",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "non-conserved order parameter",
+                  "dimension": null
+                }
+              }
+            ]
+          },
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Parameter",
+                  "name": "kappa",
+                  "rank": "scalar",
+                  "description": "gradient-energy coefficient",
+                  "dimension": null
+                },
+                {
+                  "type": "Laplacian",
+                  "operand": {
+                    "type": "Field",
+                    "name": "c",
+                    "rank": "scalar",
+                    "space": "H1",
+                    "description": "non-conserved order parameter",
+                    "dimension": null
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [
+    {
+      "field": "c",
+      "value": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Constant",
+            "value": 0.5
+          },
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Add",
+                "terms": [
+                  {
+                    "type": "Mul",
+                    "factors": [
+                      {
+                        "type": "Constant",
+                        "value": 2
+                      },
+                      {
+                        "type": "Field",
+                        "name": "x",
+                        "rank": "scalar",
+                        "space": "L2",
+                        "description": "spatial coordinate x",
+                        "dimension": null
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Neg",
+                    "operand": {
+                      "type": "Constant",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "Field",
+                    "name": "y",
+                    "rank": "scalar",
+                    "space": "L2",
+                    "description": "spatial coordinate y",
+                    "dimension": null
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "boundary_conditions": [
+    {
+      "field": "c",
+      "type": "neumann",
+      "boundary_id": "all_boundaries",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      }
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```

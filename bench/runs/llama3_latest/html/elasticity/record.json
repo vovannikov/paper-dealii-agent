@@ -1,0 +1,48 @@
+{
+ "model": "llama3:latest",
+ "case": "elasticity",
+ "modality": "html",
+ "document_chars": 5662,
+ "started": 1793130373.9587321,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [
+  "dimension_mismatch: terms of a sum have inconsistent physical dimensions: T^-2, L\u00b7T^-1"
+ ],
+ "model_seconds": 62.23896765708923,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: Dimension.__init__() got an unexpected keyword argument 'x'",
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\n  Value error, boundary condition references undeclared field '\u03c3(u)n' [type=value_error, input_value={'name': 'plane_strain_ca...None, 'ambiguity': None}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error"
+ ],
+ "total_seconds": 62.25797438621521,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 21.575893878936768,
+   "prompt_tokens": 3409,
+   "completion_tokens": 988,
+   "answer_chars": 3756,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 20.159274339675903,
+   "prompt_tokens": 4457,
+   "completion_tokens": 938,
+   "answer_chars": 3600,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 20.497897148132324,
+   "prompt_tokens": 5516,
+   "completion_tokens": 936,
+   "answer_chars": 3596,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

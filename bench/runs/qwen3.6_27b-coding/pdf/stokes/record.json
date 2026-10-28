@@ -1,0 +1,57 @@
+{
+ "model": "qwen3.6:27b-coding",
+ "case": "stokes",
+ "modality": "pdf",
+ "document_chars": 1161,
+ "started": 1793137171.2029686,
+ "model_ok": true,
+ "model_attempts": 2,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 370.75821447372437,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 2,
+ "instance_first_ok": false,
+ "instance_issues": [],
+ "instance_seconds": 113.73953032493591,
+ "total_seconds": 484.54205441474915,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 224.98934364318848,
+   "prompt_tokens": 1845,
+   "completion_tokens": 7024,
+   "answer_chars": 3774,
+   "reasoning_chars": 19494,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 145.76574611663818,
+   "prompt_tokens": 3030,
+   "completion_tokens": 4467,
+   "answer_chars": 3201,
+   "reasoning_chars": 12160,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 80.91627168655396,
+   "prompt_tokens": 823,
+   "completion_tokens": 2549,
+   "answer_chars": 329,
+   "reasoning_chars": 7207,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 32.822004079818726,
+   "prompt_tokens": 1027,
+   "completion_tokens": 1064,
+   "answer_chars": 324,
+   "reasoning_chars": 2628,
+   "finish": "stop"
+  }
+ ]
+}

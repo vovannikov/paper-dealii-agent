@@ -1,0 +1,60 @@
+{
+ "model": "llama3:latest",
+ "case": "stokes",
+ "modality": "html",
+ "document_chars": 4547,
+ "started": 1793168724.698912,
+ "model_ok": true,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 54.19420504570007,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: Dimension.__init__() got an unexpected keyword argument 'x'",
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\n  Value error, equations reference undeclared parameters: ['p'] [type=value_error, input_value={'name': 'creeping_flow',...None, 'ambiguity': None}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error"
+ ],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 3.5236687660217285,
+ "total_seconds": 57.73530387878418,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 21.03753113746643,
+   "prompt_tokens": 3351,
+   "completion_tokens": 965,
+   "answer_chars": 3767,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 19.328859567642212,
+   "prompt_tokens": 4376,
+   "completion_tokens": 902,
+   "answer_chars": 3627,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 13.824909210205078,
+   "prompt_tokens": 5397,
+   "completion_tokens": 632,
+   "answer_chars": 2561,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 3.523411989212036,
+   "prompt_tokens": 2073,
+   "completion_tokens": 136,
+   "answer_chars": 426,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

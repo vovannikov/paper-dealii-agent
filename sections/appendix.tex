@@ -1,0 +1,59 @@
+\section{Supplementary Material}
+\label{app:supp}
+
+\subsection{Extracted instance for the heat benchmark}
+The instance returned by the 27B model for the page of Section~\ref{sec:heat} (abridged to the relevant keys; the file also carries empty \code{field\_degrees} and \code{pin\_fields}):
+\begin{lstlisting}
+{ "parameter_values": {"k": 52.0, "h": 750.0, "T_amb": 0.0},
+  "geometry": {"lower_left": [0.0, 0.0], "upper_right": [0.6, 1.0],
+               "boundary_ids": {"left": 0, "bottom": 2, "top_and_right": [1, 3]},
+               "refinements": 4},
+  "value_sources": {
+    "k": "Governing equation section: k=52 W/(m.C)",
+    "h": "Top and right boundaries section: h=750 W/(m^2.C)",
+    "T_amb": "Top and right boundaries section: T_amb=0 C",
+    "geometry": "Problem description section: width 0.6 m, height 1 m"}}
+\end{lstlisting}
+
+\subsection{Expression encoding}
+Expressions are nested objects tagged by \code{type}. The strong form $\nabla\cdot(k\nabla T)=0$ is
+\begin{lstlisting}
+{"type": "Equation", "name": "strong",
+ "lhs": {"type": "Div", "operand": {"type": "Mul", "factors": [
+          {"type": "Grad", "operand": {"type": "Field", "name": "T", "rank": "scalar", "space": "H1"}},
+          {"type": "Parameter", "name": "k", "rank": "scalar"}]}},
+ "rhs": {"type": "Constant", "value": 0}}
+\end{lstlisting}
+(\code{description} and \code{dimension} members of the leaves omitted). A ramp boundary value $\beta\,t$ is \code{Mul[Parameter beta, TimeCoordinate]}; the coordinate $x$ is \code{SpatialCoordinate} with \code{axis} $0$.
+
+\subsection{Extended prompt}
+The extension of the system prompt used in Section~\ref{sec:prompt} documents the node types that the original prompt did not list or exemplify:
+\begin{lstlisting}
+- TimeCoordinate is the time variable t. Use it for time-dependent data (e.g. a ramp beta*t);
+  never declare t as a parameter.
+- SpatialCoordinate with "axis": 0 is x, axis 1 is y.
+- VectorExpr with "components" builds a vector from scalar components; Field and Parameter have
+  "rank": scalar | vector | tensor. A vector Dirichlet value of zero is a VectorExpr of Constant 0.
+- Unary nodes Transpose, Trace take "operand"; Identity is the identity tensor;
+  Convection has "velocity" and "operand" and means (velocity . grad) operand.
+- Every Equation needs name, lhs, rhs; Apply needs name, args, rank; Pow needs base, exponent.
+- Initial data: "initial_conditions": [{"field": "c", "value": <Expr of coordinates>}].
+- Named constitutive laws: "constitutive_relations": [{"name": ..., "definition": Equation whose
+  lhs is Apply(name, args) and whose rhs is the body}]; writing the expression inline is allowed.
+- Optional metadata ("provenance", "ambiguity") must be null unless filled exactly; omit otherwise.
+\end{lstlisting}
+(Abridged; the original is a paragraph of prose with the same content.)
+
+\subsection{Examples of extraction errors}
+\paragraph{Time declared as a field or a parameter.} For the transient-heat document, in eight of the ten extractions that produced a model with a ramp boundary value the value reads \code{beta*t} where \code{t} is a declared \emph{field} (six runs, which the generator then refuses: ``field \code{t} uses space L2'' or ``Dirichlet value must be a Constant or depend on space/time'') or a declared \emph{parameter} with a value taken from the document, e.g.\ the final time $1.0$ (two runs by the 27B model; a constant wall temperature $\beta\cdot1$ instead of a ramp). Every schema, rank and dimension check passes, and the instance is complete; the mathematics is nevertheless wrong. The original prompt's list of node tags does not contain \code{TimeCoordinate}, so the model had no way to express the intended object.
+
+\paragraph{A flipped source sign.} For the Poisson document one model wrote $-\nabla\cdot(k\nabla u)=-f$ (the document states $=f$). The model is internally consistent, passes all checks, produces a solver that runs, and yields a solution that differs from the gold one by $163\%$ in relative nodal $\ell^2$ norm. This is the one silently wrong run of the benchmark; only review of the stored JSON, or comparison with a reference, can catch it.
+
+\paragraph{Equivalent but different strong form.} For the elasticity document, the model wrote the Navier--Cauchy form $-((\lambda+\mu)\nabla(\nabla\cdot u)+\mu\Delta u)=f$ instead of the divergence of the stress. In the interior the two are equal, hence the scorer accepts the equation; the natural boundary condition obtained by integrating this form by parts is however \emph{not} the traction $\sigma n$. The generator refused the form (``no C++ rule for \code{Grad} (v0 scope)''), which in this instance protected the user.
+
+\paragraph{Hallucinated dimensions.} The smallest model attached dimensions to parameters that made the two sides of its own equation inconsistent (e.g.\ ``terms of a sum have inconsistent physical dimensions: $T^{-1}\Theta$, $T^{-1}$''); the dimension validator rejected the model three times in a row. Without the validator the dimensions would have been silently ignored.
+
+\paragraph{Runaway reasoning.} The 33B reasoning model did not finish its answer in five of its twelve runs: it exhausted a budget of about $62\,000$ output tokens ($\approx20$ minutes per run) on reasoning; such a generation is detected as truncated and is not retried.
+
+\subsection{Reproducing the experiments}
+The corpus (LaTeX, HTML, PDF, text), gold definitions, runner, scorer, pipeline stage and aggregation scripts produce all tables and figures of Section~\ref{sec:experiments}; the models are addressed by their Ollama tags (\code{llama3:latest}, \code{qwen3-coder:30b}, \code{devstral-small-2:latest}, \code{qwen3.6:27b-coding}, \code{laguna-xs-2.1:q4\_K\_M}).

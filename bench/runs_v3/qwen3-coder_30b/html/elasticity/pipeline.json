@@ -1,0 +1,15 @@
+{
+ "stages": {
+  "validate": "passed",
+  "generate": "failed"
+ },
+ "details": {
+  "validate": "model and instance consistent",
+  "generate": "unsupported construct: FESystem codegen: field 'A' has rank Rank.TENSOR; only scalar/vector unknowns are supported (v0 scope)"
+ },
+ "issues": [],
+ "solution": null,
+ "passed": false,
+ "status": "failed",
+ "seconds": 0.0037293434143066406
+}

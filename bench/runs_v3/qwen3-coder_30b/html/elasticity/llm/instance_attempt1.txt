@@ -1,0 +1,36 @@
+{
+  "parameter_values": {
+    "lambda": 1.5,
+    "mu": 1.0,
+    "f": [
+      0.0,
+      0.0
+    ],
+    "g_N": [
+      0.0,
+      -0.05
+    ]
+  },
+  "geometry": {
+    "lower_left": [
+      0.0,
+      0.0
+    ],
+    "upper_right": [
+      4.0,
+      1.0
+    ],
+    "boundary_ids": {
+      "clamped": 0,
+      "traction": 1,
+      "free_top": 3,
+      "free_bottom": 2
+    }
+  },
+  "value_sources": {
+    "lambda": "paper, Section 4",
+    "mu": "paper, Section 4",
+    "f": "paper, Section 4",
+    "g_N": "paper, Section 4"
+  }
+}

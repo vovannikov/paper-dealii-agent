@@ -1,0 +1,41 @@
+{
+ "model": "laguna-xs-2.1:q4_K_M",
+ "case": "transient_heat",
+ "modality": "pdf",
+ "document_chars": 1309,
+ "started": 1793141379.239079,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 49.51217436790466,
+ "model_parse_errors": [],
+ "instance_ok": false,
+ "instance_attempts": 1,
+ "instance_first_ok": false,
+ "instance_issues": [
+  "llm_output_truncated: the model 'laguna-xs-2.1:q4_K_M' ran out of tokens before finishing its answer (868 prompt + 64668 output tokens) -- it spent them on reasoning. Give it a larger context window: for Ollama restart the server with OLLAMA_CONTEXT_LENGTH=32768 (its default is 4096); for vLLM raise --max-model-len."
+ ],
+ "instance_seconds": 1185.4136505126953,
+ "total_seconds": 1234.9628646373749,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 49.5102105140686,
+   "prompt_tokens": 1855,
+   "completion_tokens": 3996,
+   "answer_chars": 3658,
+   "reasoning_chars": 8857,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 1185.4134602546692,
+   "prompt_tokens": 868,
+   "completion_tokens": 64668,
+   "answer_chars": 0,
+   "reasoning_chars": 270837,
+   "finish": "length"
+  }
+ ]
+}

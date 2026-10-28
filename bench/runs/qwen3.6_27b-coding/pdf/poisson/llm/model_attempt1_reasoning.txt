@@ -1,0 +1,364 @@
+Here's a thinking process:
+
+1.  **Understand the Goal**: Extract a mathematical model from the provided paper text into a specific JSON format (PDE-IR). The format requires fields, parameters, equations (strong form), initial conditions, boundary conditions, and metadata.
+
+2.  **Analyze the Input Text**:
+   - **Problem**: Steady diffusion of a scalar quantity `u` in a rectangular domain Ω = (0, 2) × (0, 1).
+   - **Governing Equation**: `-∇·(k ∇u) = f` in Ω. (Poisson equation)
+   - **Boundary Conditions**:
+     - Left (x=0) and Bottom (y=0): `u = 0` (Dirichlet)
+     - Right (x=2): `k ∂u/∂n = g_N` (Neumann, outward flux)
+     - Top (y=1): `k ∂u/∂n = 0` (Neumann, insulated/zero flux)
+   - **Parameters**: `k = 2.5`, `f = 10`, `g_N = 3`. All in consistent non-dimensional units.
+   - **Domain**: Rectangular (0,2) x (0,1). Not explicitly needed in PDE-IR schema unless specified, but I'll stick to the schema.
+   - **Units**: Non-dimensional, so dimensions are null.
+
+3.  **Map to PDE-IR Schema**:
+   - `name`: "steady_diffusion_poisson"
+   - `pde_ir_version`: "0.1"
+   - `fields`:
+     - `u`: scalar, H1, description: "scalar quantity (e.g., solute concentration)", dimension: null
+   - `parameters`:
+     - `k`: scalar, description: "diffusivity", dimension: null
+     - `f`: scalar, description: "volumetric production rate", dimension: null
+     - `g_N`: scalar, description: "prescribed outward flux on right boundary", dimension: null
+   - `equations`:
+     - Strong form: `-div(k grad(u)) = f`
+     - LHS: `-div(k grad(u)) - f = 0` or just `-div(k grad(u))` on LHS and `f` on RHS. The schema example shows LHS as the operator and RHS as 0, or LHS as operator and RHS as source. I'll follow the example: LHS = `-div(k grad(u))`, RHS = `f`. Wait, the example shows LHS as `Add` of `-div(...)` and `-f`, RHS as 0. I'll stick to LHS = `-div(k grad(u))`, RHS = `f` for simplicity, or match the example's style. Actually, the example has `lhs: Add([-div(k grad(u)), -f])`, `rhs: 0`. I'll do `lhs: -div(k grad(u))`, `rhs: f`. Both are fine. I'll use `lhs: Neg(Div(Mul(Grad(u), k)))`, `rhs: f`.
+     - Let's construct the expression tree carefully.
+     - `lhs`: `{"type": "Neg", "operand": {"type": "Div", "operand": {"type": "Mul", "factors": [{"type": "Parameter", "name": "k", ...}, {"type": "Grad", "operand": {"type": "Field", "name": "u", ...}}]}}}`
+     - `rhs`: `{"type": "Parameter", "name": "f", ...}`
+     - `name`: "strong_form"
+   - `initial_conditions`: [] (steady state)
+   - `boundary_conditions`:
+     - Dirichlet on left and bottom: `boundary_id`: "left_and_bottom", `type`: "dirichlet", `value`: 0
+     - Neumann on right: `boundary_id`: "right", `type`: "neumann", `value`: `g_N` (Note: schema says neumann value is prescribed outward normal flux. The equation is `k ∂u/∂n = g_N`, so value is `g_N`)
+     - Neumann on top: `boundary_id`: "top", `type`: "neumann", `value`: 0
+   - Check dimensions: All non-dimensional, so `dimension: null`.
+   - Check ranks: All scalar.
+   - Check spaces: `u` is H1. Parameters are scalar.
+   - Check constitutive relations: None explicitly needed, `k` is constant.
+   - Check assumptions: Steady state, constant diffusivity, non-dimensional units.
+
+4.  **Construct JSON**:
+   I will carefully build the JSON structure according to the schema.
+   Fields:
+   ```json
+   {
+     "name": "u",
+     "rank": "scalar",
+     "space": "H1",
+     "description": "scalar quantity (e.g., solute concentration)",
+     "dimension": null
+   }
+   ```
+   Parameters:
+   ```json
+   {
+     "name": "k",
+     "rank": "scalar",
+     "description": "diffusivity",
+     "dimension": null
+   },
+   {
+     "name": "f",
+     "rank": "scalar",
+     "description": "volumetric production rate",
+     "dimension": null
+   },
+   {
+     "name": "g_N",
+     "rank": "scalar",
+     "description": "prescribed outward flux on right boundary",
+     "dimension": null
+   }
+   ```
+   Equations:
+   ```json
+   {
+     "type": "Equation",
+     "lhs": {
+       "type": "Neg",
+       "operand": {
+         "type": "Div",
+         "operand": {
+           "type": "Mul",
+           "factors": [
+             {
+               "type": "Parameter",
+               "name": "k",
+               "rank": "scalar",
+               "description": "diffusivity",
+               "dimension": null
+             },
+             {
+               "type": "Grad",
+               "operand": {
+                 "type": "Field",
+                 "name": "u",
+                 "rank": "scalar",
+                 "space": "H1",
+                 "description": "scalar quantity (e.g., solute concentration)",
+                 "dimension": null
+               }
+             }
+           ]
+         }
+       }
+     },
+     "rhs": {
+       "type": "Parameter",
+       "name": "f",
+       "rank": "scalar",
+       "description": "volumetric production rate",
+       "dimension": null
+     },
+     "name": "strong_form"
+   }
+   ```
+   Boundary Conditions:
+   ```json
+   [
+     {
+       "field": "u",
+       "type": "dirichlet",
+       "boundary_id": "left_and_bottom",
+       "value": { "type": "Constant", "value": 0 },
+       "provenance": null,
+       "ambiguity": null
+     },
+     {
+       "field": "u",
+       "type": "neumann",
+       "boundary_id": "right",
+       "value": { "type": "Parameter", "name": "g_N", "rank": "scalar", "description": "prescribed outward flux on right boundary", "dimension": null },
+       "provenance": null,
+       "ambiguity": null
+     },
+     {
+       "field": "u",
+       "type": "neumann",
+       "boundary_id": "top",
+       "value": { "type": "Constant", "value": 0 },
+       "provenance": null,
+       "ambiguity": null
+     }
+   ]
+   ```
+   Wait, the schema says for Neumann: "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+   The paper says: `k ∂u/∂n = g_N` on x=2. So the outward flux is `g_N`. This matches.
+   For top: `k ∂u/∂n = 0`. So value is 0. Matches.
+   For left/bottom: `u = 0`. Dirichlet value is 0. Matches.
+
+   Let's double check the exact wording for boundary conditions in the prompt:
+   "Boundary conditions: a `dirichlet` value is the prescribed field value. A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`. An insulated / zero-flux boundary is neumann with value 0."
+   So my mapping is correct.
+
+   One minor point: The prompt says "Give every boundary the paper mentions a condition." The paper mentions left, bottom, right, top. I've covered all four.
+   I'll combine left and bottom into one boundary_id as suggested: "left_and_bottom".
+   I'll make sure the JSON structure exactly matches the requested schema.
+   I will add `constitutive_relations`, `invariants`, `assumptions`, `provenance`, `ambiguity` as empty/null as per schema.
+   I'll verify the expression tree syntax. The prompt says: `{"type": "Mul", "factors": [...]}`. Order doesn't strictly matter but I'll keep it consistent.
+   I'll check dimensions: "All quantities are given in consistent non-dimensional units." -> `dimension: null` for all.
+   I'll check ranks: all scalar.
+   I'll check spaces: `u` is H1. Parameters don't need space.
+   Everything looks solid.
+
+   Let's construct the final JSON carefully.
+   I will ensure all fields/parameters referenced in equations/BCs are declared.
+   I will follow the exact key names.
+   I will make sure the JSON is valid.
+
+   Structure:
+   ```json
+   {
+     "name": "steady_diffusion_poisson",
+     "pde_ir_version": "0.1",
+     "fields": [...],
+     "parameters": [...],
+     "equations": [...],
+     "initial_conditions": [],
+     "boundary_conditions": [...],
+     "constitutive_relations": [],
+     "invariants": [],
+     "assumptions": ["Steady state", "Constant diffusivity", "Non-dimensional units"],
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+   One detail: The prompt example shows `lhs` as an `Add` of terms equal to 0. I'll stick to `lhs: -div(k grad(u))`, `rhs: f` as it's cleaner and mathematically equivalent. The schema doesn't force `rhs: 0`.
+   I'll verify the `Mul` factors order. It doesn't matter.
+   I'll verify `Grad` operand. It's `u`.
+   I'll verify `Div` operand. It's `Mul(k, Grad(u))`.
+   I'll verify `Neg` operand. It's `Div(...)`.
+   All good.
+
+   Let's draft it out carefully.
+   I will make sure to include all required fields.
+   I will double-check the boundary condition values.
+   Left/Bottom: Dirichlet, value 0.
+   Right: Neumann, value g_N.
+   Top: Neumann, value 0.
+   All match.
+   Parameters: k, f, g_N.
+   Fields: u.
+   Dimensions: null.
+   Ready. Output matches exactly.✅
+   One minor thing: The prompt says "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+   The paper says `k ∂u/∂n = g_N`. So the outward flux is `g_N`. Correct.
+   I will produce the JSON now. 
+   I'll make sure the formatting is strict JSON. No markdown except the code block if needed, but the prompt says "Return a SINGLE JSON object". I will output just the JSON.
+   All set. 
+   Generating. 
+   [Self-Correction/Verification during thought]
+   - Check `Mul` factors: The example shows `factors` as an array of objects. I'll follow that.
+   - Check `Grad` and `Div`: They take `operand`.
+   - Check `Neg`: takes `operand`.
+   - Check `Constant`: takes `value`.
+   - Check `Parameter`/`Field`: take `name`, `rank`, `description`, `dimension`. `Field` also takes `space`.
+   - The prompt example shows `lhs` as `Add` with `terms`. I'll stick to `lhs` as `Neg(Div(...))` and `rhs` as `f`. It's standard.
+   - I'll add `assumptions` as an array of strings as per typical usage, or leave empty. The prompt schema shows `"assumptions": []`. I'll leave it empty or add simple strings. I'll keep it empty to be safe, or add the steady-state assumption. The schema doesn't specify type for assumptions, but usually it's a list of strings. I'll leave it `[]`.
+   - I'll verify the exact keys: `name`, `pde_ir_version`, `fields`, `parameters`, `equations`, `initial_conditions`, `boundary_conditions`, `constitutive_relations`, `invariants`, `assumptions`, `provenance`, `ambiguity`.
+   - All good.
+   - Output matches request.✅
+   Proceeds. 
+   Output Generation. 
+   [Output Generation] -> *Proceeds*
+   *(Self-Correction/Refinement during drafting)*: I should make sure the `Mul` factors order matches typical conventions, but it's fine. I'll ensure `dimension` is explicitly `null` as requested. I'll ensure `space` is `"H1"` for `u`. I'll ensure `rank` is `"scalar"`.
+   The prompt says: "Attach SI base dimensions to fields/parameters when the paper states units: `dimension` is null or an object...". Since it's non-dimensional, `null` is correct.
+   All set. 
+   Output matches exactly. 
+   [Final Check of the JSON structure]
+   ```json
+   {
+     "name": "steady_diffusion_poisson",
+     "pde_ir_version": "0.1",
+     "fields": [
+       {
+         "name": "u",
+         "rank": "scalar",
+         "space": "H1",
+         "description": "scalar quantity (e.g., solute concentration)",
+         "dimension": null
+       }
+     ],
+     "parameters": [
+       {
+         "name": "k",
+         "rank": "scalar",
+         "description": "diffusivity",
+         "dimension": null
+       },
+       {
+         "name": "f",
+         "rank": "scalar",
+         "description": "volumetric production rate",
+         "dimension": null
+       },
+       {
+         "name": "g_N",
+         "rank": "scalar",
+         "description": "prescribed outward flux on right boundary",
+         "dimension": null
+       }
+     ],
+     "equations": [
+       {
+         "type": "Equation",
+         "lhs": {
+           "type": "Neg",
+           "operand": {
+             "type": "Div",
+             "operand": {
+               "type": "Mul",
+               "factors": [
+                 {
+                   "type": "Parameter",
+                   "name": "k",
+                   "rank": "scalar",
+                   "description": "diffusivity",
+                   "dimension": null
+                 },
+                 {
+                   "type": "Grad",
+                   "operand": {
+                     "type": "Field",
+                     "name": "u",
+                     "rank": "scalar",
+                     "space": "H1",
+                     "description": "scalar quantity (e.g., solute concentration)",
+                     "dimension": null
+                   }
+                 }
+               ]
+             }
+           }
+         },
+         "rhs": {
+           "type": "Parameter",
+           "name": "f",
+           "rank": "scalar",
+           "description": "volumetric production rate",
+           "dimension": null
+         },
+         "name": "strong_form"
+       }
+     ],
+     "initial_conditions": [],
+     "boundary_conditions": [
+       {
+         "field": "u",
+         "type": "dirichlet",
+         "boundary_id": "left_and_bottom",
+         "value": {
+           "type": "Constant",
+           "value": 0
+         },
+         "provenance": null,
+         "ambiguity": null
+       },
+       {
+         "field": "u",
+         "type": "neumann",
+         "boundary_id": "right",
+         "value": {
+           "type": "Parameter",
+           "name": "g_N",
+           "rank": "scalar",
+           "description": "prescribed outward flux on right boundary",
+           "dimension": null
+         },
+         "provenance": null,
+         "ambiguity": null
+       },
+       {
+         "field": "u",
+         "type": "neumann",
+         "boundary_id": "top",
+         "value": {
+           "type": "Constant",
+           "value": 0
+         },
+         "provenance": null,
+         "ambiguity": null
+       }
+     ],
+     "constitutive_relations": [],
+     "invariants": [],
+     "assumptions": [],
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+   This matches all constraints. I will output it. 
+   One minor point: The prompt example shows `lhs` as an `Add` of terms equal to 0. I'll keep my `lhs`/`rhs` split as it's standard and valid. The schema doesn't forbid it. I'll stick with it.
+   All good.✅
+   Output matches. 
+   [Done] 
+   *Self-Correction/Note during generation prep*: I should verify if `Mul` factors order matters. It doesn't. I'll keep `k` first, then `Grad(u)`.
+   I'll verify `boundary_id` naming. "left_and_bottom", "right", "top" are clear.
+   I'll verify `dimension` is `null` as requested for non-dimensional.
+   Everything is correct.
+   Proceeds. 
+   [Output Generation] -> *Outputs JSON*
+   *(Done.)*

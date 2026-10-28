@@ -1,0 +1,69 @@
+{
+ "model": "qwen3.6:27b-coding",
+ "case": "allen_cahn",
+ "modality": "pdf",
+ "document_chars": 943,
+ "started": 1793137655.80024,
+ "model_ok": true,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 702.8425850868225,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: 'int' object is not subscriptable",
+  "response JSON did not match PDEModel: 'int' object is not subscriptable"
+ ],
+ "instance_ok": true,
+ "instance_attempts": 2,
+ "instance_first_ok": false,
+ "instance_issues": [],
+ "instance_seconds": 156.26613426208496,
+ "total_seconds": 859.1904156208038,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 280.75515031814575,
+   "prompt_tokens": 1854,
+   "completion_tokens": 8896,
+   "answer_chars": 5680,
+   "reasoning_chars": 27671,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 252.668039560318,
+   "prompt_tokens": 3311,
+   "completion_tokens": 7969,
+   "answer_chars": 5288,
+   "reasoning_chars": 23629,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 169.41318583488464,
+   "prompt_tokens": 4691,
+   "completion_tokens": 5203,
+   "answer_chars": 5373,
+   "reasoning_chars": 14375,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 82.8526701927185,
+   "prompt_tokens": 833,
+   "completion_tokens": 2548,
+   "answer_chars": 356,
+   "reasoning_chars": 7746,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 73.41276383399963,
+   "prompt_tokens": 1041,
+   "completion_tokens": 2248,
+   "answer_chars": 526,
+   "reasoning_chars": 6724,
+   "finish": "stop"
+  }
+ ]
+}

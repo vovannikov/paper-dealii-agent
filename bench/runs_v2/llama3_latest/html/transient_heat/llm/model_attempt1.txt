@@ -1,0 +1,149 @@
+Here is the extracted PDE-IR PDEModel in JSON format:
+
+```json
+{
+  "name": "square_plate_heating",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "T",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "temperature",
+      "dimension": {"temperature": 1}
+    }
+  ],
+  "parameters": [
+    {
+      "name": "κ",
+      "rank": "scalar",
+      "description": "thermal diffusivity",
+      "dimension": {"length": 2, "time": -1, "temperature": -1}
+    },
+    {
+      "name": "β",
+      "rank": "scalar",
+      "description": "heating rate",
+      "dimension": {"time": -1, "temperature": 1}
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "name": "strong",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Grad",
+                    "operand": {
+                      "type": "Field",
+                      "name": "T",
+                      "rank": "scalar",
+                      "space": "H1",
+                      "description": "temperature",
+                      "dimension": {"temperature": 1}
+                    }
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "κ",
+                    "rank": "scalar",
+                    "description": "thermal diffusivity",
+                    "dimension": {"length": 2, "time": -1, "temperature": -1}
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Constant",
+              "value": 0
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      }
+    }
+  ],
+  "initial_conditions": [
+    {
+      "field": "T",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      }
+    }
+  ],
+  "boundary_conditions": [
+    {
+      "field": "T",
+      "type": "dirichlet",
+      "boundary_id": "left",
+      "value": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Constant",
+            "value": 0
+          },
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Constant",
+                "value": 2
+              },
+              {
+                "type": "TimeCoordinate",
+                "name": "t"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "field": "T",
+      "type": "neumann",
+      "boundary_id": "right",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      }
+    },
+    {
+      "field": "T",
+      "type": "neumann",
+      "boundary_id": "bottom",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      }
+    },
+    {
+      "field": "T",
+      "type": "neumann",
+      "boundary_id": "top",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      }
+    }
+  ]
+}
+```
+
+Note that I've used the `Add` and `Mul` nodes to represent the ramped wall temperature and the insulated edges, respectively. I've also used the `Constant` node to represent the initial condition and the boundary conditions.

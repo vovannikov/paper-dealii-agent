@@ -1,0 +1,20 @@
+Here is the extracted ProblemInstance (parameter values and geometry) in JSON format:
+
+```
+{
+  "parameter_values": {
+    "ν": 0.1
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [1.0, 1.0],
+    "boundary_ids": {
+      "lid": 1,
+      "no-slip": [0, 2, 3]
+    }
+  },
+  "value_sources": {}
+}
+```
+
+Note that the paper does not provide values for any other parameters, so the `value_sources` object is empty.

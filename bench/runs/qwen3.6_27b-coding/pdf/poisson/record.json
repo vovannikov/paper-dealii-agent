@@ -1,0 +1,39 @@
+{
+ "model": "qwen3.6:27b-coding",
+ "case": "poisson",
+ "modality": "pdf",
+ "document_chars": 1306,
+ "started": 1793136089.1065845,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 161.32193636894226,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 78.72046780586243,
+ "total_seconds": 240.07413530349731,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 161.32051610946655,
+   "prompt_tokens": 1895,
+   "completion_tokens": 5059,
+   "answer_chars": 2662,
+   "reasoning_chars": 14569,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 78.71995854377747,
+   "prompt_tokens": 878,
+   "completion_tokens": 2489,
+   "answer_chars": 385,
+   "reasoning_chars": 7410,
+   "finish": "stop"
+  }
+ ]
+}

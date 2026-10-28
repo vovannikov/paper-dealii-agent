@@ -1,0 +1,15 @@
+{
+ "stages": {
+  "validate": "passed",
+  "generate": "failed"
+ },
+ "details": {
+  "validate": "model and instance consistent",
+  "generate": "unsupported construct: FESystem codegen: expected one equation per field (listed in the same order); 'transient_heating_square_plate' has 1 equations for 2 fields"
+ },
+ "issues": [],
+ "solution": null,
+ "passed": false,
+ "status": "failed",
+ "seconds": 0.009394168853759766
+}

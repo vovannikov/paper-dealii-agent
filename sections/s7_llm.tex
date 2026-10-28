@@ -1,0 +1,38 @@
+\section{The LLM Extraction Layer}
+\label{sec:llm}
+
+\subsection{Model interface}
+All model access goes through one abstract class with a single abstract method, \code{complete(messages, temperature, max\_tokens)}. Structured generation, schema parsing and the repair loop are shared and independent of the transport. The concrete transport is an OpenAI-compatible chat endpoint, which covers hosted models and locally served open-weight models (Ollama, vLLM, llama.cpp) through a \code{base\_url}; an offline scripted double supports deterministic tests. Models that expose their reasoning in a separate field (the Qwen3 family and similar) have it captured and stored next to the answer. No model-specific code is present elsewhere in the framework.
+
+\subsection{Paper ingestion}
+The preferred input is a saved publisher web page, because publishers embed equations as MathML islands, which are structured and machine-readable, in contrast to the ungrouped glyphs of a PDF or rasterised equation images. The HTML adapter splits the page on headings into sections, keeps paragraph text and every \code{<math>} element as an equation record with a guessed label, and renders the document as plain text with the MathML markup inline. Any other file (for instance text extracted from a PDF, or LaTeX) is read as plain text. The earlier hand-written MathML/LaTeX parsers (``Stage A/B'') were demoted to an optional independent cross-check after they proved fragile and effectively overfitted to a single page (ADR~0001).
+
+\subsection{Extraction prompts}
+Two prompts are used, mirroring the two objects.
+\begin{description}
+\item[Model prompt.] The system prompt states the task (transcribe the model into the PDE-IR), lists the node tags, and states the rules: declare every field and parameter; give the \emph{strong} form; the flux sign convention for Neumann and Robin conditions, with the convective example $-k\,\partial_nu=h(u-u_\infty)\mapsto-h(u-u_\infty)$; one boundary name per distinct condition, which may cover several sides; attach SI dimensions when the paper gives units, with an example ($W/(m\,K)$); and ``produce your best guess even when a reading is uncertain''. A format example is appended that is \emph{produced by the real serializer} from a small Poisson model, so the example can never drift from what the parser accepts. The user message holds the flattened paper.
+\item[Instance prompt.] Built after the model is accepted: it lists the declared parameter names and boundary names, states the face-id convention, and says that values the paper does not give must be omitted rather than guessed, so they are reported as missing.
+\end{description}
+
+\subsection{Validation--repair loop}
+\begin{figure}[t]
+\centering
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\footnotesize]
+conversation = [system(prompt), user(paper)]
+for attempt in 1..3:
+    raw = model.complete(conversation, temperature=0)
+    try:    value = parse_structured(raw, PDEModel)      # JSON recovery + schema
+    except StructuredGenerationError as e:
+        conversation += [assistant(raw), user(parse_repair(e))];  continue
+    issues = validate_model(value)                       # rank, dimension, ...
+    if no error in issues: return value
+    conversation += [assistant(raw), user(one_line_per_issue(issues))]
+return best_effort_value, issues                         # kept for human repair
+\end{lstlisting}
+\caption{The validation--repair loop (schematic). The same loop, with another schema and validator, extracts the problem instance.}
+\label{fig:loop}
+\end{figure}
+Figure~\ref{fig:loop} summarises the loop. The JSON recovery tries, in order, fenced code blocks, the whole string, and the first balanced \code{\{\ldots\}} object embedded in prose. Pydantic errors and codec errors (a missing key in an expression node, a string where integer dimension exponents are required) are converted into short messages. A truncated generation (finish reason \code{length}) is detected and \emph{not} retried: a repair prompt only lengthens the conversation. The message instead names the cause (a thinking model spending its budget on reasoning) and the remedy (a larger context window, e.g.\ \code{OLLAMA\_CONTEXT\_LENGTH=32768}, since Ollama's default of 4096 tokens silently cuts the answer off). The result of the loop is always returned, including the last parsed object on failure, so that a near-miss can be corrected by hand in the JSON file and the run resumed with \code{--model-json} and \code{--instance-json}.
+
+\subsection{Cost model}
+Per document the layer makes at least two calls. In our experiments a model-extraction call has a prompt of about $3\,000$ tokens (about $2\,000$ of which are the fixed schema prompt and example) and produces $0.7$--$1.5$k tokens of JSON for a scalar model; the instance call has a prompt of about $2\,000$ tokens and produces $0.1$--$0.3$k tokens. Repair messages add a few tens of tokens per issue. In contrast to a direct code-generation architecture, no compiler logs, source files or solver output are ever sent to the model; the only feedback is the structured issue list. We report measured token counts and latencies in Section~\ref{sec:extraction}.

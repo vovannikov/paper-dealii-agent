@@ -1,0 +1,17 @@
+{
+ "stages": {
+  "validate": "passed",
+  "generate": "passed",
+  "build": "failed"
+ },
+ "details": {
+  "validate": "model and instance consistent",
+  "generate": "deal.II reference program generated",
+  "build": "compilation failed: main.cc:151:35: error: no match for \u2018operator+=\u2019 (operand types are \u2018dealii::AlignedVector<double>::value_type\u2019 {aka \u2018double\u2019} and \u2018dealii::Tensor<1, 2>\u2019) (full log: /home/vladimir/work/dealii-agent/paper-bench/runs/llama3_latest/pdf/elasticity/work/plane_strain_cantilever/build.log)"
+ },
+ "issues": [],
+ "solution": null,
+ "passed": false,
+ "status": "failed",
+ "seconds": 26.946099281311035
+}

@@ -1,0 +1,58 @@
+\section{Architecture and Design Principles}
+\label{sec:overview}
+
+\paragraph{Design principles.}
+The architecture follows five principles that respond directly to the gaps of Section~\ref{sec:gaps}.
+\begin{enumerate}[label=\textbf{P\arabic*.},leftmargin=*]
+\item \textbf{Do not let the language model write the solver.} A direct ``paper $\to$ LLM $\to$ large \dealii{} program $\to$ compile/fix loop'' architecture is explicitly avoided. The model emits \emph{data} (a JSON document conforming to a schema), never numerical code.
+\item \textbf{A typed mathematical IR is the central artefact.} Fields, parameters, strong-form equations, boundary and initial conditions, constitutive laws, energies/invariants, assumptions and provenance live in one validated object. Mathematics, problem data and discretization are kept apart.
+\item \textbf{Deterministic where mathematics is deterministic.} Integration by parts, time discretization, linearization, code generation and verification are ordinary programs whose behaviour is reproducible and unit-testable. The LLM never skips the IR to go to the weak form or to code.
+\item \textbf{Verification is derived from the specification.} Tests are generated from the IR (manufactured solutions, tangent checks, invariants, structural checks), and their quality is itself measured (mutation testing).
+\item \textbf{The model is a replaceable component behind a narrow interface.} A single abstract method (\code{complete}) separates the framework from any provider; remote, local OpenAI-compatible and scripted test doubles are interchangeable.
+\end{enumerate}
+
+\paragraph{Pipeline.}
+Figure~\ref{fig:arch} shows the end-to-end flow. A paper (a saved publisher web page with MathML equations, or text extracted from a PDF) is flattened into prompt text. The language model is asked twice: first for the \code{PDEModel} (the mathematics), then, given the declared parameters and boundary names, for the \code{ProblemInstance} (numerical values and the domain). Both answers pass through the deterministic \emph{trust boundary}. Schema parsing, referential, rank and dimension validation (model) and instance completeness checks (instance) are inside the repair loop: failures are returned to the model as short structured diagnostics for up to three attempts. The static well-posedness and plan checks (inf--sup pairing, pinning, boundary-flux sign, time plan) run at the \code{validate} stage of the pipeline, after extraction, and report to the user, who can edit the stored JSON. Accepted objects feed the deterministic chain: weak form, time/linearization, \dealii{} code generation, build, run, diagnostics and the verification gate. Every intermediate result is stored (\code{model.json}, \code{instance.json}, raw LLM answers, generated \code{main.cc}, solution, report), so a wrong extraction can be corrected by hand and the run resumed from the edited JSON \emph{without} calling the model again.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw,rounded corners=2pt,align=center,minimum height=10mm,minimum width=29mm,inner sep=2pt,font=\scriptsize},
+  llm/.style={box,fill=llmorange!15,draw=llmorange!80!black},
+  det/.style={box,fill=detgreen!10,draw=detgreen!70!black},
+  art/.style={box,fill=irblue!10,draw=irblue!80!black},
+  arr/.style={->,>=Stealth,thick},
+  lab/.style={font=\scriptsize\itshape,text=black!70}]
+\node[art] (paper) at (0,0) {\textbf{Scientific paper}\\ HTML/MathML or PDF text};
+\node[llm] (ex1) at (3.9,0) {\textbf{LLM extraction}\\ PDE model};
+\node[art] (ir) at (7.8,0) {\textbf{PDE-IR}\\ fields, parameters, strong\\ form, BC/IC, relations};
+\node[det] (val) at (11.9,0) {\textbf{Trust boundary}\\ schema, rank, dimension,\\ completeness};
+\node[llm] (ex2) at (3.9,-2.2) {\textbf{LLM extraction}\\ values + geometry};
+\node[art] (inst) at (7.8,-2.2) {\textbf{ProblemInstance}\\ numbers, box, sides};
+\node[det] (weak) at (11.9,-2.2) {\textbf{Variational compiler}\\ weak form, time,\\ Gateaux tangent};
+\node[det] (gen) at (11.9,-4.4) {\textbf{\dealii{} generator}\\ FEValues, Newton,\\ AMR, solvers};
+\node[det] (build) at (7.8,-4.4) {\textbf{Build, run}\\ diagnostics,\\ well-posedness};
+\node[det] (ver) at (3.9,-4.4) {\textbf{Verification gate}\\ MMS, tangent, invariants,\\ structural, mutation};
+\node[art] (out) at (0,-4.4) {\textbf{Verified solver}\\ and report};
+\draw[arr] (paper)--(ex1);
+\draw[arr] (ex1)--(ir);
+\draw[arr] (ir)--(val);
+\draw[arr] (paper.south)--++(0,-0.0)|-(ex2.west);
+\draw[arr] (ex2)--(inst);
+\draw[arr] (inst.north east)--(val.south west);
+\draw[arr] (val)--(weak);
+\draw[arr] (weak)--(gen);
+\draw[arr] (gen)--(build);
+\draw[arr] (build)--(ver);
+\draw[arr] (ver)--(out);
+\draw[arr,dashed,llmorange!80!black] (val.north)--++(0,0.7)-|(ex1.north) node[lab,pos=0.25,above] {structured diagnostics (repair loop, at most 3 attempts)};
+\end{tikzpicture}
+\caption{Architecture of \femagent{}. Orange boxes are the only steps that call a language model; green boxes are deterministic; blue boxes are typed artefacts that are stored, inspected and editable. The language model never produces solver code.}
+\label{fig:arch}
+\end{figure}
+
+\paragraph{Separation of concerns.}
+Three kinds of information are kept in three different objects (ADR~0002 in the repository). The \code{PDEModel} holds mathematics only and no numbers. The \code{ProblemInstance} holds the numerical values of the parameters, the domain (an axis-aligned box and a map from each IR boundary name to mesh sides) and a short free-text source note per value. The \emph{discretization plan} holds everything that a paper does not state: element degrees, time-stepping scheme and step, linear solver and preconditioner, Newton globalization, adaptivity. This separation has three consequences: the mathematics can be verified without choosing a mesh; the discretization can be changed without touching the extraction; and the system can state \emph{exactly} what is missing (a parameter value, a boundary mapping) before any code is generated, instead of failing late inside code generation.
+
+\paragraph{Why the architecture suits small models.}
+The model's task is reduced to \emph{transcription into a schema}, with a checker in the loop. The prompt for the PDE model has about 3\,000 tokens including the schema example (Section~\ref{sec:experiments}), and a repair message is a list of one-line diagnostics. We hypothesise, and test in Section~\ref{sec:experiments}, that this makes the task feasible for locally served 8--30B-parameter models, while the same models would be unlikely to write several hundred lines of correct \dealii{} C++.

@@ -1,0 +1,35 @@
+{
+  "parameter_values": {
+    "M": 1.0,
+    "kappa": 0.01,
+    "x": 1.0,
+    "y": 1.0
+  },
+  "geometry": {
+    "lower_left": [
+      0.0,
+      0.0
+    ],
+    "upper_right": [
+      1.0,
+      1.0
+    ],
+    "boundary_ids": {
+      "domain_boundary": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    "refinements": 4
+  },
+  "field_degrees": {},
+  "pin_fields": [],
+  "value_sources": {
+    "M": "Section 3. Parameters",
+    "kappa": "Section 3. Parameters",
+    "x": "Section 1. Model (unit square domain extent)",
+    "y": "Section 1. Model (unit square domain extent)"
+  }
+}

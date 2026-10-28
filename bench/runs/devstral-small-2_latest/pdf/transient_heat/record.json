@@ -1,0 +1,60 @@
+{
+ "model": "devstral-small-2:latest",
+ "case": "transient_heat",
+ "modality": "pdf",
+ "document_chars": 1309,
+ "started": 1793132504.277531,
+ "model_ok": true,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 184.14737725257874,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\nboundary_conditions.0.value\n  Value error, None is not a valid FunctionSpace [type=value_error, input_value={'type': 'Mul', 'factors'...mension': {'time': 1}}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error",
+  "response JSON did not match PDEModel: 2 validation errors for PDEModel\nfields.1.space\n  Input should be 'H1', 'H(div)', 'H(curl)' or 'L2' [type=enum, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/enum\nboundary_conditions.0.value\n  Value error, None is not a valid FunctionSpace [type=value_error, input_value={'type': 'Mul', 'factors'...mension': {'time': 1}}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error"
+ ],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 10.14525580406189,
+ "total_seconds": 194.32020258903503,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 59.958805084228516,
+   "prompt_tokens": 1760,
+   "completion_tokens": 975,
+   "answer_chars": 3664,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 62.92518496513367,
+   "prompt_tokens": 2860,
+   "completion_tokens": 1018,
+   "answer_chars": 3801,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 61.2584969997406,
+   "prompt_tokens": 4065,
+   "completion_tokens": 977,
+   "answer_chars": 3664,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 10.144810676574707,
+   "prompt_tokens": 834,
+   "completion_tokens": 152,
+   "answer_chars": 402,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

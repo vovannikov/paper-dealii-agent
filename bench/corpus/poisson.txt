@@ -1,0 +1,32 @@
+Steady Diusion with a Volumetric Source and Mixed
+Boundary Conditions
+A. Reviewer and B. Tester
+1. Problem description
+We study the steady diusion of a scalar quantity u (for instance a solute concentration) in a
+rectangular domain Ω= (0, 2) × (0, 1). The quantity is produced inside the domain at a uniform
+volumetric rate f, and it is transported by diusion only; the diusivity k is constant in space.
+2. Governing equation
+The balance of the diusive ux −k∇u against the production rate gives the Poisson equation
+−∇· (k ∇u) = f
+in Ω.
+(1)
+3. Boundary conditions
+The quantity vanishes on the left and the bottom side of the domain,
+u = 0
+on x = 0 and on y = 0.
+(2)
+Through the right side, x = 2, a prescribed outward ux gN leaves the domain,
+k ∂u
+∂n = gN
+on x = 2,
+(3)
+where n is the outward unit normal. The top side, y = 1, is impermeable, i.e. k ∂u/∂n = 0
+there.
+4. Parameters
+The diusivity is k = 2.5 and the production rate is f = 10. The outward ux through the right
+side is gN = 3. All quantities are given in consistent non-dimensional units.
+5. Remarks on the solution
+For these data the maximum of u is reached close to the top right corner. Earlier studies with a
+constant production rate of f = 4 and a ux of gN = 1 reported a maximum of about 0.9; those
+values are not used here.
+1

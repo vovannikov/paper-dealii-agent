@@ -1,0 +1,23 @@
+```json
+{
+  "parameter_values": {
+    "k": 52.0,
+    "h": 750.0,
+    "T_amb": 0.0
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [0.6, 1.0],
+    "boundary_ids": {
+      "left": 0,
+      "bottom": 2,
+      "top_and_right": [1, 3]
+    }
+  },
+  "value_sources": {
+    "k": "paper, thermal conductivity section",
+    "h": "paper, boundary conditions section",
+    "T_amb": "paper, boundary conditions section"
+  }
+}
+```

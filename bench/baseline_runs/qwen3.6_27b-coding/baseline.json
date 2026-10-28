@@ -1,0 +1,25 @@
+{
+ "model": "qwen3.6:27b-coding",
+ "case": "heat_nafems",
+ "attempts": [
+  {
+   "stage": "compile",
+   "log": "/home/vladimir/work/dealii-agent/paper-bench/baseline_runs/qwen3.6_27b-coding/attempt1/main.cc:15:10: fatal error: deal.II/lac/constraints.h: No such file or directory\nmake[2]: *** [CMakeFiles/baseline.dir/build.make:79: CMakeFiles/baseline.dir/main.cc.o] Error 1\nmake[1]: *** [CMakeFiles/Makefile2:87: CMakeFiles/baseline.dir/all] Error 2\nmake: *** [Makefile:91: all] Error 2",
+   "k": 1
+  },
+  {
+   "stage": "compile",
+   "log": "/home/vladimir/work/dealii-agent/paper-bench/baseline_runs/qwen3.6_27b-coding/attempt2/main.cc:13:10: fatal error: deal.II/lac/matrix_tools.h: No such file or directory\nmake[2]: *** [CMakeFiles/baseline.dir/build.make:79: CMakeFiles/baseline.dir/main.cc.o] Error 1\nmake[1]: *** [CMakeFiles/Makefile2:87: CMakeFiles/baseline.dir/all] Error 2\nmake: *** [Makefile:91: all] Error 2",
+   "k": 2
+  },
+  {
+   "k": 3,
+   "stage": "llm_error",
+   "log": "the model 'qwen3.6:27b-coding' ran out of tokens before finishing its answer (5786 prompt + 12000 output tokens) -- it spent them on reasoning. Give it a larger context window: for Ollama restart the server with OLLAMA_CONTEXT_LENGTH=32768 (its default is 4096); for vLLM raise --max-model-len."
+  }
+ ],
+ "seconds": 883.7207186222076,
+ "prompt_tokens": 11389,
+ "completion_tokens": 27168,
+ "llm_calls": 3
+}

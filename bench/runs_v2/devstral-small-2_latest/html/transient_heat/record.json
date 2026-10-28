@@ -1,0 +1,39 @@
+{
+ "model": "devstral-small-2:latest",
+ "case": "transient_heat",
+ "modality": "html",
+ "document_chars": 4461,
+ "started": 1793169139.592641,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 54.72339129447937,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 11.546547174453735,
+ "total_seconds": 66.29415345191956,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 54.72124910354614,
+   "prompt_tokens": 3461,
+   "completion_tokens": 850,
+   "answer_chars": 3246,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 11.545955896377563,
+   "prompt_tokens": 2140,
+   "completion_tokens": 152,
+   "answer_chars": 402,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

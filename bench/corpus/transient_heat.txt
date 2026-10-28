@@ -1,0 +1,36 @@
+Transient Heating of a Square Plate with a Ramped Wall
+Temperature
+C. Author and D. Engineer
+1. Problem description
+We consider the unsteady heat conduction in a thin square plate Ω= (0, 1)×(0, 1) over the time
+interval 0 ≤t ≤1. The plate is initially at the reference temperature T = 0. At t = 0 the left
+edge starts to be heated such that its temperature rises linearly with time; the three other edges
+are thermally insulated.
+2. Governing equation
+With the constant thermal diusivity κ and no internal heat sources, the temperature T(x, y, t)
+obeys the heat equation
+∂T
+∂t −∇· (κ ∇T) = 0
+in Ω, t > 0.
+(1)
+3. Initial and boundary conditions
+The initial condition is
+T(x, y, 0) = 0.
+(2)
+On the left edge, x = 0, the temperature follows the ramp
+T(0, y, t) = β t,
+(3)
+where β is the heating rate. The right, bottom and top edges are insulated, so that the normal
+heat ux vanishes there:
+κ ∂T
+∂n = 0
+on x = 1, y = 0, y = 1.
+(4)
+4. Parameters
+We use κ = 0.5 and a heating rate of β = 2. Time is measured in seconds and temperature
+in kelvin above the reference temperature. The computations in Section 5 use the time step
+∆t = 0.01.
+5. Notes
+After the initial transient the interior follows the wall with a constant lag; at t = 1 the temper-
+ature at the centre of the plate is of the order of one kelvin.
+1

@@ -1,0 +1,15 @@
+{
+ "stages": {
+  "validate": "failed"
+ },
+ "details": {
+  "validate": "1 error(s)"
+ },
+ "issues": [
+  "error: no numeric value supplied for parameter 'Tamb' (missing_parameter_value)"
+ ],
+ "solution": null,
+ "passed": false,
+ "status": "failed",
+ "seconds": 0.0015223026275634766
+}

@@ -1,0 +1,39 @@
+{
+ "model": "qwen3.6:27b-coding",
+ "case": "heat_nafems",
+ "modality": "html",
+ "document_chars": 4806,
+ "started": 1793133391.9603775,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 219.71520614624023,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 77.41696047782898,
+ "total_seconds": 297.1712119579315,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 219.71286249160767,
+   "prompt_tokens": 3153,
+   "completion_tokens": 6704,
+   "answer_chars": 3838,
+   "reasoning_chars": 19915,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 77.41658282279968,
+   "prompt_tokens": 2137,
+   "completion_tokens": 2375,
+   "answer_chars": 601,
+   "reasoning_chars": 6667,
+   "finish": "stop"
+  }
+ ]
+}

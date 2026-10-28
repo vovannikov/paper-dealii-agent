@@ -1,0 +1,30 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "heat_nafems",
+ "attempts": [
+  {
+   "stage": "compile",
+   "log": "/home/vladimir/work/dealii-agent/paper-bench/baseline_runs/qwen3-coder_30b/attempt1/main.cc:47:41: error: no matching function for call to \u2018dealii::SparseMatrix<double>::SparseMatrix(dealii::DynamicSparsityPattern&)\u2019\n/home/vladimir/work/dealii-agent/paper-bench/baseline_runs/qwen3-coder_30b/attempt1/main.cc:60:59: error: no matching function for call to \u2018dealii::Quadrature<2>::Quadrature(const char [6], int)\u2019\n/home/vladimir/work/dealii-agent/paper-bench/baseline_runs/qwen3-coder_30b/attempt1/main.cc:69:21: error: passing \u2018const dealii::FEValues<2, 2>\u2019 as \u2018this\u2019 argument discards qualifiers [-fpermissive]\n/home/vladimir/work/dealii-agent/paper-bench/baseline_runs/qwen3-coder_30b/attempt1/main.cc:116:53: error: \u2018PreconditionerID\u2019 was not declared in this scope\nmake[2]: *** [CMakeFiles/baseline.dir/build.make:79: CMakeFiles/baseline.dir/main.cc.o] Error 1\nmake[1]: *** [CMakeFiles/Makefile2:87: CMakeFiles/baseline.dir/all] Error 2\nmake: *** [Makefile:91: all] Error 2",
+   "k": 1
+  },
+  {
+   "stage": "compile",
+   "log": "/home/vladimir/work/dealii-agent/paper-bench/baseline_runs/qwen3-coder_30b/attempt2/main.cc:46:23: error: no matching function for call to \u2018dealii::SparseMatrix<double>::reinit(dealii::DynamicSparsityPattern&)\u2019\n/home/vladimir/work/dealii-agent/paper-bench/baseline_runs/qwen3-coder_30b/attempt2/main.cc:68:21: error: passing \u2018const dealii::FEValues<2, 2>\u2019 as \u2018this\u2019 argument discards qualifiers [-fpermissive]\nmake[2]: *** [CMakeFiles/baseline.dir/build.make:79: CMakeFiles/baseline.dir/main.cc.o] Error 1\nmake[1]: *** [CMakeFiles/Makefile2:87: CMakeFiles/baseline.dir/all] Error 2\nmake: *** [Makefile:91: all] Error 2",
+   "k": 2
+  },
+  {
+   "stage": "compile",
+   "log": "/home/vladimir/work/dealii-agent/paper-bench/baseline_runs/qwen3-coder_30b/attempt3/main.cc:46:23: error: no matching function for call to \u2018dealii::SparseMatrix<double>::reinit(dealii::DynamicSparsityPattern&)\u2019\nmake[2]: *** [CMakeFiles/baseline.dir/build.make:79: CMakeFiles/baseline.dir/main.cc.o] Error 1\nmake[1]: *** [CMakeFiles/Makefile2:87: CMakeFiles/baseline.dir/all] Error 2\nmake: *** [Makefile:91: all] Error 2",
+   "k": 3
+  },
+  {
+   "stage": "compile",
+   "log": "/home/vladimir/work/dealii-agent/paper-bench/baseline_runs/qwen3-coder_30b/attempt4/main.cc:45:41: error: no matching function for call to \u2018dealii::SparseMatrix<double>::SparseMatrix(dealii::DynamicSparsityPattern&)\u2019\nmake[2]: *** [CMakeFiles/baseline.dir/build.make:79: CMakeFiles/baseline.dir/main.cc.o] Error 1\nmake[1]: *** [CMakeFiles/Makefile2:87: CMakeFiles/baseline.dir/all] Error 2\nmake: *** [Makefile:91: all] Error 2",
+   "k": 4
+  }
+ ],
+ "seconds": 182.87753295898438,
+ "prompt_tokens": 16006,
+ "completion_tokens": 5036,
+ "llm_calls": 4
+}

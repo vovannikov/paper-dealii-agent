@@ -1,0 +1,48 @@
+{
+ "model": "devstral-small-2:latest",
+ "case": "poisson",
+ "modality": "pdf",
+ "document_chars": 1306,
+ "started": 1793132437.1853504,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 45.2809054851532,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 2,
+ "instance_first_ok": false,
+ "instance_issues": [],
+ "instance_seconds": 21.768871068954468,
+ "total_seconds": 67.06167674064636,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 45.279412031173706,
+   "prompt_tokens": 1761,
+   "completion_tokens": 734,
+   "answer_chars": 2681,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 11.150583505630493,
+   "prompt_tokens": 834,
+   "completion_tokens": 171,
+   "answer_chars": 414,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 10.616922378540039,
+   "prompt_tokens": 1041,
+   "completion_tokens": 174,
+   "answer_chars": 435,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

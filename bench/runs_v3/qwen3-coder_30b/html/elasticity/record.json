@@ -1,0 +1,60 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "elasticity",
+ "modality": "html",
+ "document_chars": 5662,
+ "started": 1793172700.743755,
+ "model_ok": true,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 91.67947912216187,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\n  Value error, equations reference undeclared fields: ['A'] [type=value_error, input_value={'name': 'plane_strain_ca...None, 'ambiguity': None}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error",
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\n  Value error, equations reference undeclared fields: ['A'] [type=value_error, input_value={'name': 'plane_strain_ca...None, 'ambiguity': None}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error"
+ ],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 3.916991949081421,
+ "total_seconds": 95.61828923225403,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 33.3524272441864,
+   "prompt_tokens": 3866,
+   "completion_tokens": 1801,
+   "answer_chars": 8193,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 27.641948699951172,
+   "prompt_tokens": 5787,
+   "completion_tokens": 1801,
+   "answer_chars": 8193,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 30.673553705215454,
+   "prompt_tokens": 7708,
+   "completion_tokens": 1841,
+   "answer_chars": 8334,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 3.9156992435455322,
+   "prompt_tokens": 2567,
+   "completion_tokens": 208,
+   "answer_chars": 526,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

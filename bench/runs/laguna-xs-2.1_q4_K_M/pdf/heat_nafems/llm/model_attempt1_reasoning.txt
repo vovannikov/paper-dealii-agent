@@ -1,0 +1,274 @@
+Let me carefully extract the PDE model from this paper content.
+
+**Problem Description:**
+- 2D stationary heat transfer in a rectangular domain
+- Domain: 0 ≤ x ≤ 0.6 m, 0 ≤ y ≤ 1 m
+- Steady-state heat conduction (no time dependence)
+- No internal heat source
+- No material velocity
+
+**Governing Equation:**
+The heat equation is:
+∇·(k∇T) = 0
+
+Where:
+- T is temperature (field)
+- k is thermal conductivity = 52 W/(m·°C) (parameter)
+
+**Boundary Conditions:**
+1. Bottom boundary (y = 0): Dirichlet, T = 100°C
+2. Top and right boundaries: Robin (Newton's law of cooling)
+   - -k ∂T/∂n = h(T - Tamb)
+   - h = 750 W/(m²·°C), Tamb = 0°C
+   - For Robin condition in the formulation, the value should be -h*(T - Tamb)
+3. Left boundary (x = 0): Neumann (insulated), -k ∂T/∂n = 0
+
+**Dimensions:**
+- Temperature T: dimension should be temperature, so {"temperature": 1}
+- Thermal conductivity k: W/(m·°C) = kg·m·s⁻³·K⁻¹ (since W = J/s = kg·m²·s⁻³)
+  Actually, let me think more carefully:
+  - W = J/s = N·m/s = kg·m²·s⁻³
+  - W/(m·°C) = kg·m·s⁻³·K⁻¹ (since °C and K are equivalent for dimensional analysis)
+  So k has dimension {"mass": 1, "length": 1, "time": -3, "temperature": -1}
+  
+- Heat transfer coefficient h: W/(m²·°C) = kg·s⁻³·K⁻¹
+  So h has dimension {"mass": 1, "time": -3, "temperature": -1}
+
+Let me now construct the PDE-IR:
+
+**Fields:**
+- T: scalar temperature field
+
+**Parameters:**
+- k: thermal conductivity
+- h: heat transfer coefficient
+- Tamb: ambient temperature
+
+**Equation:**
+∇·(k∇T) = 0
+
+In the strong form:
+- LHS: ∇·(k∇T)
+- RHS: 0
+
+**Boundary Conditions:**
+1. Bottom (y=0): Dirichlet, T = 100°C
+2. Top and right: Robin, -k ∂T/∂n = h(T - Tamb), which means the Robin value is -h*(T - Tamb)
+3. Left (x=0): Neumann, -k ∂T/∂n = 0
+
+Wait, let me re-read the boundary condition specification in the instructions:
+"A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)` (mind the minus sign: the outflow grows with u)."
+
+So for the Robin condition, the value should be -h*(T - Tamb).
+
+Let me also check the dimensions more carefully:
+- Temperature T: {"temperature": 1}
+- Thermal conductivity k: W/(m·°C)
+  - W = J/s = N·m/s = (kg·m/s²)·m/s = kg·m²/s³
+  - W/(m·°C) = kg·m/s³·K⁻¹
+  - Dimension: {"mass": 1, "length": 1, "time": -3, "temperature": -1}
+  
+- Heat transfer coefficient h: W/(m²·°C)
+  - W/(m²·°C) = kg/s³·K⁻¹
+  - Dimension: {"mass": 1, "time": -3, "temperature": -1}
+
+- Ambient temperature Tamb: {"temperature": 1}
+
+Now let me construct the JSON:
+
+```json
+{
+  "name": "HeatTransfer-FEM-Stationary-2D-Single-HeatTransfer-0001",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "T",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "temperature",
+      "dimension": {"temperature": 1}
+    }
+  ],
+  "parameters": [
+    {
+      "name": "k",
+      "rank": "scalar",
+      "description": "thermal conductivity",
+      "dimension": {"mass": 1, "length": 1, "time": -3, "temperature": -1}
+    },
+    {
+      "name": "h",
+      "rank": "scalar",
+      "description": "heat transfer coefficient",
+      "dimension": {"mass": 1, "time": -3, "temperature": -1}
+    },
+    {
+      "name": "Tamb",
+      "rank": "scalar",
+      "description": "ambient temperature",
+      "dimension": {"temperature": 1}
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Div",
+        "operand": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Grad",
+              "operand": {
+                "type": "Field",
+                "name": "T",
+                "rank": "scalar",
+                "space": "H1",
+                "description": "temperature",
+                "dimension": {"temperature": 1}
+              }
+            },
+            {
+              "type": "Parameter",
+              "name": "k",
+              "rank": "scalar",
+              "description": "thermal conductivity",
+              "dimension": {"mass": 1, "length": 1, "time": -3, "temperature": -1}
+            }
+          ]
+        }
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "T",
+      "type": "dirichlet",
+      "boundary_id": "bottom",
+      "value": {
+        "type": "Constant",
+        "value": 100
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "T",
+      "type": "robin",
+      "boundary_id": "top_and_right",
+      "value": {
+        "type": "Neg",
+        "operand": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Add",
+              "terms": [
+                {
+                  "type": "Field",
+                  "name": "T",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "temperature",
+                  "dimension": {"temperature": 1}
+                },
+                {
+                  "type": "Neg",
+                  "operand": {
+                    "type": "Parameter",
+                    "name": "Tamb",
+                    "rank": "scalar",
+                    "description": "ambient temperature",
+                    "dimension": {"temperature": 1}
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Parameter",
+              "name": "h",
+              "rank": "scalar",
+              "description": "heat transfer coefficient",
+              "dimension": {"mass": 1, "time": -3, "temperature": -1}
+            }
+          ]
+        }
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "T",
+      "type": "neumann",
+      "boundary_id": "left",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+
+Wait, I need to double-check the boundary condition for the left boundary. The paper says:
+"-k ∂T/∂n = 0, x = 0"
+
+This is a Neumann condition with value 0. The outward normal at x=0 points in the negative x direction, so ∂T/∂n = -∂T/∂x. But the condition is -k ∂T/∂n = 0, which means the flux is zero.
+
+Actually, looking at the instructions again: "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+
+So for the equation ∇·(k∇T) = 0, the Neumann value should be k ∂T/∂n.
+
+The paper says -k ∂T/∂n = 0, which means k ∂T/∂n = 0.
+
+So the Neumann value is 0, which is correct.
+
+Let me also verify the Robin condition. The paper says:
+"-k ∂T/∂n = h(T - Tamb)"
+
+According to the instructions: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`"
+
+So the Robin value should be -h*(T - Tamb).
+
+Let me verify my expression:
+- I have: Neg(Mul(Add(Field(T), Neg(Parameter(Tamb))), Parameter(h)))
+- This is: -h * (T - Tamb)
+
+That's correct!
+
+Now let me also check if I need to include the constant value 100 for the Dirichlet condition. The paper says T = 100°C, so the value should be 100.
+
+Actually, I realize I should double-check the dimensions. The paper mentions:
+- k = 52 W/(m·°C)
+- h = 750 W/(m²·°C)
+
+For dimensional analysis:
+- W = J/s = N·m/s = kg·m²/s³
+- W/(m·°C) = kg·m/s³·K⁻¹ → dimension: {"mass": 1, "length": 1, "time": -3, "temperature": -1}
+- W/(m²·°C) = kg/s³·K⁻¹ → dimension: {"mass": 1, "time": -3, "temperature": -1}
+
+These look correct.
+
+One more thing - I should check if the equation is correct. The paper says:
+"∇·(k∇T) = 0"
+
+In my PDE-IR, I have:
+- LHS: Div(Mul(Grad(T), k))
+- RHS: 0
+
+This represents ∇·(k∇T) = 0, which is correct.
+
+I think the JSON is complete. Let me finalize it.

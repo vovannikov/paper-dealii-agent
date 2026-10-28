@@ -1,0 +1,47 @@
+{
+ "model": "devstral-small-2:latest",
+ "case": "allen_cahn",
+ "modality": "html",
+ "document_chars": 4767,
+ "started": 1793132108.318767,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 258.0597081184387,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: missing key 'name'",
+  "response JSON did not match PDEModel: missing key 'name'",
+  "response JSON did not match PDEModel: missing key 'name'"
+ ],
+ "total_seconds": 258.0642075538635,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 86.27991342544556,
+   "prompt_tokens": 3265,
+   "completion_tokens": 1357,
+   "answer_chars": 6398,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 85.31603956222534,
+   "prompt_tokens": 4668,
+   "completion_tokens": 1357,
+   "answer_chars": 6398,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 86.45719170570374,
+   "prompt_tokens": 6071,
+   "completion_tokens": 1357,
+   "answer_chars": 6398,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

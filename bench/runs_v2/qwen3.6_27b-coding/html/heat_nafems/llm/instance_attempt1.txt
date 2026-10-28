@@ -1,0 +1,33 @@
+```json
+{
+  "parameter_values": {
+    "k": 52.0,
+    "h": 750.0,
+    "T_amb": 0.0
+  },
+  "geometry": {
+    "lower_left": [
+      0.0,
+      0.0
+    ],
+    "upper_right": [
+      0.6,
+      1.0
+    ],
+    "boundary_ids": {
+      "left": 0,
+      "bottom": 2,
+      "top_and_right": [
+        1,
+        3
+      ]
+    }
+  },
+  "value_sources": {
+    "k": "Governing equation section: k=52 W/(m·°C)",
+    "h": "Top and right boundaries section: h=750 W/(m²·°C)",
+    "T_amb": "Top and right boundaries section: T_amb=0 °C",
+    "geometry": "Problem description section: width 0.6 m, height 1 m"
+  }
+}
+```

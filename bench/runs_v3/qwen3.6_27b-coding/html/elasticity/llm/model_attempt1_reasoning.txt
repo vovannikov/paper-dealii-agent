@@ -1,0 +1,562 @@
+The user wants me to extract the PDE model from the provided text into a specific JSON format (PDE-IR).
+
+1.  **Understand the Physics**:
+    *   Problem: Plane-strain cantilever beam.
+    *   Domain: $\Omega = (0,4) \times (0,1)$.
+    *   Unknown: Displacement field $\mathbf{u} = (u_x, u_y)$.
+    *   Governing Equation: $-\nabla \cdot \boldsymbol{\sigma}(\mathbf{u}) = \mathbf{f}$ in $\Omega$.
+    *   Constitutive Law (Linear Elasticity): $\boldsymbol{\sigma}(\mathbf{u}) = \lambda \text{tr}(\boldsymbol{\varepsilon}(\mathbf{u})) \mathbf{I} + 2\mu \boldsymbol{\varepsilon}(\mathbf{u})$.
+    *   Strain Definition: $\boldsymbol{\varepsilon}(\mathbf{u}) = \frac{1}{2}(\nabla \mathbf{u} + \nabla \mathbf{u}^T)$.
+    *   Parameters: $\lambda = 1.5$, $\mu = 1.0$.
+    *   Body Force: $\mathbf{f} = (0,0)$.
+    *   Boundary Conditions:
+        *   Left end ($x=0$): Clamped, $\mathbf{u} = \mathbf{0}$.
+        *   Right end ($x=4$): Traction $\boldsymbol{\sigma}(\mathbf{u})\mathbf{n} = \mathbf{g}_N = (0, -0.05)$.
+        *   Top/Bottom faces ($y=0, y=1$): Free traction, $\boldsymbol{\sigma}(\mathbf{u})\mathbf{n} = \mathbf{0}$.
+
+2.  **Map to PDE-IR Schema**:
+    *   **Fields**:
+        *   `u`: vector field, rank "vector", space "H1". Description: "displacement field". Dimension: length ({"length": 1}).
+    *   **Parameters**:
+        *   `lambda`: scalar, Lamé parameter. Dimension: stress ({"mass": 1, "length": -1, "time": -2}). Value: 1.5.
+        *   `mu`: scalar, Lamé parameter. Dimension: stress. Value: 1.0.
+        *   `f`: vector, body force. Dimension: force/volume ({"mass": 1, "length": -2, "time": -2}). Value: (0,0).
+        *   `g_N`: vector, traction. Dimension: stress. Value: (0, -0.05).
+    *   **Equations**:
+        *   Strong form: $-\nabla \cdot \boldsymbol{\sigma}(\mathbf{u}) = \mathbf{f}$.
+        *   Since $\mathbf{f} = \mathbf{0}$, RHS is 0.
+        *   LHS: `Neg(Div(sigma(u)))`.
+        *   How to represent $\boldsymbol{\sigma}(\mathbf{u})$?
+            *   Option 1: Define a constitutive relation `sigma` and use `Apply`.
+            *   Option 2: Inline the expression.
+            *   The prompt says: "Named constitutive laws: 'constitutive_relations': ... the equations then use the matching Apply node. Writing the expression inline is also allowed."
+            *   Let's inline it for simplicity, or define it if it makes the structure cleaner. Given the explicit definition in the text, defining it as a constitutive relation is good practice.
+            *   $\boldsymbol{\sigma}(\mathbf{u}) = \lambda \text{tr}(\boldsymbol{\varepsilon}(\mathbf{u})) \mathbf{I} + 2\mu \boldsymbol{\varepsilon}(\mathbf{u})$.
+            *   $\boldsymbol{\varepsilon}(\mathbf{u}) = \frac{1}{2}(\nabla \mathbf{u} + \nabla \mathbf{u}^T)$.
+            *   Let's define `epsilon` and `sigma` as constitutive relations.
+            *   Actually, usually in these IRs, we just put the strong form equation. The constitutive relations are auxiliary.
+            *   Let's define `sigma` as a constitutive relation.
+            *   `sigma` definition: `lhs`: `Apply(name: "sigma", args: [Field u])`, `rhs`: `Add(Mul(Parameter lambda, Mul(Trace(Apply(name: "epsilon", args: [Field u])), Identity)), Mul(Mul(Constant 2, Parameter mu), Apply(name: "epsilon", args: [Field u])))`.
+            *   `epsilon` definition: `lhs`: `Apply(name: "epsilon", args: [Field u])`, `rhs`: `Mul(Constant 0.5, Add(Grad(Field u), Transpose(Grad(Field u))))`.
+            *   Wait, the prompt says "constitutive_relations": [{"name": "f_prime", "definition": {"type": "Equation", ...}}].
+            *   Let's stick to inlining if possible, or use the constitutive relation feature if it simplifies the main equation. The main equation is just `-div(sigma(u)) = f`.
+            *   Let's define `sigma` and `epsilon` as constitutive relations to keep the main equation clean.
+    *   **Boundary Conditions**:
+        *   `left` ($x=0$): Dirichlet, value 0 (vector).
+        *   `right` ($x=4$): Neumann, value `g_N` = (0, -0.05). Note: Neumann value is the outward normal flux. For elasticity, the flux is $\boldsymbol{\sigma}\mathbf{n}$. The paper says $\boldsymbol{\sigma}\mathbf{n} = \mathbf{g}_N$. So the Neumann value is exactly $\mathbf{g}_N$.
+        *   `top_and_bottom` ($y=0, y=1$): Neumann, value 0 (vector).
+    *   **Dimensions**:
+        *   The paper says parameters are non-dimensional. So dimensions are null.
+        *   Fields: `u` is displacement. Usually length, but if non-dimensional, null. Let's assume null since parameters are non-dimensional.
+    *   **Structure**:
+        *   `fields`: `u` (vector).
+        *   `parameters`: `lambda`, `mu`, `f`, `g_N`.
+        *   `equations`: One equation for equilibrium.
+        *   `constitutive_relations`: `epsilon`, `sigma`.
+        *   `boundary_conditions`: `left`, `right`, `top_and_bottom`.
+
+3.  **Refining the IR**:
+    *   `fields`:
+        ```json
+        {
+          "name": "u",
+          "rank": "vector",
+          "space": "H1",
+          "description": "displacement field",
+          "dimension": null
+        }
+        ```
+    *   `parameters`:
+        ```json
+        {
+          "name": "lambda",
+          "rank": "scalar",
+          "description": "Lamé parameter",
+          "dimension": null
+        },
+        {
+          "name": "mu",
+          "rank": "scalar",
+          "description": "Lamé parameter",
+          "dimension": null
+        },
+        {
+          "name": "f",
+          "rank": "vector",
+          "description": "body force",
+          "dimension": null
+        },
+        {
+          "name": "g_N",
+          "rank": "vector",
+          "description": "prescribed traction",
+          "dimension": null
+        }
+        ```
+    *   `constitutive_relations`:
+        *   `epsilon`:
+            ```json
+            {
+              "name": "epsilon",
+              "definition": {
+                "type": "Equation",
+                "name": "epsilon_def",
+                "lhs": {
+                  "type": "Apply",
+                  "name": "epsilon",
+                  "args": [{"type": "Field", "name": "u", "rank": "vector", "space": "H1", "description": "displacement field", "dimension": null}],
+                  "rank": "tensor"
+                },
+                "rhs": {
+                  "type": "Mul",
+                  "factors": [
+                    {"type": "Constant", "value": 0.5},
+                    {
+                      "type": "Add",
+                      "terms": [
+                        {"type": "Grad", "operand": {"type": "Field", "name": "u", "rank": "vector", "space": "H1", "description": "displacement field", "dimension": null}},
+                        {"type": "Transpose", "operand": {"type": "Grad", "operand": {"type": "Field", "name": "u", "rank": "vector", "space": "H1", "description": "displacement field", "dimension": null}}}
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+            ```
+        *   `sigma`:
+            ```json
+            {
+              "name": "sigma",
+              "definition": {
+                "type": "Equation",
+                "name": "sigma_def",
+                "lhs": {
+                  "type": "Apply",
+                  "name": "sigma",
+                  "args": [{"type": "Field", "name": "u", "rank": "vector", "space": "H1", "description": "displacement field", "dimension": null}],
+                  "rank": "tensor"
+                },
+                "rhs": {
+                  "type": "Add",
+                  "terms": [
+                    {
+                      "type": "Mul",
+                      "factors": [
+                        {"type": "Parameter", "name": "lambda", "rank": "scalar", "description": "Lamé parameter", "dimension": null},
+                        {"type": "Trace", "operand": {"type": "Apply", "name": "epsilon", "args": [{"type": "Field", "name": "u", "rank": "vector", "space": "H1", "description": "displacement field", "dimension": null}], "rank": "tensor"}},
+                        {"type": "Identity"}
+                      ]
+                    },
+                    {
+                      "type": "Mul",
+                      "factors": [
+                        {"type": "Constant", "value": 2},
+                        {"type": "Parameter", "name": "mu", "rank": "scalar", "description": "Lamé parameter", "dimension": null},
+                        {"type": "Apply", "name": "epsilon", "args": [{"type": "Field", "name": "u", "rank": "vector", "space": "H1", "description": "displacement field", "dimension": null}], "rank": "tensor"}
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+            ```
+    *   `equations`:
+        ```json
+        {
+          "type": "Equation",
+          "name": "equilibrium",
+          "lhs": {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Apply",
+                "name": "sigma",
+                "args": [{"type": "Field", "name": "u", "rank": "vector", "space": "H1", "description": "displacement field", "dimension": null}],
+                "rank": "tensor"
+              }
+            }
+          },
+          "rhs": {
+            "type": "Parameter",
+            "name": "f",
+            "rank": "vector",
+            "description": "body force",
+            "dimension": null
+          }
+        }
+        ```
+    *   `boundary_conditions`:
+        *   Left: `dirichlet`, `boundary_id`: "left", `value`: `{"type": "Constant", "value": 0}`.
+        *   Right: `neumann`, `boundary_id`: "right", `value`: `{"type": "Parameter", "name": "g_N", ...}`.
+        *   Top/Bottom: `neumann`, `boundary_id`: "top_and_bottom", `value`: `{"type": "Constant", "value": 0}`.
+
+    *   Wait, the prompt says: "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+    *   For elasticity, the strong form is $-\nabla \cdot \boldsymbol{\sigma} = \mathbf{f}$. The natural boundary condition is $\boldsymbol{\sigma}\mathbf{n} = \mathbf{g}$. So the Neumann value is exactly $\mathbf{g}$.
+    *   The paper says $\mathbf{g}_N = (0, -0.05)$.
+    *   So `g_N` parameter value is `(0, -0.05)`. But in PDE-IR, parameters are usually scalars or tensors, but here it's a vector constant. I can define `g_N` as a vector parameter, or just put the vector constant directly in the BC. The prompt says "Declare every field and parameter you reference under fields/parameters." So I'll declare `g_N` as a vector parameter.
+    *   Actually, `g_N` is a constant vector. I'll declare it as a parameter with rank "vector".
+    *   Let's check dimensions: "non-dimensional". So `dimension: null`.
+    *   I will construct the JSON carefully.
+
+    Let's refine the constitutive relations. The prompt example shows inline expressions are allowed. Inlining might be safer to avoid complex nested `Apply` nodes if the parser expects simple things, but the prompt explicitly supports `constitutive_relations`. I'll use them for clarity.
+    Actually, to be safe and concise, I'll inline the stress expression in the equation, or define it. The prompt says "Named constitutive laws: ... the equations then use the matching Apply node. Writing the expression inline is also allowed." I'll stick to defining them as it matches the paper's structure well.
+
+    Wait, `epsilon` and `sigma` definitions in `constitutive_relations` should follow the schema:
+    ```json
+    "constitutive_relations": [
+      {
+        "name": "epsilon",
+        "definition": {
+          "type": "Equation",
+          "name": "epsilon_def",
+          "lhs": { "type": "Apply", "name": "epsilon", "args": [ { "type": "Field", "name": "u", ... } ], "rank": "tensor" },
+          "rhs": { ... }
+        }
+      },
+      ...
+    ]
+    ```
+    This matches the prompt's instruction.
+
+    Let's assemble the JSON.
+    Fields: `u` (vector)
+    Parameters: `lambda`, `mu`, `f`, `g_N`
+    Equations: equilibrium
+    BCs: left (dirichlet 0), right (neumann g_N), top_and_bottom (neumann 0)
+    Constitutive: epsilon, sigma
+
+    One detail: `f` is given as `(0,0)`. I can just set the RHS of the equation to `{"type": "Constant", "value": 0}` directly, or use the parameter `f`. I'll use the parameter `f` for completeness, or just 0. The prompt says "Body forces are neglected." and "f=(0,0)". I'll just use 0 for RHS to keep it simple, or declare `f` and use it. I'll declare `f` as a vector parameter with value 0, but PDE-IR parameters don't have values in the schema, they are just declarations. The values are usually set in a separate config or assumed known. I'll just put `{"type": "Constant", "value": 0}` for the RHS, and omit `f` from parameters if it's just zero, or keep it. I'll keep it simple: RHS is 0.
+
+    Actually, the prompt says "Declare every field and parameter you reference". If I reference `f`, I must declare it. I'll just use `{"type": "Constant", "value": 0}` for the RHS and not declare `f`.
+
+    Let's construct carefully.
+
+    Fields:
+    ```json
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "displacement field",
+      "dimension": null
+    }
+    ```
+
+    Parameters:
+    ```json
+    {
+      "name": "lambda",
+      "rank": "scalar",
+      "description": "Lamé parameter",
+      "dimension": null
+    },
+    {
+      "name": "mu",
+      "rank": "scalar",
+      "description": "Lamé parameter",
+      "dimension": null
+    },
+    {
+      "name": "g_N",
+      "rank": "vector",
+      "description": "prescribed traction",
+      "dimension": null
+    }
+    ```
+
+    Equations:
+    ```json
+    {
+      "type": "Equation",
+      "name": "equilibrium",
+      "lhs": {
+        "type": "Neg",
+        "operand": {
+          "type": "Div",
+          "operand": {
+            "type": "Apply",
+            "name": "sigma",
+            "args": [
+              {
+                "type": "Field",
+                "name": "u",
+                "rank": "vector",
+                "space": "H1",
+                "description": "displacement field",
+                "dimension": null
+              }
+            ],
+            "rank": "tensor"
+          }
+        }
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      }
+    }
+    ```
+
+    Constitutive Relations:
+    ```json
+    [
+      {
+        "name": "epsilon",
+        "definition": {
+          "type": "Equation",
+          "name": "epsilon_def",
+          "lhs": {
+            "type": "Apply",
+            "name": "epsilon",
+            "args": [
+              {
+                "type": "Field",
+                "name": "u",
+                "rank": "vector",
+                "space": "H1",
+                "description": "displacement field",
+                "dimension": null
+              }
+            ],
+            "rank": "tensor"
+          },
+          "rhs": {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Constant",
+                "value": 0.5
+              },
+              {
+                "type": "Add",
+                "terms": [
+                  {
+                    "type": "Grad",
+                    "operand": {
+                      "type": "Field",
+                      "name": "u",
+                      "rank": "vector",
+                      "space": "H1",
+                      "description": "displacement field",
+                      "dimension": null
+                    }
+                  },
+                  {
+                    "type": "Transpose",
+                    "operand": {
+                      "type": "Grad",
+                      "operand": {
+                        "type": "Field",
+                        "name": "u",
+                        "rank": "vector",
+                        "space": "H1",
+                        "description": "displacement field",
+                        "dimension": null
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "sigma",
+        "definition": {
+          "type": "Equation",
+          "name": "sigma_def",
+          "lhs": {
+            "type": "Apply",
+            "name": "sigma",
+            "args": [
+              {
+                "type": "Field",
+                "name": "u",
+                "rank": "vector",
+                "space": "H1",
+                "description": "displacement field",
+                "dimension": null
+              }
+            ],
+            "rank": "tensor"
+          },
+          "rhs": {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Parameter",
+                    "name": "lambda",
+                    "rank": "scalar",
+                    "description": "Lamé parameter",
+                    "dimension": null
+                  },
+                  {
+                    "type": "Trace",
+                    "operand": {
+                      "type": "Apply",
+                      "name": "epsilon",
+                      "args": [
+                        {
+                          "type": "Field",
+                          "name": "u",
+                          "rank": "vector",
+                          "space": "H1",
+                          "description": "displacement field",
+                          "dimension": null
+                        }
+                      ],
+                      "rank": "tensor"
+                    }
+                  },
+                  {
+                    "type": "Identity"
+                  }
+                ]
+              },
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "mu",
+                    "rank": "scalar",
+                    "description": "Lamé parameter",
+                    "dimension": null
+                  },
+                  {
+                    "type": "Apply",
+                    "name": "epsilon",
+                    "args": [
+                      {
+                        "type": "Field",
+                        "name": "u",
+                        "rank": "vector",
+                        "space": "H1",
+                        "description": "displacement field",
+                        "dimension": null
+                      }
+                    ],
+                    "rank": "tensor"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ]
+    ```
+
+    Boundary Conditions:
+    ```json
+    [
+      {
+        "field": "u",
+        "type": "dirichlet",
+        "boundary_id": "left",
+        "value": {
+          "type": "Constant",
+          "value": 0
+        }
+      },
+      {
+        "field": "u",
+        "type": "neumann",
+        "boundary_id": "right",
+        "value": {
+          "type": "Parameter",
+          "name": "g_N",
+          "rank": "vector",
+          "description": "prescribed traction",
+          "dimension": null
+        }
+      },
+      {
+        "field": "u",
+        "type": "neumann",
+        "boundary_id": "top_and_bottom",
+        "value": {
+          "type": "Constant",
+          "value": 0
+        }
+      }
+    ]
+    ```
+
+    Check dimensions: The paper says parameters are non-dimensional. So `dimension: null` is correct.
+    Check ranks: `u` is vector. `lambda`, `mu` are scalars. `g_N` is vector. `epsilon`, `sigma` are tensors.
+    Check equation: `-div(sigma(u)) = 0`. Correct.
+    Check BCs: Left is clamped (u=0). Right has traction g_N. Top/bottom free (traction 0). Correct.
+    Check constitutive: Matches linear elasticity. Correct.
+    One minor point: `g_N` value is `(0, -0.05)`. In PDE-IR, parameters don't hold values, they are just symbols. The solver config would assign values. So declaring it as a parameter is fine.
+    I will assemble the JSON now.
+    I'll make sure all field/parameter references in the IR match the declarations exactly.
+    I'll double check the `Apply` node structure: `{"type": "Apply", "name": "...", "args": [...], "rank": "..."}`.
+    The prompt says: `Apply needs "name", "args" and "rank"`.
+    I'll ensure that.
+    Also, `Identity` is `{"type": "Identity"}`.
+    `Trace` takes `operand`.
+    `Transpose` takes `operand`.
+    `Grad` takes `operand`.
+    `Div` takes `operand`.
+    `Mul` takes `factors`.
+    `Add` takes `terms`.
+    `Neg` takes `operand`.
+    `Constant` takes `value`.
+    `Parameter` takes `name`, `rank`, `description`, `dimension`.
+    `Field` takes `name`, `rank`, `space`, `description`, `dimension`.
+
+    Everything looks consistent.
+    One thing: `g_N` is a vector parameter. I'll declare it.
+    I will produce the final JSON.
+    I'll remove `provenance` and `ambiguity` as instructed.
+    I'll set `pde_ir_version` to "0.1".
+    Name: "plane_strain_cantilever".
+    All good.
+    Let's generate. 
+    Self-Correction/Verification during thought:
+    - The prompt says: "A `neumann` or `robin` value is the prescribed OUTWARD normal flux". For elasticity, the flux is $\boldsymbol{\sigma}\mathbf{n}$. The BC is $\boldsymbol{\sigma}\mathbf{n} = \mathbf{g}_N$. So the Neumann value is indeed $\mathbf{g}_N$.
+    - The prompt says: "Declare every field and parameter you reference under `fields`/`parameters`."
+    - I will reference `g_N` in the BC.
+    - I will reference `lambda`, `mu` in constitutive relations.
+    - I will reference `u` everywhere.
+    - Dimensions: null.
+    - Ranks: scalar/vector/tensor as appropriate.
+    - The structure matches the schema.
+    - I'll format it carefully.
+    - One detail: `epsilon` and `sigma` definitions use `Apply`. The `args` should be the field `u`.
+    - I'll make sure the JSON is valid.
+    - Ready. 
+    Output matches the requested format.
+    Proceeds. 
+    [Output Generation] -> *Self-Correction/Refinement during generation prep*: 
+    I should verify the `Apply` node syntax in the prompt: `Apply needs "name", "args" and "rank"`.
+    I will use exactly that.
+    Also, `Identity` is just `{"type": "Identity"}`.
+    `Trace` and `Transpose` take `operand`.
+    All good.
+    I will produce the JSON now. 
+    One minor point: `g_N` is a vector. In the BC, I'll use `{"type": "Parameter", "name": "g_N", ...}`.
+    The prompt example shows parameters in BC values.
+    Everything is consistent.
+    Final check of the text: "The Lamé parameters are λ=1.5 and μ=1.0 (non-dimensional)." -> dimensions null.
+    "Body forces are neglected." -> f=0.
+    "end traction is gN=(0,−0.05)." -> g_N parameter.
+    All set. 
+    Output matches. 
+    [Done] 
+    *Self-Correction/Note during thought*: I realize that `epsilon` and `sigma` are defined as constitutive relations. The prompt says: `"constitutive_relations": [{"name": "f_prime", "definition": {"type": "Equation", "name": "f_prime", "lhs": {"type": "Apply", "name": "f_prime", "args": [<Field c>], "rank": "scalar"}, "rhs": <body Expr>}}]`.
+    I will follow this exactly.
+    I will construct the JSON carefully.
+    All good. 
+    Proceeds. 
+    [Output Generation]

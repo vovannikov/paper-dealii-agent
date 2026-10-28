@@ -1,0 +1,49 @@
+{
+ "model": "qwen3.6:27b-coding",
+ "case": "elasticity",
+ "modality": "pdf",
+ "document_chars": 1321,
+ "started": 1793136633.295667,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [
+  "rank_mismatch: equation sides have different tensor ranks: ['scalar', 'vector']",
+  "div_of_scalar: divergence applied to a scalar-valued expression (needs a vector or tensor)"
+ ],
+ "model_seconds": 537.7679145336151,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: missing key 'args'",
+  "response JSON did not match PDEModel: 2 validation errors for PDEModel\nconstitutive_relations.0\n  Input should be a valid dictionary or instance of ConstitutiveRelation [type=model_type, input_value='sigma(u) = lambda * tr(e...) * I + 2 * mu * eps(u)', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/model_type\nconstitutive_relations.1\n  Input should be a valid dictionary or instance of ConstitutiveRelation [type=model_type, input_value='eps(u) = 0.5 * (Grad(u) + Grad(u)^T)', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/model_type"
+ ],
+ "total_seconds": 537.8123548030853,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 233.21163940429688,
+   "prompt_tokens": 1925,
+   "completion_tokens": 6974,
+   "answer_chars": 2651,
+   "reasoning_chars": 21944,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 168.8911418914795,
+   "prompt_tokens": 2834,
+   "completion_tokens": 5215,
+   "answer_chars": 2634,
+   "reasoning_chars": 14460,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 135.66165971755981,
+   "prompt_tokens": 3888,
+   "completion_tokens": 4233,
+   "answer_chars": 2401,
+   "reasoning_chars": 12016,
+   "finish": "stop"
+  }
+ ]
+}

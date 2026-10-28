@@ -1,0 +1,256 @@
+{
+  "name": "allen_cahn",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "c",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "non-conserved order parameter",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "M",
+      "rank": "scalar",
+      "description": "mobility",
+      "dimension": null
+    },
+    {
+      "name": "kappa",
+      "rank": "scalar",
+      "description": "gradient-energy coefficient",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "TimeDerivative",
+            "operand": {
+              "type": "Field",
+              "name": "c",
+              "rank": "scalar",
+              "space": "H1",
+              "description": "non-conserved order parameter",
+              "dimension": null
+            }
+          },
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Parameter",
+                  "name": "M",
+                  "rank": "scalar",
+                  "description": "mobility",
+                  "dimension": null
+                },
+                {
+                  "type": "Add",
+                  "terms": [
+                    {
+                      "type": "Neg",
+                      "operand": {
+                        "type": "Apply",
+                        "function": "f_prime",
+                        "argument": {
+                          "type": "Field",
+                          "name": "c",
+                          "rank": "scalar",
+                          "space": "H1",
+                          "description": "non-conserved order parameter",
+                          "dimension": null
+                        }
+                      }
+                    },
+                    {
+                      "type": "Mul",
+                      "factors": [
+                        {
+                          "type": "Parameter",
+                          "name": "kappa",
+                          "rank": "scalar",
+                          "description": "gradient-energy coefficient",
+                          "dimension": null
+                        },
+                        {
+                          "type": "Laplacian",
+                          "operand": {
+                            "type": "Field",
+                            "name": "c",
+                            "rank": "scalar",
+                            "space": "H1",
+                            "description": "non-conserved order parameter",
+                            "dimension": null
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [
+    {
+      "field": "c",
+      "value": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Constant",
+            "value": 0.5
+          },
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Add",
+                "terms": [
+                  {
+                    "type": "Mul",
+                    "factors": [
+                      {
+                        "type": "Constant",
+                        "value": 2
+                      },
+                      {
+                        "type": "Field",
+                        "name": "x",
+                        "rank": "vector",
+                        "space": "H1",
+                        "description": "spatial coordinate x",
+                        "dimension": null
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Constant",
+                    "value": -1
+                  }
+                ]
+              },
+              {
+                "type": "Add",
+                "terms": [
+                  {
+                    "type": "Mul",
+                    "factors": [
+                      {
+                        "type": "Constant",
+                        "value": 2
+                      },
+                      {
+                        "type": "Field",
+                        "name": "y",
+                        "rank": "vector",
+                        "space": "H1",
+                        "description": "spatial coordinate y",
+                        "dimension": null
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Constant",
+                    "value": -1
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "boundary_conditions": [
+    {
+      "field": "c",
+      "type": "neumann",
+      "boundary_id": "all_sides",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Apply",
+        "function": "f_prime",
+        "argument": {
+          "type": "Field",
+          "name": "c",
+          "rank": "scalar",
+          "space": "H1",
+          "description": "non-conserved order parameter",
+          "dimension": null
+        }
+      },
+      "rhs": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Constant",
+            "value": 0.5
+          },
+          {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Pow",
+                "base": {
+                  "type": "Field",
+                  "name": "c",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "non-conserved order parameter",
+                  "dimension": null
+                },
+                "exponent": 3
+              },
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Field",
+                  "name": "c",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "non-conserved order parameter",
+                  "dimension": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "name": "double_well_potential_derivative"
+    }
+  ],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}

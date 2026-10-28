@@ -1,0 +1,304 @@
+Let me carefully extract the PDE model from this paper about the Allen-Cahn equation.
+
+From the paper:
+
+1. **Field**: c(x,y,t) - a non-conserved order parameter (scalar field)
+
+2. **Domain**: Ω = (0,1)² (unit square)
+
+3. **Free Energy** (equation 1):
+   F[c] = ∫_Ω (f(c) + (κ/2)|∇c|²) dΩ
+
+4. **Potential** (equation 2):
+   f(c) = (1/4)(c² - 1)²
+
+5. **Allen-Cahn equation** (equation 3):
+   ∂c/∂t = -M(f'(c) - κ∇²c)
+
+   Let me compute f'(c):
+   f(c) = (1/4)(c² - 1)²
+   f'(c) = (1/4) · 2(c² - 1) · 2c = c(c² - 1) = c³ - c
+
+   So the equation becomes:
+   ∂c/∂t = -M(c³ - c - κ∇²c)
+   ∂c/∂t = -M(c³ - c) + Mκ∇²c
+   ∂c/∂t = Mκ∇²c - M(c³ - c)
+
+   Or equivalently:
+   ∂c/∂t = M(κ∇²c - c³ + c)
+
+6. **Boundary conditions** (equation 4):
+   ∇c · n = 0 on ∂Ω (no flux, insulated boundary)
+   This is a Neumann boundary condition with value 0.
+
+7. **Initial condition** (equation 5):
+   c(x,y,0) = (1/2)(2x-1)(2y-1)
+
+8. **Parameters**:
+   - M = 1 (mobility)
+   - κ = 0.01 (gradient-energy coefficient)
+
+Now let me construct the PDE-IR:
+
+**Fields**:
+- c: scalar field, rank scalar, space H1
+
+**Parameters**:
+- M: scalar, mobility
+- κ: scalar, gradient-energy coefficient
+
+**Equation**:
+The strong form of Allen-Cahn equation:
+∂c/∂t = M(f'(c) - κ∇²c)
+
+Where f'(c) = c³ - c
+
+So:
+∂c/∂t = M(c³ - c - κ∇²c)
+
+Or rearranged:
+∂c/∂t - M(c³ - c) + Mκ∇²c = 0
+
+Let me think about the expression tree structure:
+
+The equation is:
+∂c/∂t = -M(f'(c) - κ∇²c)
+
+Which can be written as:
+∂c/∂t + M(f'(c) - κ∇²c) = 0
+
+Or:
+∂c/∂t + M·f'(c) - M·κ·∇²c = 0
+
+Where f'(c) = c³ - c
+
+So the left-hand side would be:
+∂c/∂t + M·(c³ - c) - M·κ·∇²c
+
+Let me build the expression tree:
+
+TimeDerivative of c
++ M * (c^3 - c)
+- M * κ * Laplacian(c)
+
+Actually, looking at the original equation again:
+∂c/∂t = -M(f'(c) - κ∇²c)
+
+This is:
+∂c/∂t = -M·f'(c) + M·κ·∇²c
+
+So:
+∂c/∂t + M·f'(c) - M·κ·∇²c = 0
+
+Where f'(c) = c³ - c
+
+Let me be more careful about the expression tree structure.
+
+The PDE is:
+∂c/∂t = -M(f'(c) - κ∇²c)
+
+Let me expand:
+∂c/∂t = -M·f'(c) + M·κ·∇²c
+
+Rearranging to strong form (LHS = 0):
+∂c/∂t + M·f'(c) - M·κ·∇²c = 0
+
+Where f'(c) = c³ - c
+
+So:
+∂c/∂t + M·(c³ - c) - M·κ·∇²c = 0
+
+Expression tree for LHS:
+Add [
+  TimeDerivative(Field c),
+  Mul [M, Add [
+    Sub [Pow(c, 3), c],
+    Neg [Mul [M, κ, Laplacian(c)]]
+  ]]
+]
+
+Wait, let me reconsider. The equation is:
+∂c/∂t = -M(f'(c) - κ∇²c)
+
+Let me expand the right side:
+∂c/∂t = -M·f'(c) + M·κ·∇²c
+
+So:
+∂c/∂t + M·f'(c) - M·κ·∇²c = 0
+
+Where f'(c) = c³ - c
+
+So:
+∂c/∂t + M·(c³ - c) - M·κ·∇²c = 0
+
+Expression tree:
+Add [
+  TimeDerivative(c),
+  Add [
+    Mul [M, Sub [Pow(c, 3), c]],
+    Neg [Mul [M, κ, Laplacian(c)]]
+  ]
+]
+
+Hmm, let me think again more carefully.
+
+The equation is:
+∂c/∂t = -M(f'(c) - κ∇²c)
+
+Let me denote:
+- Term1 = -M·f'(c)
+- Term2 = M·κ·∇²c
+
+So:
+∂c/∂t = Term1 + Term2
+
+Rearranging:
+∂c/∂t - Term1 - Term2 = 0
+
+Wait no:
+∂c/∂t = Term1 + Term2
+∂c/∂t - Term1 - Term2 = 0
+
+But Term1 = -M·f'(c), so -Term1 = M·f'(c)
+And Term2 = M·κ·∇²c, so -Term2 = -M·κ·∇²c
+
+So:
+∂c/∂t + M·f'(c) - M·κ·∇²c = 0
+
+Where f'(c) = c³ - c
+
+So:
+∂c/∂t + M·(c³ - c) - M·κ·∇²c = 0
+
+Expression tree for LHS:
+Add [
+  TimeDerivative(c),
+  Add [
+    Mul [M, Sub [Pow(c, 3), c]],
+    Neg [Mul [M, κ, Laplacian(c)]]
+  ]
+]
+
+Actually, I realize I need to be more careful. Let me re-read the equation:
+
+∂c/∂t = -M(f'(c) - κ∇²c)
+
+Let me expand:
+∂c/∂t = -M·f'(c) + M·κ·∇²c
+
+So the strong form is:
+∂c/∂t + M·f'(c) - M·κ·∇²c = 0
+
+Where f'(c) = c³ - c
+
+So:
+∂c/∂t + M·(c³ - c) - M·κ·∇²c = 0
+
+Let me build the expression tree step by step:
+
+1. TimeDerivative(c) - this is ∂c/∂t
+2. M * (c³ - c) - this is M·f'(c)
+3. M * κ * Laplacian(c) - this is M·κ·∇²c
+
+The LHS of the equation is:
+∂c/∂t + M·f'(c) - M·κ·∇²c
+
+Which is:
+TimeDerivative(c) + Mul(M, Sub(Pow(c,3), c)) - Mul(M, κ, Laplacian(c))
+
+Expression tree:
+{
+  "type": "Add",
+  "terms": [
+    {
+      "type": "TimeDerivative",
+      "operand": {
+        "type": "Field",
+        "name": "c",
+        ...
+      }
+    },
+    {
+      "type": "Add",
+      "terms": [
+        {
+          "type": "Mul",
+          "factors": [
+            {"type": "Parameter", "name": "M", ...},
+            {
+              "type": "Add",
+              "terms": [
+                {"type": "Pow", "base": {"type": "Field", "name": "c", ...}, "exponent": 3},
+                {"type": "Neg", "operand": {"type": "Field", "name": "c", ...}}
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Neg",
+          "operand": {
+            "type": "Mul",
+            "factors": [
+              {"type": "Parameter", "name": "M", ...},
+              {"type": "Parameter", "name": "κ", ...},
+              {
+                "type": "Laplacian",
+                "operand": {"type": "Field", "name": "c", ...}
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+
+Hmm, this is getting complex. Let me simplify.
+
+Actually, looking at the structure more carefully:
+
+The equation is:
+∂c/∂t = -M(f'(c) - κ∇²c)
+
+Let me think of this as:
+∂c/∂t + M(f'(c) - κ∇²c) = 0
+
+Where f'(c) = c³ - c
+
+So:
+∂c/∂t + M(c³ - c) - Mκ∇²c = 0
+
+The expression tree for the LHS:
+Add [
+  TimeDerivative(c),
+  Add [
+    Mul(M, Sub(Pow(c,3), c)),
+    Neg(Mul(M, κ, Laplacian(c)))
+  ]
+]
+
+Or equivalently:
+Add [
+  TimeDerivative(c),
+  Mul(M, Sub(Pow(c,3), c)),
+  Neg(Mul(M, κ, Laplacian(c)))
+]
+
+Let me use the simpler form with three terms.
+
+**Boundary conditions**:
+The paper states: ∇c · n = 0 on ∂Ω
+
+This is a Neumann boundary condition with value 0 (insulated/no-flux boundary).
+
+**Initial conditions**:
+c(x,y,0) = (1/2)(2x-1)(2y-1)
+
+Now let me write out the full JSON structure.
+
+For the dimensions:
+- c is an order parameter, typically dimensionless
+- M is mobility, units would be [time]/[energy] or similar, but since we're not given specific units, I'll leave it as null
+- κ is gradient-energy coefficient, units would be [energy]/[length]², but again I'll leave as null
+
+Let me construct the final JSON:

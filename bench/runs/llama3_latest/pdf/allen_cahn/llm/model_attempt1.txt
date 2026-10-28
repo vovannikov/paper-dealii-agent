@@ -1,0 +1,160 @@
+Here is the extracted PDE-IR PDEModel in JSON format:
+
+```
+{
+  "name": "allen_cahn",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "c",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "order parameter",
+      "dimension": {"length": 2, "time": 1}
+    }
+  ],
+  "parameters": [
+    {
+      "name": "M",
+      "rank": "scalar",
+      "description": "mobility",
+      "dimension": {"time": -1}
+    },
+    {
+      "name": "κ",
+      "rank": "scalar",
+      "description": "gradient-energy coefficient",
+      "dimension": {"length": 2, "time": -1}
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Grad",
+                  "operand": {
+                    "type": "Field",
+                    "name": "c",
+                    "rank": "scalar",
+                    "space": "H1",
+                    "description": "order parameter",
+                    "dimension": {"length": 2, "time": 1}
+                  }
+                },
+                {
+                  "type": "Parameter",
+                  "name": "κ",
+                  "rank": "scalar",
+                  "description": "gradient-energy coefficient",
+                  "dimension": {"length": 2, "time": -1}
+                }
+              ]
+            }
+          },
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Parameter",
+                  "name": "M",
+                  "rank": "scalar",
+                  "description": "mobility",
+                  "dimension": {"time": -1}
+                },
+                {
+                  "type": "Grad",
+                  "operand": {
+                    "type": "Field",
+                    "name": "c",
+                    "rank": "scalar",
+                    "space": "H1",
+                    "description": "order parameter",
+                    "dimension": {"length": 2, "time": 1}
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [
+    {
+      "field": "c",
+      "type": "dirichlet",
+      "value": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Field",
+                "name": "c",
+                "rank": "scalar",
+                "space": "H1",
+                "description": "order parameter",
+                "dimension": {"length": 2, "time": 1}
+              },
+              {
+                "type": "Constant",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Field",
+                "name": "c",
+                "rank": "scalar",
+                "space": "H1",
+                "description": "order parameter",
+                "dimension": {"length": 2, "time": 1}
+              },
+              {
+                "type": "Constant",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "boundary_conditions": [
+    {
+      "field": "c",
+      "type": "neumann",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      }
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+
+Note that I've assumed the boundary condition is a Neumann condition with zero flux, as stated in the paper.

@@ -1,0 +1,47 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "allen_cahn",
+ "modality": "pdf",
+ "document_chars": 943,
+ "started": 1793131146.040321,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 54.73747801780701,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: missing key 'name'",
+  "response JSON did not match PDEModel: missing key 'name'",
+  "response JSON did not match PDEModel: missing key 'name'"
+ ],
+ "total_seconds": 54.74642086029053,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 17.175021409988403,
+   "prompt_tokens": 1670,
+   "completion_tokens": 1333,
+   "answer_chars": 6702,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 18.188730239868164,
+   "prompt_tokens": 3056,
+   "completion_tokens": 1333,
+   "answer_chars": 6702,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 19.365245580673218,
+   "prompt_tokens": 4442,
+   "completion_tokens": 1333,
+   "answer_chars": 6702,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

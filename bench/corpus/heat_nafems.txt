@@ -1,0 +1,84 @@
+2D Stationary Heat Transfer Benchmark
+Benchmark HeatTransfer-FEM-Stationary-2D-Single-HeatTransfer-0001
+Problem description
+This benchmark considers steady-state heat conduction in a rectangular solid. The rectangle
+has a width of 0.6 m and a height of 1 m. The lower boundary is maintained at 100 °C. The
+upper and right boundaries exchange heat with an ambient environment at 0 °C by natural
+convection. The left boundary is thermally insulated.
+x
+y
+T = 100 °C
+convection: h = 750 W/(m²·°C), Tamb = 0 °C
+insulated
+0.6 m
+1 m
+(0.6, 0.2)
+Governing equation
+For steady heat transfer in a solid with no internal heat source and no material velocity, the
+transient, source, and advection terms vanish. The resulting heat equation is
+
+∇· ( 𝑘∇𝑇) = 0
+Here 𝑇 is temperature and 𝑘 is the thermal conductivity. Since the material is homogeneous,
+𝑘= 52W/(m·°C).
+∇· ( 52∇𝑇) = 0
+in 𝛺
+Boundary conditions
+Bottom boundary
+The temperature is prescribed on the lower boundary:
+𝑇= 100°C, 𝑦= 0
+Top and right boundaries
+These boundaries are subject to Newton's law of cooling with ambient temperature 0 °C and
+heat-transfer coefficient 750 W/(m²·°C):
+−𝑘
+∂𝑇
+∂𝑛= ℎ(𝑇−𝑇amb )
+ℎ= 750W/(m²·°C), 𝑇amb = 0°C
+The outward normal 𝑛 is used in the convection condition.
+Left boundary
+The remaining boundary is thermally insulated, so the normal heat flux vanishes:
+
+−𝑘∂𝑇
+∂𝑛= 0, 𝑥= 0
+Reference solution and verification point
+The benchmark uses the temperature at P = (0.6 m, 0.2 m) as the reference quantity. The
+reference temperature is 18.25 °C.
+Reference point
+P = (0.6 m, 0.2 m)
+Reference
+temperature
+Tref = 18.25 °C
+Verification tolerance
+relative error < 10−3
+The numerical solution is accepted when the relative error at the reference point satisfies
+|𝑇(0.6,0.2 ) −𝑇ref
+𝑇ref
+| < 10 −3
+Model summary
+Quantity
+Value
+Domain
+0 ≤ x ≤ 0.6 m, 0 ≤ y ≤ 1 m
+Thermal conductivity
+k = 52 W/(m·°C)
+Bottom boundary
+T = 100 °C
+Top/right boundaries
+Convection to Tamb = 0 °C
+
+Quantity
+Value
+Heat-transfer coefficient
+h = 750 W/(m²·°C)
+Left boundary
+Thermally insulated
+Reference point
+(0.6 m, 0.2 m)
+Reference temperature
+18.25 °C
+Acceptance criterion
+|(T − Tref)/Tref| < 10−3
+Source: Wolfram Documentation, Heat Transfer Model Verification Tests, benchmark
+HeatTransfer-FEM-Stationary-2D-Single-HeatTransfer-0001 . The page identifies the
+benchmark reference as A. D. Cameron, J. A. Casey, and G. B. Simpson, Benchmark Tests for
+Thermal Analysis, NAFEMS Documentation.
+Source page: Wolfram Heat Transfer Model Verification Tests

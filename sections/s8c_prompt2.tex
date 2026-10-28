@@ -1,0 +1,19 @@
+\subsection{Experiment: how much does the prompt contract matter?}
+\label{sec:prompt}
+The failure analysis suggests that many errors arise because the original extraction prompt does not tell the model how to express things the IR \emph{can} express: it lists node tags without the time and space coordinates, vector construction, initial conditions or the form of a constitutive relation, and its only format example is a scalar Poisson model. To test this hypothesis we extended the system prompt by a short block (Appendix~\ref{app:supp}; about 350 tokens) that documents exactly these node types and rules, and re-ran the six documents in HTML for the four models that finished in the original experiment (the runaway-reasoning model was not repeated). Nothing else changed: same documents, same temperature, same scorer.
+
+\begin{table}[t]
+\centering\small
+\caption{Effect of the extended prompt contract (HTML documents, six per model): documents valid, correct and ran (solver compiled and ran) with the original and with the extended prompt.}
+\label{tab:v2}
+\input{tables/tab_v2}
+\end{table}
+
+\begin{table}[t]
+\centering\small
+\caption{Per-document outcome with the extended prompt (\cmark\ correct, $\sim$ valid but not equivalent, \xmark\ rejected at the trust boundary).}
+\label{tab:v2matrix}
+\input{tables/tab_v2_matrix}
+\end{table}
+
+\input{sections/s8d2_v2text}

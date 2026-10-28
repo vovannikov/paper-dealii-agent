@@ -1,0 +1,267 @@
+```json
+{
+  "name": "plane_strain_cantilever",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "displacement vector",
+      "dimension": {"length": 1}
+    },
+    {
+      "name": "sigma",
+      "rank": "tensor",
+      "space": "L2",
+      "description": "stress tensor",
+      "dimension": {"mass": 1, "length": -1, "time": -2}
+    },
+    {
+      "name": "epsilon",
+      "rank": "tensor",
+      "space": "L2",
+      "description": "strain tensor",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "lambda",
+      "rank": "scalar",
+      "description": "first Lamé parameter",
+      "dimension": {"mass": 1, "length": -1, "time": -2}
+    },
+    {
+      "name": "mu",
+      "rank": "scalar",
+      "description": "second Lamé parameter",
+      "dimension": {"mass": 1, "length": -1, "time": -2}
+    },
+    {
+      "name": "f",
+      "rank": "vector",
+      "description": "body force",
+      "dimension": {"mass": 1, "length": 0, "time": -2}
+    },
+    {
+      "name": "gN",
+      "rank": "vector",
+      "description": "end traction",
+      "dimension": {"mass": 1, "length": -1, "time": -2}
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "name": "equilibrium",
+      "lhs": {
+        "type": "Neg",
+        "operand": {
+          "type": "Div",
+          "operand": {
+            "type": "Field",
+            "name": "sigma",
+            "rank": "tensor",
+            "space": "L2",
+            "description": "stress tensor",
+            "dimension": {"mass": 1, "length": -1, "time": -2}
+          }
+        }
+      },
+      "rhs": {
+        "type": "Parameter",
+        "name": "f",
+        "rank": "vector",
+        "description": "body force",
+        "dimension": {"mass": 1, "length": 0, "time": -2}
+      }
+    },
+    {
+      "type": "Equation",
+      "name": "constitutive",
+      "lhs": {
+        "type": "Field",
+        "name": "sigma",
+        "rank": "tensor",
+        "space": "L2",
+        "description": "stress tensor",
+        "dimension": {"mass": 1, "length": -1, "time": -2}
+      },
+      "rhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Parameter",
+                "name": "lambda",
+                "rank": "scalar",
+                "description": "first Lamé parameter",
+                "dimension": {"mass": 1, "length": -1, "time": -2}
+              },
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Trace",
+                    "operand": {
+                      "type": "Field",
+                      "name": "epsilon",
+                      "rank": "tensor",
+                      "space": "L2",
+                      "description": "strain tensor",
+                      "dimension": null
+                    }
+                  },
+                  {
+                    "type": "Identity"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Constant",
+                "value": 2
+              },
+              {
+                "type": "Parameter",
+                "name": "mu",
+                "rank": "scalar",
+                "description": "second Lamé parameter",
+                "dimension": {"mass": 1, "length": -1, "time": -2}
+              },
+              {
+                "type": "Field",
+                "name": "epsilon",
+                "rank": "tensor",
+                "space": "L2",
+                "description": "strain tensor",
+                "dimension": null
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "Equation",
+      "name": "strain",
+      "lhs": {
+        "type": "Field",
+        "name": "epsilon",
+        "rank": "tensor",
+        "space": "L2",
+        "description": "strain tensor",
+        "dimension": null
+      },
+      "rhs": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Constant",
+            "value": 0.5
+          },
+          {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Grad",
+                "operand": {
+                  "type": "Field",
+                  "name": "u",
+                  "rank": "vector",
+                  "space": "H1",
+                  "description": "displacement vector",
+                  "dimension": {"length": 1}
+                }
+              },
+              {
+                "type": "Transpose",
+                "operand": {
+                  "type": "Grad",
+                  "operand": {
+                    "type": "Field",
+                    "name": "u",
+                    "rank": "vector",
+                    "space": "H1",
+                    "description": "displacement vector",
+                    "dimension": {"length": 1}
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "clamped",
+      "value": {
+        "type": "VectorExpr",
+        "components": [
+          {
+            "type": "Constant",
+            "value": 0
+          },
+          {
+            "type": "Constant",
+            "value": 0
+          }
+        ]
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "sigma",
+      "type": "neumann",
+      "boundary_id": "right_end",
+      "value": {
+        "type": "Parameter",
+        "name": "gN",
+        "rank": "vector",
+        "description": "end traction",
+        "dimension": {"mass": 1, "length": -1, "time": -2}
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "sigma",
+      "type": "neumann",
+      "boundary_id": "top_and_bottom",
+      "value": {
+        "type": "VectorExpr",
+        "components": [
+          {
+            "type": "Constant",
+            "value": 0
+          },
+          {
+            "type": "Constant",
+            "value": 0
+          }
+        ]
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```

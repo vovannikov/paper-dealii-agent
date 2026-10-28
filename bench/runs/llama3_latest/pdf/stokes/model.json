@@ -1,0 +1,153 @@
+{
+  "name": "creeping_flow",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "velocity",
+      "dimension": {
+        "length": 1,
+        "mass": 0,
+        "time": -1,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "ν",
+      "rank": "scalar",
+      "description": "kinematic viscosity",
+      "dimension": {
+        "length": 1,
+        "mass": 0,
+        "time": -1,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    },
+    {
+      "name": "ulid",
+      "rank": "vector",
+      "description": "lid velocity",
+      "dimension": {
+        "length": 1,
+        "mass": 0,
+        "time": -1,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Grad",
+                    "operand": {
+                      "type": "Field",
+                      "name": "u",
+                      "rank": "vector",
+                      "space": "H1",
+                      "description": "velocity",
+                      "dimension": {
+                        "length": 1,
+                        "mass": 0,
+                        "time": -1,
+                        "temperature": 0,
+                        "amount": 0,
+                        "current": 0,
+                        "luminosity": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "ν",
+                    "rank": "scalar",
+                    "description": "kinematic viscosity",
+                    "dimension": {
+                      "length": 1,
+                      "mass": 0,
+                      "time": -1,
+                      "temperature": 0,
+                      "amount": 0,
+                      "current": 0,
+                      "luminosity": 0
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "lid",
+      "value": {
+        "type": "Field",
+        "name": "ulid",
+        "rank": "vector",
+        "space": "H1",
+        "description": "lid velocity",
+        "dimension": {
+          "length": 1,
+          "mass": 0,
+          "time": -1,
+          "temperature": 0,
+          "amount": 0,
+          "current": 0,
+          "luminosity": 0
+        }
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "no-slip",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}

@@ -1,0 +1,438 @@
+The user wants me to fix a dimensional inconsistency in the PDE-IR JSON.
+The error says: "terms of a sum have inconsistent physical dimensions: L·T^-2, L^-2·M·T^-2 (at equation 'momentum')"
+
+Let's look at the momentum equation:
+`-div(2 * nu * epsilon(u)) + grad(p) = 0`
+Wait, the paper says: `-div(2 nu epsilon(u)) + grad(p) = 0`
+Actually, the paper says: `-∇·(2ν ε(u)) + ∇p = 0`
+Wait, the dimensions:
+`nu` (kinematic viscosity) has dimensions L^2 T^-1.
+`epsilon(u)` has dimensions of `grad(u)`, which is T^-1.
+So `nu * epsilon(u)` has dimensions L^2 T^-1 * T^-1 = L^2 T^-2.
+`div(...)` adds L^-1, so `div(nu * epsilon(u))` has dimensions L T^-2.
+`grad(p)` has dimensions of `p` / L.
+Pressure `p` has dimensions M L^-1 T^-2.
+So `grad(p)` has dimensions M L^-2 T^-2.
+These are indeed inconsistent! L T^-2 vs M L^-2 T^-2.
+This is because the Stokes equation in the paper uses kinematic viscosity `nu`, which implies the density `rho` is normalized to 1, or the equation is actually `-div(2 nu epsilon(u)) + grad(p) = 0` where `p` is actually pressure divided by density (specific pressure), or `nu` is dynamic viscosity?
+Wait, the paper says: "where ν is the kinematic viscosity".
+In fluid dynamics, the momentum equation is usually `-div(2 mu epsilon(u)) + grad(p) = 0` where `mu` is dynamic viscosity.
+If `nu` is kinematic viscosity, the equation should be `-div(2 nu epsilon(u)) + grad(p/rho) = 0`, or `rho` is assumed 1.
+Often in lid-driven cavity problems, non-dimensionalization is used, or density is set to 1.
+The paper says: "The viscosity is ν=0.1". It calls it kinematic viscosity.
+If we stick to the paper's equation exactly: `-∇·(2ν ε(u)) + ∇p = 0`.
+To fix the dimensional inconsistency in the IR, I should either:
+1. Remove dimensions from `p` or `nu` if they are non-dimensional.
+2. Or adjust dimensions to be consistent. Since it's a standard benchmark problem, variables are often non-dimensionalized. The domain is (0,1)x(0,1), lid velocity is 1, nu=0.1. This strongly implies non-dimensional variables.
+If variables are non-dimensional, dimensions should be `null`.
+Let's check the paper text: "We consider the steady flow of an incompressible Newtonian fluid in the unit square cavity Ω=(0,1)×(0,1)." "The viscosity is ν=0.1 and the lid moves in the positive x-direction with ulid=(1,0)."
+This is the classic Ghia et al. (1982) or similar benchmark. Usually, it's non-dimensionalized.
+I will set `dimension: null` for all fields and parameters to avoid the dimensional mismatch, or I can explicitly state they are non-dimensional. The prompt says "Attach SI base dimensions to fields/parameters when the paper states units". The paper does not state units, it just gives numbers. So `dimension: null` is appropriate.
+
+Wait, the prompt says: "Attach SI base dimensions to fields/parameters when the paper states units". It doesn't state units. So I should use `null`.
+But I already put dimensions in the previous attempt, which caused the error. I will remove them or set them to `null`.
+
+Let's verify the equation structure.
+The paper says: `-∇·(2ν ε(u)) + ∇p = 0`
+My previous IR had:
+`-div(nu * (grad(u) + grad(u)^T)) + grad(p) = 0`
+Wait, `epsilon(u) = 1/2 (grad(u) + grad(u)^T)`.
+So `2 * nu * epsilon(u) = nu * (grad(u) + grad(u)^T)`.
+My IR used `nu * (grad(u) + grad(u)^T)`, which matches `2 * nu * epsilon(u)`. That's correct.
+The dimensional mismatch was due to me assigning SI dimensions to `nu` and `p` which don't match in this specific non-dimensionalized form.
+I will set `dimension: null` for all fields and parameters.
+
+Let's reconstruct the JSON carefully.
+Fields: u (vector), p (scalar)
+Parameters: nu (scalar), u_lid (vector)
+Equations: momentum, continuity
+Boundary conditions: lid (dirichlet u_lid), stationary_walls (dirichlet 0)
+
+Check equation structure:
+Momentum: `-div(nu * (grad(u) + transpose(grad(u)))) + grad(p) = 0`
+Continuity: `div(u) = 0`
+
+I will make sure the JSON matches the schema exactly.
+I'll remove dimensions to be safe, or set them to null.
+The prompt says: "Attach SI base dimensions to fields/parameters when the paper states units". It doesn't, so null is fine.
+
+Let's draft the JSON.
+```json
+{
+  "name": "stokes_lid_driven_cavity",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "velocity field",
+      "dimension": null
+    },
+    {
+      "name": "p",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "pressure field",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "nu",
+      "rank": "scalar",
+      "description": "kinematic viscosity",
+      "dimension": null
+    },
+    {
+      "name": "u_lid",
+      "rank": "vector",
+      "description": "lid velocity",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Parameter",
+                    "name": "nu",
+                    "rank": "scalar",
+                    "description": "kinematic viscosity",
+                    "dimension": null
+                  },
+                  {
+                    "type": "Add",
+                    "terms": [
+                      {
+                        "type": "Grad",
+                        "operand": {
+                          "type": "Field",
+                          "name": "u",
+                          "rank": "vector",
+                          "space": "H1",
+                          "description": "velocity field",
+                          "dimension": null
+                        }
+                      },
+                      {
+                        "type": "Transpose",
+                        "operand": {
+                          "type": "Grad",
+                          "operand": {
+                            "type": "Field",
+                            "name": "u",
+                            "rank": "vector",
+                            "space": "H1",
+                            "description": "velocity field",
+                            "dimension": null
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "type": "Grad",
+            "operand": {
+              "type": "Field",
+              "name": "p",
+              "rank": "scalar",
+              "space": "H1",
+              "description": "pressure field",
+              "dimension": null
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "momentum"
+    },
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Div",
+        "operand": {
+          "type": "Field",
+          "name": "u",
+          "rank": "vector",
+          "space": "H1",
+          "description": "velocity field",
+          "dimension": null
+        }
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "continuity"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "lid",
+      "value": {
+        "type": "Parameter",
+        "name": "u_lid",
+        "rank": "vector",
+        "description": "lid velocity",
+        "dimension": null
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "stationary_walls",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+
+Wait, should I keep the factor of 2? The paper says `-∇·(2ν ε(u)) + ∇p = 0` and `ε(u) = 1/2(∇u + ∇u^T)`.
+So `2ν ε(u) = ν(∇u + ∇u^T)`. My IR uses `nu * (grad(u) + transpose(grad(u)))`, which is correct.
+The dimensional error was strictly because I assigned SI dimensions to non-dimensional variables. Setting them to `null` fixes it.
+I will double check the schema requirements.
+"Attach SI base dimensions to fields/parameters when the paper states units" -> It doesn't, so null is correct.
+Everything else looks solid.
+One minor point: `u_lid` is given as `(1,0)`. I could just use a constant vector `{"type": "VectorExpr", "components": [{"type": "Constant", "value": 1}, {"type": "Constant", "value": 0}]}` instead of a parameter, but using a parameter is fine. I'll stick to parameter or just inline it. The prompt says "Declare every field and parameter you reference". I'll keep `u_lid` as a parameter.
+Actually, it's simpler to just use `{"type": "Constant", "value": 0}` for zero, but for `(1,0)` I'll use `VectorExpr`. Or keep parameter. I'll keep parameter as it's cleaner.
+Wait, the boundary condition value for `u_lid` in my draft is a Parameter node. That's fine.
+I will produce the JSON now.
+One thing: `Transpose` of `Grad(u)`? `Grad(u)` is a tensor (Jacobian). `Transpose` is correct.
+The structure matches the prompt's example.
+I will output only the JSON.
+Check consistency: `terms of a sum have inconsistent physical dimensions` -> fixed by `dimension: null`.
+All good.
+Proceed. 
+Let's verify the exact JSON structure matches the requested schema.
+Fields: u, p. Parameters: nu, u_lid.
+Equations: momentum, continuity.
+BCs: lid, stationary_walls.
+All correct.
+Output matches. 
+One detail: `u_lid` dimension is null. That's fine.
+I will generate the response. 
+Self-Correction/Refinement during thought: 
+Should I explicitly define `u_lid` as a constant vector in the BC instead of a parameter? The prompt says "Declare every field and parameter you reference under fields/parameters." So keeping it as a parameter is correct.
+I'll make sure the JSON is perfectly formatted.
+Ready. 
+Output matches the draft. 
+Proceeds. 
+[Output Generation] -> *Self-Correction/Verification during generation prep*: 
+Wait, the prompt says "Attach SI base dimensions to fields/parameters when the paper states units". It doesn't state units, so `null` is correct. The error was explicitly about dimensions. So removing them is the right fix.
+The JSON structure is valid.
+I will produce it. 
+All good. 
+Output matches response. 
+[Done] 
+*Self-Correction/Note during thought*: I should ensure that `Transpose` and `Grad` are used correctly. `Grad` of a vector field yields a tensor. `Transpose` of a tensor yields a tensor. `Add` of two tensors yields a tensor. `Mul` by scalar yields tensor. `Div` of tensor yields vector. `Grad` of scalar yields vector. `Add` of two vectors yields vector. `Neg` of vector yields vector. `Constant 0` is vector (implicitly). This matches the momentum equation structure.
+Everything is consistent.
+Proceeds. 
+Output Generation. 
+```json
+{
+  "name": "stokes_lid_driven_cavity",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "velocity field",
+      "dimension": null
+    },
+    {
+      "name": "p",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "pressure field",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "nu",
+      "rank": "scalar",
+      "description": "kinematic viscosity",
+      "dimension": null
+    },
+    {
+      "name": "u_lid",
+      "rank": "vector",
+      "description": "lid velocity",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Parameter",
+                    "name": "nu",
+                    "rank": "scalar",
+                    "description": "kinematic viscosity",
+                    "dimension": null
+                  },
+                  {
+                    "type": "Add",
+                    "terms": [
+                      {
+                        "type": "Grad",
+                        "operand": {
+                          "type": "Field",
+                          "name": "u",
+                          "rank": "vector",
+                          "space": "H1",
+                          "description": "velocity field",
+                          "dimension": null
+                        }
+                      },
+                      {
+                        "type": "Transpose",
+                        "operand": {
+                          "type": "Grad",
+                          "operand": {
+                            "type": "Field",
+                            "name": "u",
+                            "rank": "vector",
+                            "space": "H1",
+                            "description": "velocity field",
+                            "dimension": null
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "type": "Grad",
+            "operand": {
+              "type": "Field",
+              "name": "p",
+              "rank": "scalar",
+              "space": "H1",
+              "description": "pressure field",
+              "dimension": null
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "momentum"
+    },
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Div",
+        "operand": {
+          "type": "Field",
+          "name": "u",
+          "rank": "vector",
+          "space": "H1",
+          "description": "velocity field",
+          "dimension": null
+        }
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "continuity"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "lid",
+      "value": {
+        "type": "Parameter",
+        "name": "u_lid",
+        "rank": "vector",
+        "description": "lid velocity",
+        "dimension": null
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "stationary_walls",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+All checks passed. Output matches. 
+Proceeds. 
+[Final Check of the Prompt]
+"Reply with ONLY the corrected JSON object addressing these problems."
+I will output exactly the JSON.
+Done. 
+(Self-Correction/Note during generation: I'll make sure the JSON is strictly valid and matches the schema. The dimensions are set to null to resolve the inconsistency, as the problem is non-dimensionalized. The structure is correct.)
+Output matches. 
+Proceeds. 
+[Output Generation] -> *Done.* 
+*(Note: I will ensure no markdown formatting interferes if possible, but standard JSON block is fine. The prompt says "Reply with ONLY the corrected JSON object".)*
+I will produce it now. 
+[Output Generation]

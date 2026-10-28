@@ -1,0 +1,33 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}\usepackage{amsmath,amssymb}\usepackage[margin=2.5cm]{geometry}
+\title{Steady Diffusion with a Volumetric Source and Mixed Boundary Conditions}\author{A. Reviewer and B. Tester}\date{}
+\begin{document}\maketitle
+\section*{1. Problem description}
+We study the steady diffusion of a scalar quantity $u$ (for instance a solute concentration) in a rectangular domain $\Omega=(0,2)\times(0,1)$. The quantity is produced inside the domain at a uniform volumetric rate $f$, and it is transported by diffusion only; the diffusivity $k$ is constant in space.
+
+\section*{2. Governing equation}
+The balance of the diffusive flux $-k\nabla u$ against the production rate gives the Poisson equation
+
+\begin{equation}
+-\nabla\cdot\left(k\,\nabla u\right) = f \quad \text{in } \Omega .
+\end{equation}
+\section*{3. Boundary conditions}
+The quantity vanishes on the left and the bottom side of the domain,
+
+\begin{equation}
+u = 0 \quad \text{on } x=0 \text{ and on } y=0 .
+\end{equation}
+Through the right side, $x=2$, a prescribed outward flux $g_N$ leaves the domain,
+
+\begin{equation}
+k\,\frac{\partial u}{\partial n} = g_N \quad \text{on } x=2 ,
+\end{equation}
+where $n$ is the outward unit normal. The top side, $y=1$, is impermeable, i.e. $k\,\partial u/\partial n = 0$ there.
+
+\section*{4. Parameters}
+The diffusivity is $k=2.5$ and the production rate is $f=10$. The outward flux through the right side is $g_N=3$. All quantities are given in consistent non-dimensional units.
+
+\section*{5. Remarks on the solution}
+For these data the maximum of $u$ is reached close to the top right corner. Earlier studies with a constant production rate of $f=4$ and a flux of $g_N=1$ reported a maximum of about $0.9$; those values are not used here.
+
+\end{document}

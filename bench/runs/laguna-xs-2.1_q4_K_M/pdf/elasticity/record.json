@@ -1,0 +1,29 @@
+{
+ "model": "laguna-xs-2.1:q4_K_M",
+ "case": "elasticity",
+ "modality": "pdf",
+ "document_chars": 1321,
+ "started": 1793142614.265625,
+ "model_ok": false,
+ "model_attempts": 1,
+ "model_first_ok": false,
+ "model_issues": [
+  "llm_output_truncated: the model 'laguna-xs-2.1:q4_K_M' ran out of tokens before finishing its answer (1881 prompt + 63655 output tokens) -- it spent them on reasoning. Give it a larger context window: for Ollama restart the server with OLLAMA_CONTEXT_LENGTH=32768 (its default is 4096); for vLLM raise --max-model-len."
+ ],
+ "model_seconds": 1177.2534053325653,
+ "model_parse_errors": [
+  "the model 'laguna-xs-2.1:q4_K_M' ran out of tokens before finishing its answer (1881 prompt + 63655 output tokens) -- it spent them on reasoning. Give it a larger context window: for Ollama restart the server with OLLAMA_CONTEXT_LENGTH=32768 (its default is 4096); for vLLM raise --max-model-len."
+ ],
+ "total_seconds": 1177.2697393894196,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 1177.2531926631927,
+   "prompt_tokens": 1881,
+   "completion_tokens": 63655,
+   "answer_chars": 0,
+   "reasoning_chars": 214051,
+   "finish": "length"
+  }
+ ]
+}

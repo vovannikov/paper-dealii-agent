@@ -1,0 +1,47 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "stokes",
+ "modality": "html",
+ "document_chars": 4547,
+ "started": 1793130903.7177587,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [
+  "rank_mismatch: terms of a sum have mixed tensor ranks: ['scalar', 'vector']"
+ ],
+ "model_seconds": 39.58444619178772,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: 1 validation error for PDEModel\nconstitutive_relations.0.definition\n  Field required [type=missing, input_value={'type': 'Equation', 'lhs...': 'strain_rate_tensor'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing"
+ ],
+ "total_seconds": 39.60974979400635,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 15.570626020431519,
+   "prompt_tokens": 2998,
+   "completion_tokens": 1100,
+   "answer_chars": 4730,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 11.928340435028076,
+   "prompt_tokens": 4214,
+   "completion_tokens": 813,
+   "answer_chars": 3227,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 12.079051733016968,
+   "prompt_tokens": 5079,
+   "completion_tokens": 813,
+   "answer_chars": 3227,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

@@ -1,0 +1,48 @@
+{
+ "model": "llama3:latest",
+ "case": "poisson",
+ "modality": "html",
+ "document_chars": 4669,
+ "started": 1793130289.9479961,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 16.856536865234375,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 2,
+ "instance_first_ok": false,
+ "instance_issues": [],
+ "instance_seconds": 6.69751238822937,
+ "total_seconds": 23.576236724853516,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 16.854809999465942,
+   "prompt_tokens": 3006,
+   "completion_tokens": 779,
+   "answer_chars": 3062,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 3.8367176055908203,
+   "prompt_tokens": 2113,
+   "completion_tokens": 152,
+   "answer_chars": 453,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 2.8594045639038086,
+   "prompt_tokens": 2308,
+   "completion_tokens": 136,
+   "answer_chars": 349,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

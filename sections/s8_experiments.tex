@@ -1,0 +1,75 @@
+\section{Experiments}
+\label{sec:experiments}
+
+All experiments were run on one workstation (20-core Intel i9-9900X, 63~GB RAM) with a locally built \dealii{} (with UMFPACK and LAPACK), CMake and GCC. Language models were served by Ollama \citep{ollama} through its OpenAI-compatible endpoint, in 4-bit quantization (Q4\_K\_M, Q4\_0 for Llama~3), at temperature $0$, with a context window of at least 32\,k tokens (the model-side limit differs per model; Llama~3 used $8$\,k). Extraction wall times therefore include model loading and are specific to this hardware.
+
+\subsection{Case study: a NAFEMS-derived heat-transfer benchmark from a saved web page}
+\label{sec:heat}
+
+\paragraph{The document.} The first test is a saved web page of the Wolfram Language documentation \citep{wolframheat}, test \code{HeatTransfer-FEM-Stationary-2D-Single-HeatTransfer-0001}, which cites a NAFEMS benchmark \citep{nafemsheat}. The page (13~kB of HTML) describes steady heat conduction in a rectangle of width $0.6$~m and height $1$~m, with $-\nabla\cdot(k\nabla T)=0$ written in MathML, $k=52$~W/(m\,$^\circ$C), $T=100\,^\circ$C on the lower side, convection with $h=750$~W/(m$^2\,^\circ$C) and $T_\infty=0\,^\circ$C on the top and right sides, and an insulated left side. It also provides a reference temperature $T_{\mathrm{ref}}=18.25\,^\circ$C at $P=(0.6,0.2)$~m with the acceptance criterion $|T(P)-T_{\mathrm{ref}}|/T_{\mathrm{ref}}<10^{-3}$. The page contains an SVG schematic, a parameter table, a reference to the source, and the benchmark identifier---a realistic amount of non-equation content.
+
+\paragraph{The run.} The command
+\begin{lstlisting}
+femagent solve heat_transfer_benchmark_0001.html --model qwen3.6:27b-coding \
+        --base-url http://localhost:11434/v1 --deal-ii-dir <dealii>
+\end{lstlisting}
+produced, with the 27B-parameter model, the model and instance of Section~\ref{sec:ir} in one attempt each. The model call used 3\,153 prompt and 6\,704 output tokens (about $20\,000$ characters of the output were reasoning) and took $220$~s; the instance call used 2\,137 and 2\,375 tokens and took $77$~s (instance JSON: $k=52$, $h=750$, $T_\infty=0$; box $[0,0.6]\times[0,1]$; sides \code{left}$\mapsto0$, \code{bottom}$\mapsto2$, \code{top\_and\_right}$\mapsto[1,3]$; each value with a source note such as ``Top and right boundaries section: $h=750$ W/(m$^2\cdot^\circ$C)''). The model correctly applied the sign convention of the prompt (Robin value $-h(T-T_\infty)$), attached correct SI dimensions to $T$, $k$ and $h$, and ignored the reference-value distractor. The pipeline then passed all six stages: \code{validate}, \code{generate} (a 236-line program), \code{build}, \code{run} (256 cells, 289 unknowns), \code{diagnose} and \code{verify} (MMS convergence and structural checks of the diffusion operator).
+
+\paragraph{Comparison with the published reference.} The verification gate does not exercise the Robin and Dirichlet terms (Section~\ref{sec:verification}), so we additionally compared with the reference value, using the generated program of the gold model on a sequence of uniformly refined meshes. Point $P$ lies on the right-hand edge, where the $Q_1$ trace is linear between vertices, so the finite-element value at $P$ is obtained exactly by interpolation between the two neighbouring vertices. Table~\ref{tab:nafems} and Figure~\ref{fig:nafems} show the result. The relative deviation from $18.25$ falls below the benchmark tolerance of $10^{-3}$ from $32\times32$ cells on and stagnates at about $2\cdot10^{-4}$: the converged value is $18.2538$, which agrees with the published four-digit reference to its precision, and the non-monotone behaviour between $64^2$ and $512^2$ cells is a discretization effect of the same size as the reference's rounding. The default mesh of the tool ($16\times16$ cells, the one used in the end-to-end run above) has a deviation of $7.4\cdot10^{-3}$ and \emph{would not meet} the page's own acceptance criterion; the end-to-end verdict ``PASS'' certifies the pipeline and the operator, not the benchmark tolerance, and a user who wants the latter must refine the mesh (the number of refinements is part of the instance).
+
+\begin{table}[t]
+\centering\small
+\caption{Heat benchmark: finite-element value at $P=(0.6,0.2)$ m of the generated $Q_1$ solver against $T_{\mathrm{ref}}=18.25\,^\circ$C.}
+\label{tab:nafems}
+\begin{tabular}{@{}rrrrr@{}}\toprule
+Cells & Unknowns & $T_h(P)$ [$^\circ$C] & $|T_h(P)-T_{\mathrm{ref}}|/T_{\mathrm{ref}}$ & $<10^{-3}$?\\ \midrule
+$8\times8$ & 81 & 16.6071 & $9.0\cdot10^{-2}$ & no\\
+$16\times16$ & 289 & 18.1148 & $7.4\cdot10^{-3}$ & no\\
+$32\times32$ & 1\,089 & 18.2637 & $7.5\cdot10^{-4}$ & yes\\
+$64\times64$ & 4\,225 & 18.2514 & $7.5\cdot10^{-5}$ & yes\\
+$128\times128$ & 16\,641 & 18.2546 & $2.5\cdot10^{-4}$ & yes\\
+$256\times256$ & 66\,049 & 18.2536 & $2.0\cdot10^{-4}$ & yes\\
+$512\times512$ & 263\,169 & 18.2538 & $2.1\cdot10^{-4}$ & yes\\
+\bottomrule\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/nafems.pdf}
+\caption{Heat benchmark. (a) Temperature field of the generated solver on $64\times64$ cells; the white line is the $18.25\,^\circ$C isotherm and $P$ is the probe point. (b) Deviation of the probe value from the published reference against the mesh size.}
+\label{fig:nafems}
+\end{figure}
+
+\paragraph{A caught error.} An earlier run of this document with a local model produced a Robin value with the wrong sign (the boundary then \emph{heats} the body). The program would have compiled and run. The static boundary-flux check of Section~\ref{sec:validation} flagged it before code generation and quoted the corrected form; this case motivated the check, and it is an instance of the ``runs but solves the wrong physics'' failure mode \citep{wrongphysics2026}.
+
+\subsection{Extraction benchmark: paper to PDE-IR}
+\label{sec:extraction}
+
+\subsubsection{Corpus}
+The corpus has six documents (Table~\ref{tab:corpus}). One is the real page above. Five were authored by us as short, paper-style descriptions with numbered display equations, a parameters section, and a final section containing plausible \emph{distractor} numbers (for instance the Poisson document mentions a different production rate and flux used in ``earlier studies''). Each is available as (i)~HTML with MathML equations produced by a \LaTeX-to-MathML converter, parsed by the HTML adapter, and (ii)~a PDF: the synthetic documents are typeset with \LaTeX{} and the real page is printed to PDF by a browser; the PDFs are converted to plain text with PyMuPDF \citep{pymupdf} and given to the model as text. The PDF text is realistically imperfect: ligatures are lost (``ow'' for ``flow''), fractions are split over lines, and equation numbers drift from their equations.
+
+\begin{table}[t]
+\centering\small
+\caption{Benchmark documents. ``Gold'' is the repository's hand-encoded PDE-IR (parameter values taken from the document).}
+\label{tab:corpus}
+\begin{tabularx}{\textwidth}{@{}p{2.4cm}p{3.3cm}X@{}}
+\toprule
+Document & Problem class & Content to extract\\ \midrule
+Heat (NAFEMS) & steady scalar, real page & $-\nabla\cdot(k\nabla T)=0$; Dirichlet on one side, Robin on two, insulated on one; three parameters; $0.6\times1$ box\\
+Poisson & steady scalar & $-\nabla\cdot(k\nabla u)=f$; Dirichlet on two sides ($x=0$, $y=0$), prescribed flux on one, insulated on one; $2\times1$ box; distractor values\\
+Transient heat & transient scalar & $T_t-\nabla\cdot(\kappa\nabla T)=0$; $T(\cdot,0)=0$; ramp $T=\beta t$ on one side; insulated elsewhere\\
+Elasticity & steady vector, constitutive & $-\nabla\cdot\sigma(u)=f$ with $\sigma=\lambda\,\mathrm{tr}\,\varepsilon\,I+2\mu\varepsilon$; clamped end, traction vector, free faces; $4\times1$ box\\
+Stokes & steady mixed, constraint & $-\nabla\cdot(2\nu\varepsilon(u))+\nabla p=0$, $\nabla\cdot u=0$; moving lid (vector Dirichlet); pressure level undetermined\\
+Allen--Cahn & transient nonlinear & $c_t=-M(f'(c)-\kappa\Delta c)$, $f=\tfrac14(c^2-1)^2$; zero flux; spatial initial field; free energy statement\\
+\bottomrule\end{tabularx}
+\end{table}
+
+\subsubsection{Models, runs and metrics}
+Five locally served models were used: Llama~3 8B \citep{llama3}; Qwen3-Coder 30B; Devstral Small~2 24B; Qwen3.6 27B (coding variant, a reasoning model); and Laguna XS~2.1 33B (also a reasoning model); names are the Ollama tags and sizes as reported by the server. Each model processed each of the six documents in both formats once: $5\times6\times2=60$ runs. A run executes exactly the extraction steps of \code{femagent solve}: the model call(s) with up to three attempts, then the instance call(s) with up to three attempts, with the original prompts.
+
+We report four outcomes per run, in increasing strength. \textbf{Valid}: both objects pass the deterministic checks of the repair loop. \textbf{Correct}: the extraction is \emph{equivalent to the gold specification}, decided by the scorer described next. \textbf{Ran}: the generated solver compiled and ran to completion (after the full pipeline up to \code{diagnose}, with the verification gate disabled for speed). \textbf{Exact}: the solver output equals the gold solver's output on the same mesh to $10^{-6}$ relative $\ell^2$ difference of the nodal values.
+
+\paragraph{The scorer.} Names chosen by a model are irrelevant. The equations of the extracted and the gold model are evaluated on the same random polynomial fields in $(x,y,t)$ (each model with its own parameter values from its own instance, fields mapped by name or, failing that, by rank), and the residual polynomials must agree with a factor of exactly $\pm1$ (the factor $\pm1$ because boundary fluxes are defined against the equation as written; free scaling is allowed only for the incompressibility constraint). Boundary data are compared side by side of the rectangle (Dirichlet vs.\ flux class and the value as a polynomial of the test fields, with unspecified sides counted as zero flux), which detects a wrong convective sign, a wrong side mapping or a missing condition; initial conditions are compared as polynomials; the domain box must agree. For the incompressible problem a second family of divergence-free test fields is used, so $-\nabla\cdot(2\nu\varepsilon(u))$ and $-\nu\Delta u$ are recognised as equal \emph{modulo the constraint}; such matches are counted as correct and reported separately. The scorer was validated on gold-versus-gold (all six cases equal) and on mutants (a flipped Robin sign and a ten-fold conductivity are detected).
+
+\subsubsection{Results}
+\input{sections/s8b_results}

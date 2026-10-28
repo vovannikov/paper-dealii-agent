@@ -1,0 +1,39 @@
+{
+ "model": "qwen3.6:27b-coding",
+ "case": "elasticity",
+ "modality": "html",
+ "document_chars": 5662,
+ "started": 1793134341.6511502,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 236.56711268424988,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 97.242347240448,
+ "total_seconds": 333.8494071960449,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 236.56478118896484,
+   "prompt_tokens": 3644,
+   "completion_tokens": 7297,
+   "answer_chars": 3989,
+   "reasoning_chars": 20429,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 97.24183392524719,
+   "prompt_tokens": 2629,
+   "completion_tokens": 3005,
+   "answer_chars": 436,
+   "reasoning_chars": 8136,
+   "finish": "stop"
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+{
+ "stages": {
+  "validate": "failed"
+ },
+ "details": {
+  "validate": "2 error(s)"
+ },
+ "issues": [
+  "error: field_degrees/pin_fields references undeclared field 'p' (unknown_field)",
+  "error: field_degrees/pin_fields references undeclared field 'p' (unknown_field)"
+ ],
+ "solution": null,
+ "passed": false,
+ "status": "failed",
+ "seconds": 0.001232147216796875
+}

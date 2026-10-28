@@ -1,0 +1,555 @@
+Let me carefully extract the PDE model from this paper content.
+
+## Problem Description:
+- 2D stationary heat transfer in a rectangular solid
+- Width: 0.6 m, Height: 1 m
+- Steady-state heat conduction (no transient, no advection, no internal heat source)
+
+## Governing Equation:
+The heat equation is:
+∇ · (k ∇T) = 0 in Ω
+
+Where:
+- T is temperature
+- k = 52 W/(m·°C) is thermal conductivity
+
+## Boundary Conditions:
+
+1. **Bottom boundary (y = 0)**: Dirichlet condition
+   T = 100 °C
+
+2. **Top and right boundaries**: Newton's law of cooling (Robin condition)
+   -k ∂T/∂n = h(T - T_amb)
+   where h = 750 W/(m²·°C), T_amb = 0 °C
+   
+   Note: The paper says "-k ∂T/∂n = h(T - T_amb)" which is the standard form.
+   For the Robin condition in our format, we need to express it as:
+   -k ∂T/∂n = h(T - T_amb)
+   
+   So the Robin value should be h(T - T_amb) = 750(T - 0) = 750T
+   
+   Wait, let me re-read the instructions:
+   "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)` (mind the minus sign: the outflow grows with u)"
+   
+   So for the Robin condition, the value should be `-h*(T - T_amb)` = `-750*(T - 0)` = `-750*T`
+
+3. **Left boundary (x = 0)**: Insulated (Neumann condition)
+   -k ∂T/∂n = 0
+   
+   So Neumann value is 0
+
+Let me now construct the PDE-IR:
+
+Fields:
+- T: temperature, scalar, H1
+
+Parameters:
+- k: thermal conductivity = 52 W/(m·°C)
+- h: heat transfer coefficient = 750 W/(m²·°C)
+- T_amb: ambient temperature = 0 °C
+
+Wait, looking at the problem again, k is given as a constant 52 W/(m·°C), not as a parameter. But in the PDE-IR format, I should probably still declare it as a parameter since it's used in the equation.
+
+Actually, let me reconsider. The paper says k = 52 W/(m·°C) is a constant. But for the PDE-IR, I think it's better to declare it as a parameter with a constant value, or I could just use a Constant in the equation.
+
+Looking at the example in the instructions, they use parameters for things like k, f, h, u_amb. So I'll follow that pattern.
+
+Let me think about the dimensions:
+- k = 52 W/(m·°C) = 52 J/(s·m·K) = 52 kg·m/(s³·K)
+  So dimension: {"mass": 1, "length": 1, "time": -3, "temperature": -1}
+  
+- h = 750 W/(m²·°C) = 750 J/(s·m²·K) = 750 kg/(s³·K·m)
+  So dimension: {"mass": 1, "length": -1, "time": -3, "temperature": -1}
+
+- T_amb = 0 °C (temperature)
+  So dimension: {"temperature": 1}
+
+Now for the boundary conditions:
+
+1. Bottom (y=0): Dirichlet, T = 100 °C
+   boundary_id: "bottom"
+
+2. Top and right: Robin, -k ∂T/∂n = h(T - T_amb)
+   According to the instructions: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`"
+   So the Robin value is -h*(T - T_amb) = -750*(T - 0) = -750*T
+   
+   boundary_id: "top_and_right"
+
+3. Left (x=0): Neumann, -k ∂T/∂n = 0
+   So the Neumann value is 0
+   
+   boundary_id: "left"
+
+Let me now write out the PDE-IR structure:
+
+```json
+{
+  "name": "HeatTransfer-FEM-Stationary-2D-Single-HeatTransfer-0001",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "T",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "temperature",
+      "dimension": {"temperature": 1}
+    }
+  ],
+  "parameters": [
+    {
+      "name": "k",
+      "rank": "scalar",
+      "description": "thermal conductivity",
+      "dimension": {"mass": 1, "length": 1, "time": -3, "temperature": -1}
+    },
+    {
+      "name": "h",
+      "rank": "scalar",
+      "description": "heat transfer coefficient",
+      "dimension": {"mass": 1, "length": -1, "time": -3, "temperature": -1}
+    },
+    {
+      "name": "T_amb",
+      "rank": "scalar",
+      "description": "ambient temperature",
+      "dimension": {"temperature": 1}
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Div",
+        "operand": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Grad",
+              "operand": {
+                "type": "Field",
+                "name": "T",
+                "rank": "scalar",
+                "space": "H1",
+                "description": "temperature",
+                "dimension": {"temperature": 1}
+              }
+            },
+            {
+              "type": "Parameter",
+              "name": "k",
+              "rank": "scalar",
+              "description": "thermal conductivity",
+              "dimension": {"mass": 1, "length": 1, "time": -3, "temperature": -1}
+            }
+          ]
+        }
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "T",
+      "type": "dirichlet",
+      "boundary_id": "bottom",
+      "value": {
+        "type": "Constant",
+        "value": 100
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "T",
+      "type": "robin",
+      "boundary_id": "top_and_right",
+      "value": {
+        "type": "Neg",
+        "operand": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Parameter",
+              "name": "h",
+              "rank": "scalar",
+              "description": "heat transfer coefficient",
+              "dimension": {"mass": 1, "length": -1, "time": -3, "temperature": -1}
+            },
+            {
+              "type": "Add",
+              "terms": [
+                {
+                  "type": "Field",
+                  "name": "T",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "temperature",
+                  "dimension": {"temperature": 1}
+                },
+                {
+                  "type": "Neg",
+                  "operand": {
+                    "type": "Parameter",
+                    "name": "T_amb",
+                    "rank": "scalar",
+                    "description": "ambient temperature",
+                    "dimension": {"temperature": 1}
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "T",
+      "type": "neumann",
+      "boundary_id": "left",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+
+Wait, I need to reconsider the equation structure. Looking at the example in the instructions:
+
+```json
+"lhs": {
+  "type": "Add",
+  "terms": [
+    {
+      "type": "Neg",
+      "operand": {
+        "type": "Div",
+        "operand": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Grad",
+              "operand": {
+                "type": "Field",
+                ...
+              }
+            },
+            {
+              "type": "Parameter",
+              ...
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Neg",
+      "operand": {
+        "type": "Parameter",
+        ...
+      }
+    }
+  ]
+},
+"rhs": {
+  "type": "Constant",
+  "value": 0
+}
+```
+
+This is for an equation like -div(k grad(u)) - f = 0.
+
+But my equation is div(k grad(T)) = 0.
+
+So the lhs should be:
+- type: "Div"
+- operand: Mul(Grad(T), k)
+
+And rhs should be Constant(0).
+
+Actually, looking more carefully at the example, it seems like the equation is structured as:
+lhs = rhs
+
+So for my equation div(k grad(T)) = 0:
+- lhs = Div(Mul(Grad(T), k))
+- rhs = Constant(0)
+
+Let me also check if I need to include the field/parameter definitions inside the equation. Looking at the example, it seems like the Field and Parameter objects in the equation should have all the same fields as in the top-level fields/parameters arrays.
+
+Actually, I think I'm overcomplicating this. Let me re-read the instructions...
+
+The instructions say:
+- "Expression trees are encoded as nested objects tagged by a 'type' field"
+- "Declare every field and parameter you reference under `fields`/`parameters`"
+
+So I think the Field and Parameter objects in the equation are just references, and the actual declarations are in the top-level fields/parameters arrays.
+
+Let me also reconsider the boundary conditions. The paper says:
+
+For top and right boundaries:
+"-k ∂T/∂n = h(T - T_amb)"
+
+According to the instructions:
+"A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)` (mind the minus sign: the outflow grows with u)"
+
+So the Robin value should be `-h*(T - T_amb)`.
+
+Let me also double-check the Neumann condition. The paper says:
+"-k ∂T/∂n = 0" for the left boundary.
+
+According to the instructions:
+"A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`. An insulated / zero-flux boundary is neumann with value 0."
+
+So for the Neumann condition, the value is the outward normal flux, which is -k ∂T/∂n. Since -k ∂T/∂n = 0, the Neumann value is 0.
+
+Wait, I need to be more careful here. Let me re-read:
+
+"A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+
+So for the equation -div(k grad(u)) = 0, the Neumann value is k du/dn.
+
+But my equation is div(k grad(T)) = 0, which is the negative of that.
+
+Hmm, let me think about this more carefully.
+
+The standard heat equation is:
+ρc_p ∂T/∂t = ∇·(k∇T) + Q
+
+For steady state with no sources:
+0 = ∇·(k∇T)
+
+Or equivalently:
+∇·(k∇T) = 0
+
+The flux is q = -k∇T (Fourier's law), so:
+∇·q = 0
+
+The boundary condition for heat flux is:
+q·n = -k ∂T/∂n
+
+For the left boundary, the paper says:
+-k ∂T/∂n = 0
+
+So the outward normal flux is -k ∂T/∂n = 0.
+
+According to the instructions, for the equation -div(k grad(u)) = 0, the Neumann value is k du/dn.
+
+But my equation is div(k grad(T)) = 0, which is the negative.
+
+Let me think about this differently. The instructions say:
+"A `neumann` or `robin` value is the prescribed OUTWARD normal flux"
+
+So the Neumann value should be the outward normal flux, which is -k ∂T/∂n.
+
+For the left boundary, -k ∂T/∂n = 0, so the Neumann value is 0.
+
+This matches what I had before.
+
+Now for the Robin condition. The paper says:
+"-k ∂T/∂n = h(T - T_amb)"
+
+The outward normal flux is -k ∂T/∂n = h(T - T_amb).
+
+According to the instructions:
+"A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`"
+
+So the Robin value should be -h*(T - T_amb).
+
+Wait, but the outward normal flux is -k ∂T/∂n = h(T - T_amb), not -h*(T - T_amb).
+
+Let me re-read the instructions again...
+
+"A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)` (mind the minus sign: the outflow grows with u)."
+
+So the Robin value is -h*(u - u_amb), which represents the outward normal flux.
+
+But the paper says the outward normal flux is h(T - T_amb).
+
+So there's a discrepancy. Let me think...
+
+Oh, I see the issue. The instructions are saying that for the Robin condition, the value should be -h*(u - u_amb), which is the negative of what the paper says.
+
+But wait, the paper says:
+"-k ∂T/∂n = h(T - T_amb)"
+
+And the instructions say:
+"A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`"
+
+So the Robin value should be -h*(T - T_amb), not h*(T - T_amb).
+
+But the outward normal flux is -k ∂T/∂n = h(T - T_amb).
+
+So the Robin value in the PDE-IR should be -h*(T - T_amb), which is the negative of the outward normal flux.
+
+Hmm, this is confusing. Let me just follow the instructions literally.
+
+The paper says: -k ∂T/∂n = h(T - T_amb)
+
+The instructions say: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`"
+
+So the Robin value should be -h*(T - T_amb).
+
+Let me also reconsider the equation structure. Looking at the example again:
+
+```json
+"lhs": {
+  "type": "Add",
+  "terms": [
+    {
+      "type": "Neg",
+      "operand": {
+        "type": "Div",
+        "operand": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Grad",
+              "operand": {
+                "type": "Field",
+                ...
+              }
+            },
+            {
+              "type": "Parameter",
+              ...
+            }
+          ]
+        }
+      }
+    },
+    ...
+  ]
+},
+"rhs": {
+  "type": "Constant",
+  "value": 0
+}
+```
+
+This represents: -div(k grad(u)) - f = 0
+
+So the lhs is -div(k grad(u)) - f and the rhs is 0.
+
+For my equation div(k grad(T)) = 0:
+- lhs should be Div(Mul(Grad(T), k))
+- rhs should be Constant(0)
+
+Actually, I realize I need to be more careful. Let me look at the example equation again:
+
+The example has:
+- lhs: Add(Neg(Div(Mul(Grad(u), k))), Neg(f))
+- rhs: Constant(0)
+
+This represents: -div(k grad(u)) - f = 0
+
+But the standard form would be: -div(k grad(u)) = f
+
+So the example is putting everything on the lhs and setting rhs to 0.
+
+For my equation div(k grad(T)) = 0:
+- lhs: Div(Mul(Grad(T), k))
+- rhs: Constant(0)
+
+This represents: div(k grad(T)) = 0
+
+OK, I think I have it right now. Let me finalize the PDE-IR.
+
+Actually, wait. I need to reconsider the boundary conditions again.
+
+The paper says for the top and right boundaries:
+"-k ∂T/∂n = h(T - T_amb)"
+
+The instructions say:
+"A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`"
+
+So the Robin value should be -h*(T - T_amb).
+
+But the paper says the outward normal flux is -k ∂T/∂n = h(T - T_amb).
+
+So the Robin value should be -h*(T - T_amb), which is the negative of the outward normal flux.
+
+Hmm, but the instructions also say:
+"A `neumann` or `robin` value is the prescribed OUTWARD normal flux"
+
+So the Robin value should be the outward normal flux, which is h(T - T_amb).
+
+But the instructions also say:
+"A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`"
+
+This is contradictory. Let me just follow the second instruction literally.
+
+The paper says: -k ∂T/∂n = h(T - T_amb)
+
+The instructions say: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`"
+
+So the Robin value should be -h*(T - T_amb).
+
+Let me also check the Neumann condition.
+
+The paper says for the left boundary:
+"-k ∂T/∂n = 0"
+
+The instructions say:
+"A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`. An insulated / zero-flux boundary is neumann with value 0."
+
+So the Neumann value should be the outward normal flux, which is -k ∂T/∂n = 0.
+
+So the Neumann value is 0.
+
+OK, I think I have all the pieces now. Let me write out the final PDE-IR.
+
+One more thing: I need to decide on the boundary IDs. The paper mentions:
+- Bottom boundary (y = 0)
+- Top and right boundaries
+- Left boundary (x = 0)
+
+I'll use:
+- "bottom" for the bottom boundary
+- "top_and_right" for the top and right boundaries
+- "left" for the left boundary
+
+Let me also make sure I'm using the correct structure for the Robin condition.
+
+The Robin condition is: -k ∂T/∂n = h(T - T_amb)
+
+According to the instructions, the Robin value should be -h*(T - T_amb).
+
+So the Robin value is:
+{
+  "type": "Neg",
+  "operand": {
+    "type": "Mul",
+    "factors": [
+      {"type": "Parameter", "name": "h", ...},
+      {
+        "type": "Add",
+        "terms": [
+          {"type": "Field", "name": "T", ...},
+          {
+            "type": "Neg",
+            "operand": {"type": "Parameter", "name": "T_amb", ...}
+          }
+        ]
+      }
+    ]
+  }
+}
+
+This represents -h*(T - T_amb).
+
+OK, I think I'm ready to write the final answer.

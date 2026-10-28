@@ -1,0 +1,47 @@
+{
+ "model": "devstral-small-2:latest",
+ "case": "elasticity",
+ "modality": "pdf",
+ "document_chars": 1321,
+ "started": 1793132698.667992,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 263.74793314933777,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: missing key 'space'",
+  "response JSON did not match PDEModel: missing key 'space'",
+  "response JSON did not match PDEModel: missing key 'space'"
+ ],
+ "total_seconds": 263.76642775535583,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 86.84892749786377,
+   "prompt_tokens": 1782,
+   "completion_tokens": 1410,
+   "answer_chars": 5684,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 87.9497537612915,
+   "prompt_tokens": 3238,
+   "completion_tokens": 1410,
+   "answer_chars": 5684,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 88.94169068336487,
+   "prompt_tokens": 4694,
+   "completion_tokens": 1410,
+   "answer_chars": 5684,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

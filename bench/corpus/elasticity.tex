@@ -1,0 +1,45 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}\usepackage{amsmath,amssymb}\usepackage[margin=2.5cm]{geometry}
+\title{Plane-Strain Cantilever Loaded by an End Traction}\author{E. Mechanic and F. Solid}\date{}
+\begin{document}\maketitle
+\section*{1. Problem description}
+A short cantilever occupies the rectangle $\Omega=(0,4)\times(0,1)$ and is analysed in plane strain. The beam is clamped at its left end, $x=0$. A uniform shear traction acts downwards on the right end, $x=4$, while the upper and lower faces are free of traction. Body forces are neglected.
+
+\section*{2. Governing equations}
+The displacement field $u=(u_x,u_y)$ satisfies the equilibrium equation
+
+\begin{equation}
+-\nabla\cdot\sigma(u) = f \quad \text{in } \Omega ,
+\end{equation}
+with the body force $f$. The material is isotropic and linearly elastic, with the stress
+
+\begin{equation}
+\sigma(u) = \lambda\,\mathrm{tr}\,\varepsilon(u)\, I + 2\mu\,\varepsilon(u),
+\end{equation}
+and the small-strain tensor
+
+\begin{equation}
+\varepsilon(u) = \tfrac{1}{2}\left(\nabla u + \nabla u^{T}\right) .
+\end{equation}
+Here $\lambda$ and $\mu$ are the Lam\'e parameters and $I$ is the identity tensor.
+
+\section*{3. Boundary conditions}
+The clamped end is fixed,
+
+\begin{equation}
+u = 0 \quad \text{on } x=0 ,
+\end{equation}
+and the prescribed traction on the right end is
+
+\begin{equation}
+\sigma(u)\,n = g_N \quad \text{on } x=4 ,
+\end{equation}
+with $n$ the outward unit normal. On the faces $y=0$ and $y=1$ we have $\sigma(u)\,n=0$.
+
+\section*{4. Parameters}
+The Lam\'e parameters are $\lambda=1.5$ and $\mu=1.0$ (non-dimensional). The body force vanishes, $f=(0,0)$, and the end traction is $g_N=(0,-0.05)$.
+
+\section*{5. Results}
+The tip deflection predicted by Euler--Bernoulli theory for this load is about $-0.09$; the finite element solution is expected to be slightly larger in magnitude because of shear deformation.
+
+\end{document}

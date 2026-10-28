@@ -1,0 +1,255 @@
+{
+  "name": "plane_strain_cantilever",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "displacement field",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "lambda",
+      "rank": "scalar",
+      "description": "Lamé parameter",
+      "dimension": null
+    },
+    {
+      "name": "mu",
+      "rank": "scalar",
+      "description": "Lamé parameter",
+      "dimension": null
+    },
+    {
+      "name": "g_N",
+      "rank": "vector",
+      "description": "prescribed end traction",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "name": "equilibrium",
+      "lhs": {
+        "type": "Neg",
+        "operand": {
+          "type": "Div",
+          "operand": {
+            "type": "Apply",
+            "name": "sigma",
+            "args": [
+              {
+                "type": "Field",
+                "name": "u",
+                "rank": "vector",
+                "space": "H1",
+                "description": "displacement field",
+                "dimension": null
+              }
+            ],
+            "rank": "tensor"
+          }
+        }
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      }
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "left",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      }
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "right",
+      "value": {
+        "type": "Parameter",
+        "name": "g_N",
+        "rank": "vector",
+        "description": "prescribed end traction",
+        "dimension": null
+      }
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "top_and_bottom",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      }
+    }
+  ],
+  "constitutive_relations": [
+    {
+      "name": "epsilon",
+      "definition": {
+        "type": "Equation",
+        "name": "epsilon_def",
+        "lhs": {
+          "type": "Apply",
+          "name": "epsilon",
+          "args": [
+            {
+              "type": "Field",
+              "name": "u",
+              "rank": "vector",
+              "space": "H1",
+              "description": "displacement field",
+              "dimension": null
+            }
+          ],
+          "rank": "tensor"
+        },
+        "rhs": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Constant",
+              "value": 0.5
+            },
+            {
+              "type": "Add",
+              "terms": [
+                {
+                  "type": "Grad",
+                  "operand": {
+                    "type": "Field",
+                    "name": "u",
+                    "rank": "vector",
+                    "space": "H1",
+                    "description": "displacement field",
+                    "dimension": null
+                  }
+                },
+                {
+                  "type": "Transpose",
+                  "operand": {
+                    "type": "Grad",
+                    "operand": {
+                      "type": "Field",
+                      "name": "u",
+                      "rank": "vector",
+                      "space": "H1",
+                      "description": "displacement field",
+                      "dimension": null
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "sigma",
+      "definition": {
+        "type": "Equation",
+        "name": "sigma_def",
+        "lhs": {
+          "type": "Apply",
+          "name": "sigma",
+          "args": [
+            {
+              "type": "Field",
+              "name": "u",
+              "rank": "vector",
+              "space": "H1",
+              "description": "displacement field",
+              "dimension": null
+            }
+          ],
+          "rank": "tensor"
+        },
+        "rhs": {
+          "type": "Add",
+          "terms": [
+            {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Parameter",
+                  "name": "lambda",
+                  "rank": "scalar",
+                  "description": "Lamé parameter",
+                  "dimension": null
+                },
+                {
+                  "type": "Trace",
+                  "operand": {
+                    "type": "Apply",
+                    "name": "epsilon",
+                    "args": [
+                      {
+                        "type": "Field",
+                        "name": "u",
+                        "rank": "vector",
+                        "space": "H1",
+                        "description": "displacement field",
+                        "dimension": null
+                      }
+                    ],
+                    "rank": "tensor"
+                  }
+                },
+                {
+                  "type": "Identity"
+                }
+              ]
+            },
+            {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Constant",
+                  "value": 2
+                },
+                {
+                  "type": "Parameter",
+                  "name": "mu",
+                  "rank": "scalar",
+                  "description": "Lamé parameter",
+                  "dimension": null
+                },
+                {
+                  "type": "Apply",
+                  "name": "epsilon",
+                  "args": [
+                    {
+                      "type": "Field",
+                      "name": "u",
+                      "rank": "vector",
+                      "space": "H1",
+                      "description": "displacement field",
+                      "dimension": null
+                    }
+                  ],
+                  "rank": "tensor"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}

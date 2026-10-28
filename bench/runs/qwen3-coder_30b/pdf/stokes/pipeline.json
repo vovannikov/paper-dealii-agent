@@ -1,0 +1,15 @@
+{
+ "stages": {
+  "validate": "passed",
+  "generate": "failed"
+ },
+ "details": {
+  "validate": "model and instance consistent",
+  "generate": "unsupported construct: FESystem codegen: field 'p' uses space FunctionSpace.L2; only H1 (FE_Q) is supported (v0 scope)"
+ },
+ "issues": [],
+ "solution": null,
+ "passed": false,
+ "status": "failed",
+ "seconds": 0.001378774642944336
+}

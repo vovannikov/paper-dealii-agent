@@ -1,0 +1,417 @@
+The user wants me to extract the PDE model from the provided text into a specific JSON format (PDE-IR).
+
+1.  **Problem description**:
+    - Domain: $\Omega = (0,1) \times (0,1)$
+    - Time interval: $0 \le t \le 1$
+    - Initial condition: $T(x,y,0) = 0$
+    - Left edge ($x=0$): $T(0,y,t) = \beta t$
+    - Right ($x=1$), bottom ($y=0$), top ($y=1$) edges: insulated, $\kappa \frac{\partial T}{\partial n} = 0$
+    - Governing equation: $\frac{\partial T}{\partial t} - \nabla \cdot (\kappa \nabla T) = 0$
+    - Parameters: $\kappa = 0.5$, $\beta = 2$. Time in seconds, temperature in Kelvin.
+
+2.  **Fields**:
+    - `T`: scalar field, temperature. Space: H1. Dimension: temperature (1).
+
+3.  **Parameters**:
+    - `kappa` ($\kappa$): thermal diffusivity. Dimension: length^2 / time. Wait, the equation is $\frac{\partial T}{\partial t} - \nabla \cdot (\kappa \nabla T) = 0$. Usually, thermal diffusivity $\alpha$ or $\kappa$ has units $m^2/s$. Let's check dimensions: $\partial T / \partial t$ is $K/s$. $\nabla \cdot (\kappa \nabla T)$ is $\kappa \nabla^2 T \sim \kappa K/m^2$. So $\kappa$ has units $m^2/s$. Dimension: `{"length": 2, "time": -1}`.
+    - `beta` ($\beta$): heating rate. $T = \beta t \implies \beta = T/t$. Units: $K/s$. Dimension: `{"temperature": 1, "time": -1}`.
+
+4.  **Equations**:
+    - Strong form: $\frac{\partial T}{\partial t} - \nabla \cdot (\kappa \nabla T) = 0$
+    - In PDE-IR:
+      LHS: `Add` of `TimeDerivative(T)` and `Neg(Div(Mul(kappa, Grad(T))))`
+      RHS: `Constant(0)`
+      Name: "heat_equation"
+
+5.  **Initial Conditions**:
+    - Field: `T`
+    - Value: `Constant(0)`
+
+6.  **Boundary Conditions**:
+    - Left edge ($x=0$): Dirichlet, value $\beta t$. In PDE-IR, time-dependent Dirichlet is `Mul(beta, TimeCoordinate())`.
+    - Right, bottom, top edges ($x=1, y=0, y=1$): Neumann, value 0 (insulated).
+    - Boundary IDs: "left", "insulated" (or "right_bottom_top").
+
+7.  **Dimensions**:
+    - T: `{"temperature": 1}`
+    - kappa: `{"length": 2, "time": -1}`
+    - beta: `{"temperature": 1, "time": -1}`
+
+Let's construct the JSON carefully.
+
+Fields:
+```json
+{
+  "name": "T",
+  "rank": "scalar",
+  "space": "H1",
+  "description": "temperature",
+  "dimension": {"temperature": 1}
+}
+```
+
+Parameters:
+```json
+{
+  "name": "kappa",
+  "rank": "scalar",
+  "description": "thermal diffusivity",
+  "dimension": {"length": 2, "time": -1}
+},
+{
+  "name": "beta",
+  "rank": "scalar",
+  "description": "heating rate",
+  "dimension": {"temperature": 1, "time": -1}
+}
+```
+
+Equations:
+```json
+{
+  "type": "Equation",
+  "lhs": {
+    "type": "Add",
+    "terms": [
+      {
+        "type": "TimeDerivative",
+        "operand": {
+          "type": "Field",
+          "name": "T",
+          "rank": "scalar",
+          "space": "H1",
+          "description": "temperature",
+          "dimension": {"temperature": 1}
+        }
+      },
+      {
+        "type": "Neg",
+        "operand": {
+          "type": "Div",
+          "operand": {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Parameter",
+                "name": "kappa",
+                "rank": "scalar",
+                "description": "thermal diffusivity",
+                "dimension": {"length": 2, "time": -1}
+              },
+              {
+                "type": "Grad",
+                "operand": {
+                  "type": "Field",
+                  "name": "T",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "temperature",
+                  "dimension": {"temperature": 1}
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "rhs": {
+    "type": "Constant",
+    "value": 0
+  },
+  "name": "heat_equation"
+}
+```
+
+Initial Conditions:
+```json
+{
+  "field": "T",
+  "value": {
+    "type": "Constant",
+    "value": 0
+  }
+}
+```
+
+Boundary Conditions:
+Left edge:
+```json
+{
+  "field": "T",
+  "type": "dirichlet",
+  "boundary_id": "left",
+  "value": {
+    "type": "Mul",
+    "factors": [
+      {
+        "type": "Parameter",
+        "name": "beta",
+        "rank": "scalar",
+        "description": "heating rate",
+        "dimension": {"temperature": 1, "time": -1}
+      },
+      {
+        "type": "TimeCoordinate"
+      }
+    ]
+  }
+}
+```
+Insulated edges:
+```json
+{
+  "field": "T",
+  "type": "neumann",
+  "boundary_id": "insulated",
+  "value": {
+    "type": "Constant",
+    "value": 0
+  }
+}
+```
+
+Check dimensions:
+Temperature: `{"temperature": 1}`
+Thermal diffusivity $\kappa$: $m^2/s \rightarrow \{"length": 2, "time": -1\}$
+Heating rate $\beta$: $K/s \rightarrow \{"temperature": 1, "time": -1\}$
+TimeCoordinate has implicit time dimension, but we don't assign dimensions to coordinates usually. The prompt says "Attach SI base dimensions to fields/parameters when the paper states units". I'll stick to that.
+
+Wait, the prompt says: "Attach SI base dimensions to fields/parameters when the paper states units: `dimension` is null or an object of integer exponents of length, mass, time, temperature, amount, current, luminosity".
+So I will include dimensions for T, kappa, beta.
+
+Let's verify the equation structure.
+$\frac{\partial T}{\partial t} - \nabla \cdot (\kappa \nabla T) = 0$
+LHS: Add(TimeDerivative(T), Neg(Div(Mul(kappa, Grad(T)))))
+RHS: Constant(0)
+Matches.
+
+Boundary conditions:
+Left: Dirichlet, value $\beta t$.
+Right, bottom, top: Neumann, value 0.
+Matches.
+
+Initial condition:
+T(x,y,0) = 0.
+Matches.
+
+One minor point: The prompt says "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". For Neumann, it says "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`. An insulated / zero-flux boundary is neumann with value 0."
+So for insulated, value is 0. Correct.
+
+Check parameter names: `kappa` and `beta`. I'll use `kappa` and `beta`.
+Check field name: `T`.
+Check equation name: `heat_equation`.
+
+Let's assemble the JSON.
+I will make sure all types match the schema.
+`TimeCoordinate` is used for `t`.
+`SpatialCoordinate` is not needed here.
+`Mul` factors order doesn't matter.
+`Add` terms order doesn't matter.
+
+One detail: `dimension` for `kappa` is `{"length": 2, "time": -1}`.
+`dimension` for `beta` is `{"temperature": 1, "time": -1}`.
+`dimension` for `T` is `{"temperature": 1}`.
+
+Wait, the prompt says "Attach SI base dimensions to fields/parameters when the paper states units". The paper says "Time is measured in seconds and temperature in kelvin". It doesn't explicitly give units for kappa and beta, but they are derived. I'll include them as best guess, or leave null if uncertain. The prompt says "Produce your best guess even when a reading is uncertain." I'll include them.
+
+Let's double check the `TimeCoordinate` usage. The prompt says: `{"type": "TimeCoordinate"} is the time variable t. Use it for time-dependent data (e.g. a ramp beta*t); never declare t as a parameter.`
+So `value` for left BC is `{"type": "Mul", "factors": [{"type": "Parameter", "name": "beta", ...}, {"type": "TimeCoordinate"}]}`.
+
+Everything looks solid.
+
+Structure:
+```json
+{
+  "name": "transient_heating_square_plate",
+  "pde_ir_version": "0.1",
+  "fields": [ ... ],
+  "parameters": [ ... ],
+  "equations": [ ... ],
+  "initial_conditions": [ ... ],
+  "boundary_conditions": [ ... ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+
+I will carefully construct the JSON.
+Check `fields`:
+```json
+{
+  "name": "T",
+  "rank": "scalar",
+  "space": "H1",
+  "description": "temperature",
+  "dimension": {"temperature": 1}
+}
+```
+Check `parameters`:
+```json
+{
+  "name": "kappa",
+  "rank": "scalar",
+  "description": "thermal diffusivity",
+  "dimension": {"length": 2, "time": -1}
+},
+{
+  "name": "beta",
+  "rank": "scalar",
+  "description": "heating rate",
+  "dimension": {"temperature": 1, "time": -1}
+}
+```
+Check `equations`:
+```json
+{
+  "type": "Equation",
+  "lhs": {
+    "type": "Add",
+    "terms": [
+      {
+        "type": "TimeDerivative",
+        "operand": {
+          "type": "Field",
+          "name": "T",
+          "rank": "scalar",
+          "space": "H1",
+          "description": "temperature",
+          "dimension": {"temperature": 1}
+        }
+      },
+      {
+        "type": "Neg",
+        "operand": {
+          "type": "Div",
+          "operand": {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Parameter",
+                "name": "kappa",
+                "rank": "scalar",
+                "description": "thermal diffusivity",
+                "dimension": {"length": 2, "time": -1}
+              },
+              {
+                "type": "Grad",
+                "operand": {
+                  "type": "Field",
+                  "name": "T",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "temperature",
+                  "dimension": {"temperature": 1}
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "rhs": {
+    "type": "Constant",
+    "value": 0
+  },
+  "name": "heat_equation"
+}
+```
+Check `initial_conditions`:
+```json
+{
+  "field": "T",
+  "value": {
+    "type": "Constant",
+    "value": 0
+  }
+}
+```
+Check `boundary_conditions`:
+```json
+{
+  "field": "T",
+  "type": "dirichlet",
+  "boundary_id": "left",
+  "value": {
+    "type": "Mul",
+    "factors": [
+      {
+        "type": "Parameter",
+        "name": "beta",
+        "rank": "scalar",
+        "description": "heating rate",
+        "dimension": {"temperature": 1, "time": -1}
+      },
+      {
+        "type": "TimeCoordinate"
+      }
+    ]
+  }
+},
+{
+  "field": "T",
+  "type": "neumann",
+  "boundary_id": "insulated",
+  "value": {
+    "type": "Constant",
+    "value": 0
+  }
+}
+```
+
+One minor thing: The prompt says "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+The equation is $\frac{\partial T}{\partial t} - \nabla \cdot (\kappa \nabla T) = 0$.
+So the flux term is $\kappa \nabla T \cdot n$. The Neumann value should be $\kappa \frac{\partial T}{\partial n}$. The paper says $\kappa \frac{\partial T}{\partial n} = 0$ on insulated boundaries. So value 0 is correct.
+
+All good. I will generate the JSON.
+I'll make sure to follow the exact schema.
+No extra text.
+Ready. 
+Let's verify the `dimension` keys: length, mass, time, temperature, amount, current, luminosity.
+`{"temperature": 1}` is correct.
+`{"length": 2, "time": -1}` is correct.
+`{"temperature": 1, "time": -1}` is correct.
+
+One detail: `TimeCoordinate` doesn't have a `rank` or `dimension` in the prompt example, it's just `{"type": "TimeCoordinate"}`. I'll stick to that.
+The prompt says: `{"type": "TimeCoordinate"} is the time variable t.`
+I will use exactly that.
+
+Final check of the JSON structure matches the requested format.
+All fields and parameters are declared.
+Equation is strong form.
+BCs and ICs are correct.
+Dimensions are attached.
+Output is a single JSON object.
+Proceed. 
+Self-Correction/Refinement during thought:
+Should I include `provenance` and `ambiguity`? The prompt says "Optional metadata ("provenance", "ambiguity") must be null unless you can fill it exactly; omit it otherwise." I will omit them or set to null. I'll set to null as in the example.
+The example includes `provenance: null, ambiguity: null` at the top level and in BCs. I'll follow the example structure.
+
+One thing: `dimension` for `kappa` and `beta` might be considered uncertain since the paper doesn't explicitly state units for them, only for time and temperature. But it's standard physics. I'll keep them. If I want to be safe, I could set them to null, but the prompt says "Produce your best guess even when a reading is uncertain." So I'll keep them.
+
+Wait, the prompt says: "Attach SI base dimensions to fields/parameters when the paper states units". It doesn't explicitly state units for kappa and beta, but gives values. I'll stick with my best guess dimensions.
+
+Let's construct carefully.
+All good.
+Output matches request.
+Proceeds. 
+Generating JSON. 
+[Done] 
+Output Generation. 
+(Self-Correction/Verification during generation prep)
+Check `TimeCoordinate` usage in BC value:
+`"value": { "type": "Mul", "factors": [ { "type": "Parameter", "name": "beta", ... }, { "type": "TimeCoordinate" } ] }`
+This is correct.
+Check `initial_conditions` format: `[ { "field": "T", "value": { "type": "Constant", "value": 0 } } ]`
+Correct.
+Check `boundary_conditions` format: matches example.
+Check `equations` format: matches example.
+Everything is consistent.
+Proceeds. 
+Output matches the final JSON. 
+Done. 
+[Output Generation] -> *Proceeds*

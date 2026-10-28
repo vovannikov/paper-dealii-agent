@@ -1,0 +1,233 @@
+{
+  "name": "plane_strain_cantilever",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "displacement field",
+      "dimension": {
+        "length": 1,
+        "mass": 0,
+        "time": -1,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "λ",
+      "rank": "scalar",
+      "description": "Lamé parameter",
+      "dimension": {
+        "length": 1,
+        "mass": 0,
+        "time": -1,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    },
+    {
+      "name": "μ",
+      "rank": "scalar",
+      "description": "Lamé parameter",
+      "dimension": {
+        "length": 1,
+        "mass": 0,
+        "time": -1,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    },
+    {
+      "name": "f",
+      "rank": "vector",
+      "description": "body force",
+      "dimension": {
+        "length": 1,
+        "mass": 0,
+        "time": -1,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    },
+    {
+      "name": "gN",
+      "rank": "vector",
+      "description": "end traction",
+      "dimension": {
+        "length": 1,
+        "mass": 0,
+        "time": -1,
+        "temperature": 0,
+        "amount": 0,
+        "current": 0,
+        "luminosity": 0
+      }
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Div",
+              "operand": {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Grad",
+                    "operand": {
+                      "type": "Field",
+                      "name": "u",
+                      "rank": "vector",
+                      "space": "H1",
+                      "description": "displacement field",
+                      "dimension": {
+                        "length": 1,
+                        "mass": 0,
+                        "time": -1,
+                        "temperature": 0,
+                        "amount": 0,
+                        "current": 0,
+                        "luminosity": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "λ",
+                    "rank": "scalar",
+                    "description": "Lamé parameter",
+                    "dimension": {
+                      "length": 1,
+                      "mass": 0,
+                      "time": -1,
+                      "temperature": 0,
+                      "amount": 0,
+                      "current": 0,
+                      "luminosity": 0
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Parameter",
+              "name": "f",
+              "rank": "vector",
+              "description": "body force",
+              "dimension": {
+                "length": 1,
+                "mass": 0,
+                "time": -1,
+                "temperature": 0,
+                "amount": 0,
+                "current": 0,
+                "luminosity": 0
+              }
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "clamped",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "robin",
+      "boundary_id": "traction",
+      "value": {
+        "type": "Neg",
+        "operand": {
+          "type": "Mul",
+          "factors": [
+            {
+              "type": "Field",
+              "name": "u",
+              "rank": "vector",
+              "space": "H1",
+              "description": "displacement field",
+              "dimension": {
+                "length": 1,
+                "mass": 0,
+                "time": -1,
+                "temperature": 0,
+                "amount": 0,
+                "current": 0,
+                "luminosity": 0
+              }
+            },
+            {
+              "type": "Parameter",
+              "name": "gN",
+              "rank": "vector",
+              "description": "end traction",
+              "dimension": {
+                "length": 1,
+                "mass": 0,
+                "time": -1,
+                "temperature": 0,
+                "amount": 0,
+                "current": 0,
+                "luminosity": 0
+              }
+            }
+          ]
+        }
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "free",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}

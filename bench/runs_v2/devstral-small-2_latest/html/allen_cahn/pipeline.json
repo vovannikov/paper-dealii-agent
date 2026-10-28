@@ -1,0 +1,15 @@
+{
+ "stages": {
+  "validate": "failed"
+ },
+ "details": {
+  "validate": "1 error(s)"
+ },
+ "issues": [
+  "error: geometry has no face-id mapping for boundary 'boundary' (missing_boundary_mapping)"
+ ],
+ "solution": null,
+ "passed": false,
+ "status": "failed",
+ "seconds": 0.003567218780517578
+}

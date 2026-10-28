@@ -1,0 +1,48 @@
+{
+ "model": "laguna-xs-2.1:q4_K_M",
+ "case": "poisson",
+ "modality": "html",
+ "document_chars": 4669,
+ "started": 1793138655.4291198,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 56.86480784416199,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 2,
+ "instance_first_ok": false,
+ "instance_issues": [],
+ "instance_seconds": 22.56778120994568,
+ "total_seconds": 79.47054147720337,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 56.86327505111694,
+   "prompt_tokens": 3142,
+   "completion_tokens": 4510,
+   "answer_chars": 2647,
+   "reasoning_chars": 11684,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 20.377521514892578,
+   "prompt_tokens": 2158,
+   "completion_tokens": 1626,
+   "answer_chars": 364,
+   "reasoning_chars": 4825,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 2.1890735626220703,
+   "prompt_tokens": 2373,
+   "completion_tokens": 168,
+   "answer_chars": 361,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

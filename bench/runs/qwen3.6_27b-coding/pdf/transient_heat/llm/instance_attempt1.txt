@@ -1,0 +1,23 @@
+{
+  "parameter_values": {
+    "kappa": 0.5,
+    "beta": 2.0,
+    "t": 1.0
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [1.0, 1.0],
+    "boundary_ids": {
+      "left": 0,
+      "right": 1,
+      "bottom": 2,
+      "top": 3
+    }
+  },
+  "value_sources": {
+    "kappa": "Section 4",
+    "beta": "Section 4",
+    "t": "Section 1 (final time of interval 0 ≤ t ≤ 1)",
+    "geometry": "Section 1"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "parameter_values": {
+    "nu": 0.1,
+    "u_lid": [1.0, 0.0]
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [1.0, 1.0],
+    "boundary_ids": {
+      "top": 3,
+      "walls": [0, 1, 2]
+    }
+  },
+  "value_sources": {
+    "nu": "Section 4",
+    "u_lid": "Section 4",
+    "geometry": "Section 1"
+  }
+}

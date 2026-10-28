@@ -1,0 +1,46 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "stokes",
+ "modality": "html",
+ "document_chars": 4547,
+ "started": 1793168914.9217758,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [
+  "rank_mismatch: terms of a sum have mixed tensor ranks: ['scalar', 'vector']",
+  "rank_mismatch: terms of a sum have mixed tensor ranks: ['scalar', 'vector']"
+ ],
+ "model_seconds": 57.151968002319336,
+ "model_parse_errors": [],
+ "total_seconds": 57.16341972351074,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 16.98355770111084,
+   "prompt_tokens": 3376,
+   "completion_tokens": 1169,
+   "answer_chars": 5025,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 17.634337663650513,
+   "prompt_tokens": 4597,
+   "completion_tokens": 1206,
+   "answer_chars": 5201,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 22.52771282196045,
+   "prompt_tokens": 5876,
+   "completion_tokens": 1458,
+   "answer_chars": 6886,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

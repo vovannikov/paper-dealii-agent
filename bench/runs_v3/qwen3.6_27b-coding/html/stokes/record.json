@@ -1,0 +1,57 @@
+{
+ "model": "qwen3.6:27b-coding",
+ "case": "stokes",
+ "modality": "html",
+ "document_chars": 4547,
+ "started": 1793173602.7626977,
+ "model_ok": true,
+ "model_attempts": 2,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 355.33713126182556,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 2,
+ "instance_first_ok": false,
+ "instance_issues": [],
+ "instance_seconds": 139.5952136516571,
+ "total_seconds": 494.9846570491791,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 189.31629514694214,
+   "prompt_tokens": 3610,
+   "completion_tokens": 6022,
+   "answer_chars": 4547,
+   "reasoning_chars": 16651,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 166.0155382156372,
+   "prompt_tokens": 4886,
+   "completion_tokens": 5245,
+   "answer_chars": 3839,
+   "reasoning_chars": 15594,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 106.99928259849548,
+   "prompt_tokens": 2167,
+   "completion_tokens": 3294,
+   "answer_chars": 435,
+   "reasoning_chars": 8358,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 32.59410834312439,
+   "prompt_tokens": 2403,
+   "completion_tokens": 1072,
+   "answer_chars": 421,
+   "reasoning_chars": 2516,
+   "finish": "stop"
+  }
+ ]
+}

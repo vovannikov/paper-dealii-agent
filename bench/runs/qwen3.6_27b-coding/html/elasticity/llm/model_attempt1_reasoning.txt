@@ -1,0 +1,559 @@
+The user wants me to extract a PDE model from the provided text and format it as a JSON object conforming to the `PDEModel` schema.
+
+**1. Problem Description:**
+- Domain: $\Omega = (0,4) \times (0,1)$
+- Plane strain analysis.
+- Clamped at left end ($x=0$).
+- Uniform shear traction downwards on right end ($x=4$).
+- Upper and lower faces ($y=0, y=1$) are free of traction.
+- Body forces neglected.
+
+**2. Governing Equations:**
+- Equilibrium: $-\nabla \cdot \sigma(u) = f$ in $\Omega$.
+- Constitutive law (Isotropic linear elasticity): $\sigma(u) = \lambda \text{tr}(\varepsilon(u)) I + 2\mu \varepsilon(u)$.
+- Strain tensor: $\varepsilon(u) = \frac{1}{2}(\nabla u + \nabla u^T)$.
+- Parameters: $\lambda, \mu$ (Lamé parameters).
+- Body force $f = (0,0)$.
+
+**3. Boundary Conditions:**
+- Left end ($x=0$): $u = 0$ (Dirichlet).
+- Right end ($x=4$): $\sigma(u)n = g_N$ (Neumann). $g_N = (0, -0.05)$.
+- Top/Bottom faces ($y=0, y=1$): $\sigma(u)n = 0$ (Neumann/Insulated).
+
+**4. Parameters:**
+- $\lambda = 1.5$
+- $\mu = 1.0$
+- $f = (0,0)$
+- $g_N = (0, -0.05)$
+
+**5. Fields:**
+- Displacement $u = (u_x, u_y)$. Rank: vector. Space: H1 (vector-valued).
+
+**6. PDE-IR Construction:**
+
+*Fields:*
+- `u`: vector field, rank "vector", space "H1". Description: "Displacement field". Dimension: length (SI: {"length": 1}). Wait, the problem says parameters are non-dimensional, but usually displacement has length dimension. I'll stick to null or length. Let's use null since it says non-dimensional.
+
+*Parameters:*
+- `lambda`: scalar, 1.5.
+- `mu`: scalar, 1.0.
+- `f`: vector, (0,0).
+- `g_N`: vector, (0, -0.05).
+
+*Equations:*
+Strong form: $-\nabla \cdot \sigma(u) = f$.
+$\sigma(u) = \lambda (\nabla \cdot u) I + 2\mu \varepsilon(u)$.
+Note: $\text{tr}(\varepsilon(u)) = \nabla \cdot u$.
+So $\sigma(u) = \lambda (\nabla \cdot u) I + \mu (\nabla u + \nabla u^T)$.
+The PDE is $-\nabla \cdot (\lambda (\nabla \cdot u) I + \mu (\nabla u + \nabla u^T)) = f$.
+In PDE-IR, I need to represent the divergence of the stress tensor.
+The schema supports `Div`, `Grad`, `Add`, `Mul`, `Field`, `Parameter`, `Constant`, `Neg`, `Equation`.
+Wait, `Div` usually takes a tensor or vector. `Grad` takes a vector and returns a tensor.
+Let's look at the schema rules. `Div` operand is usually a tensor for elasticity.
+Actually, the prompt says: "Expression trees are encoded as nested objects tagged by a "type" field (Add, Mul, Neg, Grad, Div, Laplacian, TimeDerivative, Inner, Pow, Apply, Field, Parameter, Constant, Equation, DomainIntegral, BoundaryIntegral)."
+For elasticity, the strong form is often written as:
+`-Div(sigma(u)) = f`
+Where `sigma(u)` is defined via constitutive relations or inline.
+The prompt says: "Give the strong form (not the weak form); femagent derives the weak form itself."
+I will write the equation as:
+`-Div( lambda * (Div(u)) * I + mu * (Grad(u) + Transpose(Grad(u))) ) = f`
+Wait, does the schema support `Transpose` or `I` (Identity)?
+The list of types doesn't explicitly list `Transpose` or `Identity`.
+However, `Div` of a tensor is standard.
+Maybe I should just use `Div` on the stress expression.
+Let's check the types again: `Add, Mul, Neg, Grad, Div, Laplacian, TimeDerivative, Inner, Pow, Apply, Field, Parameter, Constant, Equation, DomainIntegral, BoundaryIntegral`.
+No `Transpose` or `Identity`.
+How to represent $\nabla \cdot (\lambda (\nabla \cdot u) I + 2\mu \varepsilon(u))$?
+Actually, $\nabla \cdot (\alpha I) = \nabla \alpha$.
+And $\nabla \cdot (\nabla u + \nabla u^T) = \Delta u + \nabla (\nabla \cdot u)$.
+So the equation is $-\lambda \nabla (\nabla \cdot u) - \mu (\Delta u + \nabla (\nabla \cdot u)) = f$.
+Or $-(\lambda + \mu) \nabla (\nabla \cdot u) - \mu \Delta u = f$.
+This uses `Grad`, `Div`, `Laplacian`, `Add`, `Mul`, `Neg`.
+Let's verify:
+$\nabla \cdot \sigma = \nabla \cdot (\lambda (\nabla \cdot u) I + \mu (\nabla u + \nabla u^T))$
+$= \lambda \nabla (\nabla \cdot u) + \mu (\Delta u + \nabla (\nabla \cdot u))$
+$= (\lambda + \mu) \nabla (\nabla \cdot u) + \mu \Delta u$.
+So the PDE is:
+$- [ (\lambda + \mu) \nabla (\nabla \cdot u) + \mu \Delta u ] = f$.
+This fits the available operators perfectly.
+`Div(u)` is $\nabla \cdot u$.
+`Grad(Div(u))` is $\nabla (\nabla \cdot u)$.
+`Laplacian(u)` is $\Delta u$.
+So LHS: `Neg( Add( Mul( Add(lambda, mu), Grad(Div(u)) ), Mul(mu, Laplacian(u)) ) )`
+RHS: `f`
+This avoids needing `Transpose` or `Identity`.
+
+Let's double check this derivation.
+$\sigma = \lambda (\nabla \cdot u) I + 2\mu \varepsilon(u)$
+$\nabla \cdot \sigma = \nabla \cdot (\lambda (\nabla \cdot u) I) + 2\mu \nabla \cdot \varepsilon(u)$
+$\nabla \cdot (\alpha I) = \nabla \alpha$. So first term is $\lambda \nabla (\nabla \cdot u)$.
+$\varepsilon(u) = \frac{1}{2}(\nabla u + \nabla u^T)$.
+$\nabla \cdot \varepsilon(u) = \frac{1}{2} (\nabla \cdot (\nabla u) + \nabla \cdot (\nabla u^T))$.
+$\nabla \cdot (\nabla u) = \Delta u$.
+$\nabla \cdot (\nabla u^T) = \nabla (\nabla \cdot u)$.
+So $2\mu \nabla \cdot \varepsilon(u) = \mu (\Delta u + \nabla (\nabla \cdot u))$.
+Total: $\lambda \nabla (\nabla \cdot u) + \mu \Delta u + \mu \nabla (\nabla \cdot u) = (\lambda + \mu) \nabla (\nabla \cdot u) + \mu \Delta u$.
+Correct.
+
+So the equation is:
+`- ( (lambda + mu) * Grad(Div(u)) + mu * Laplacian(u) ) = f`
+Or `Add( Neg( Mul( Add(lambda, mu), Grad(Div(u)) ) ), Neg( Mul(mu, Laplacian(u)) ) ) = f`
+Actually, `Neg( Add( ... ) )` is cleaner.
+
+Let's construct the JSON.
+
+Fields:
+- `u`: vector, H1, "Displacement field", dimension null (non-dimensional).
+
+Parameters:
+- `lambda`: scalar, 1.5, "Lamé parameter lambda", dimension null.
+- `mu`: scalar, 1.0, "Lamé parameter mu", dimension null.
+- `f`: vector, (0,0), "Body force", dimension null.
+- `g_N`: vector, (0, -0.05), "Prescribed traction", dimension null.
+
+Equations:
+- Name: "equilibrium"
+- LHS: `Neg( Add( Mul( Add(lambda, mu), Grad(Div(u)) ), Mul(mu, Laplacian(u)) ) )`
+- RHS: `f`
+
+Boundary Conditions:
+- `left` (x=0): Dirichlet, value 0 (vector zero).
+- `right` (x=4): Neumann, value `g_N`.
+- `top_and_bottom` (y=0, y=1): Neumann, value 0.
+
+Wait, the prompt says: "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+For elasticity, the flux is $\sigma n$. The strong form is $-\nabla \cdot \sigma = f$.
+So the natural BC is $\sigma n = g_N$.
+Thus, the Neumann value should be exactly $g_N$.
+For insulated/free traction, $\sigma n = 0$, so Neumann value is 0.
+
+Let's verify dimensions. The problem says parameters are non-dimensional. I'll set dimension to null for all.
+
+Structure of PDE-IR:
+```json
+{
+  "name": "plane_strain_cantilever",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "Displacement field",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "lambda",
+      "rank": "scalar",
+      "description": "Lamé parameter lambda",
+      "dimension": null
+    },
+    {
+      "name": "mu",
+      "rank": "scalar",
+      "description": "Lamé parameter mu",
+      "dimension": null
+    },
+    {
+      "name": "f",
+      "rank": "vector",
+      "description": "Body force",
+      "dimension": null
+    },
+    {
+      "name": "g_N",
+      "rank": "vector",
+      "description": "Prescribed traction on right end",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Neg",
+        "operand": {
+          "type": "Add",
+          "terms": [
+            {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Add",
+                  "terms": [
+                    { "type": "Parameter", "name": "lambda", "rank": "scalar", "description": "Lamé parameter lambda", "dimension": null },
+                    { "type": "Parameter", "name": "mu", "rank": "scalar", "description": "Lamé parameter mu", "dimension": null }
+                  ]
+                },
+                {
+                  "type": "Grad",
+                  "operand": {
+                    "type": "Div",
+                    "operand": {
+                      "type": "Field",
+                      "name": "u",
+                      "rank": "vector",
+                      "space": "H1",
+                      "description": "Displacement field",
+                      "dimension": null
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Mul",
+              "factors": [
+                { "type": "Parameter", "name": "mu", "rank": "scalar", "description": "Lamé parameter mu", "dimension": null },
+                {
+                  "type": "Laplacian",
+                  "operand": {
+                    "type": "Field",
+                    "name": "u",
+                    "rank": "vector",
+                    "space": "H1",
+                    "description": "Displacement field",
+                    "dimension": null
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "rhs": {
+        "type": "Parameter",
+        "name": "f",
+        "rank": "vector",
+        "description": "Body force",
+        "dimension": null
+      },
+      "name": "equilibrium"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "left",
+      "value": { "type": "Constant", "value": 0 },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "right",
+      "value": {
+        "type": "Parameter",
+        "name": "g_N",
+        "rank": "vector",
+        "description": "Prescribed traction on right end",
+        "dimension": null
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "top_and_bottom",
+      "value": { "type": "Constant", "value": 0 },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+
+Wait, should I include the constitutive relation explicitly in `constitutive_relations`? The prompt says "Give the strong form (not the weak form); femagent derives the weak form itself." and "Declare every field and parameter you reference under fields/parameters."
+Usually, for elasticity, the strong form is given as $-\nabla \cdot \sigma(u) = f$ with $\sigma(u)$ defined. But since I expanded it into $\nabla$ and $\Delta$ operators, it's self-contained. I'll stick to the expanded form in the equation. It's safer given the limited operator set.
+
+Check boundary conditions:
+- Left: $x=0$, clamped -> $u=0$. Dirichlet.
+- Right: $x=4$, traction $g_N$. Neumann.
+- Top/Bottom: $y=0,1$, free traction -> $\sigma n = 0$. Neumann with 0.
+
+One detail: `g_N` is given as $(0, -0.05)$. I'll define it as a parameter. The value in the BC will reference it.
+The prompt says: "A `neumann` or `robin` value is the prescribed OUTWARD normal flux". For elasticity, flux is $\sigma n$. So value is $g_N$. Correct.
+
+Check dimensions: The problem states parameters are non-dimensional. I'll set `dimension: null` for all.
+
+Check equation name: "equilibrium" or "strong". I'll use "equilibrium".
+
+Check field rank: "vector". Space: "H1".
+Check parameter ranks: "scalar" for lambda, mu. "vector" for f, g_N.
+
+One minor point: `Div` of a vector field returns a scalar. `Grad` of a scalar returns a vector. `Laplacian` of a vector returns a vector. `Add` and `Mul` work component-wise or scalar-vector. This matches.
+
+Let's verify the expression tree syntax carefully.
+`Mul` takes `factors` array.
+`Add` takes `terms` array.
+`Neg` takes `operand`.
+`Grad`, `Div`, `Laplacian` take `operand`.
+`Field`, `Parameter`, `Constant` have appropriate fields.
+
+Everything looks consistent.
+
+One thing: The prompt example uses `Neg` for the source term in Poisson: `-div(k grad(u)) - f = 0`.
+My equation: `- ( (lambda+mu) grad(div(u)) + mu laplacian(u) ) = f`.
+This is equivalent to `- (lambda+mu) grad(div(u)) - mu laplacian(u) - f = 0`.
+I will keep it as LHS = RHS as in the example.
+
+Wait, should I define `f` and `g_N` as parameters with constant values, or just put the constants directly? The prompt says "Declare every field and parameter you reference". I'll declare them as parameters.
+
+Let's assemble the JSON carefully.
+I will make sure all types match the schema.
+`fields`: array of objects.
+`parameters`: array of objects.
+`equations`: array of objects.
+`boundary_conditions`: array of objects.
+`initial_conditions`: empty array.
+`constitutive_relations`: empty array.
+`invariants`: empty array.
+`assumptions`: empty array.
+`provenance`: null.
+`ambiguity`: null.
+
+One detail: `g_N` value is `(0, -0.05)`. In PDE-IR, vectors are usually represented as fields or parameters of rank "vector". I'll declare `g_N` as a vector parameter. The BC value will reference it.
+Similarly for `f`.
+
+Is there any ambiguity about plane strain? Plane strain implies $\varepsilon_{zz}=0$, which affects the constitutive law if using Young's modulus and Poisson's ratio, but here Lamé parameters are given directly, so the 2D form is exactly as derived. The derivation holds.
+
+Final check of the expression:
+LHS: `Neg( Add( Mul( Add(lambda, mu), Grad(Div(u)) ), Mul(mu, Laplacian(u)) ) )`
+RHS: `f`
+This correctly represents $-\nabla \cdot \sigma = f$.
+
+I will produce the JSON now.
+One minor adjustment: I'll add descriptions to parameters and fields as requested/implied.
+Dimensions: null.
+All good.
+Proceed. 
+Let's double check the `Div` and `Grad` nesting.
+`Grad(Div(u))` -> `Grad` operand is `Div` operand `u`. Correct.
+`Laplacian(u)` -> `Laplacian` operand `u`. Correct.
+`Add(lambda, mu)` -> `Add` terms `lambda`, `mu`. Correct.
+`Mul(Add(...), Grad(...))` -> `Mul` factors `Add(...)`, `Grad(...)`. Correct.
+`Mul(mu, Laplacian(u))` -> `Mul` factors `mu`, `Laplacian(u)`. Correct.
+`Add(term1, term2)` -> `Add` terms `term1`, `term2`. Correct.
+`Neg(Add(...))` -> `Neg` operand `Add(...)`. Correct.
+
+Everything matches the schema.
+Output matches request.
+Done. 
+I will generate the JSON. 
+Self-Correction/Refinement during thought:
+Wait, the prompt says "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+For elasticity, the flux is $\sigma n$. The strong form is $-\nabla \cdot \sigma = f$.
+So the Neumann BC value should indeed be $\sigma n = g_N$.
+The problem states $g_N = (0, -0.05)$.
+So the BC value is `g_N`.
+This is consistent.
+
+One thing: `f` is given as `(0,0)`. I'll declare it as a parameter.
+The JSON structure looks solid.
+I will produce it now. 
+All steps verified.
+Output matches exactly. 
+Proceeds. 
+[Output Generation] -> JSON string. 
+(Note: I'll make sure to format it properly as a single JSON object.) 
+Check schema fields: `name`, `pde_ir_version`, `fields`, `parameters`, `equations`, `initial_conditions`, `boundary_conditions`, `constitutive_relations`, `invariants`, `assumptions`, `provenance`, `ambiguity`. All present.
+Values match.
+Ready. 
+Output Generation. 
+```json
+{
+  "name": "plane_strain_cantilever",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "u",
+      "rank": "vector",
+      "space": "H1",
+      "description": "Displacement field",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "lambda",
+      "rank": "scalar",
+      "description": "Lamé parameter lambda",
+      "dimension": null
+    },
+    {
+      "name": "mu",
+      "rank": "scalar",
+      "description": "Lamé parameter mu",
+      "dimension": null
+    },
+    {
+      "name": "f",
+      "rank": "vector",
+      "description": "Body force",
+      "dimension": null
+    },
+    {
+      "name": "g_N",
+      "rank": "vector",
+      "description": "Prescribed traction on right end",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Neg",
+        "operand": {
+          "type": "Add",
+          "terms": [
+            {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Add",
+                  "terms": [
+                    {
+                      "type": "Parameter",
+                      "name": "lambda",
+                      "rank": "scalar",
+                      "description": "Lamé parameter lambda",
+                      "dimension": null
+                    },
+                    {
+                      "type": "Parameter",
+                      "name": "mu",
+                      "rank": "scalar",
+                      "description": "Lamé parameter mu",
+                      "dimension": null
+                    }
+                  ]
+                },
+                {
+                  "type": "Grad",
+                  "operand": {
+                    "type": "Div",
+                    "operand": {
+                      "type": "Field",
+                      "name": "u",
+                      "rank": "vector",
+                      "space": "H1",
+                      "description": "Displacement field",
+                      "dimension": null
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Parameter",
+                  "name": "mu",
+                  "rank": "scalar",
+                  "description": "Lamé parameter mu",
+                  "dimension": null
+                },
+                {
+                  "type": "Laplacian",
+                  "operand": {
+                    "type": "Field",
+                    "name": "u",
+                    "rank": "vector",
+                    "space": "H1",
+                    "description": "Displacement field",
+                    "dimension": null
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "rhs": {
+        "type": "Parameter",
+        "name": "f",
+        "rank": "vector",
+        "description": "Body force",
+        "dimension": null
+      },
+      "name": "equilibrium"
+    }
+  ],
+  "initial_conditions": [],
+  "boundary_conditions": [
+    {
+      "field": "u",
+      "type": "dirichlet",
+      "boundary_id": "left",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "right",
+      "value": {
+        "type": "Parameter",
+        "name": "g_N",
+        "rank": "vector",
+        "description": "Prescribed traction on right end",
+        "dimension": null
+      },
+      "provenance": null,
+      "ambiguity": null
+    },
+    {
+      "field": "u",
+      "type": "neumann",
+      "boundary_id": "top_and_bottom",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+All checks passed. Output matches request.
+One minor point: `Div` of a vector field in 2D plane strain is a scalar. `Grad` of that scalar is a vector. `Laplacian` of a vector is a vector. The addition and multiplication are valid. The strong form derivation is correct. The boundary conditions match the problem statement. Parameters are declared. Dimensions are null as stated. JSON structure is valid.
+Ready. 
+Output matches. 
+Proceeds. 
+[Final Check of the Prompt]
+"Return a SINGLE JSON object matching the PDEModel schema."
+"Expression trees are encoded as nested objects tagged by a "type" field..."
+"Declare every field and parameter you reference under fields/parameters."
+"Give the strong form..."
+"Boundary conditions: a dirichlet value is the prescribed field value. A neumann or robin value is the prescribed OUTWARD normal flux..."
+All constraints met.
+Output generation. 
+(Self-Correction/Note during generation prep)
+I should ensure that the `value` in boundary conditions for `g_N` correctly references the parameter. The schema example shows referencing parameters in BC values. That's fine.
+The `Constant` value `0` for vector fields might be interpreted as a zero vector. That's standard.
+Everything is consistent.
+Proceeds. 
+[Output Generation] -> *Proceeds*

@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2D Stationary Heat Transfer Benchmark</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #667085;
+      --border: #d9dee7;
+      --accent: #2563eb;
+      --accent-soft: #eaf2ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+            Roboto, Helvetica, Arial, sans-serif;
+    }
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 42px 24px 64px;
+    }
+    header {
+      margin-bottom: 28px;
+    }
+    h1, h2, h3 { line-height: 1.25; }
+    h1 { font-size: 2rem; margin: 0 0 8px; }
+    h2 { font-size: 1.35rem; margin-top: 36px; }
+    h3 { font-size: 1.05rem; margin-top: 28px; }
+    .subtitle { color: var(--muted); margin: 0; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      margin: 20px 0;
+      box-shadow: 0 2px 10px rgba(16, 24, 40, 0.04);
+    }
+    .equation {
+      overflow-x: auto;
+      text-align: center;
+      padding: 16px 8px;
+      margin: 14px 0;
+      background: #fbfcfe;
+      border-radius: 10px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
+    }
+    .param {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 15px;
+      background: #fff;
+    }
+    .param strong { display: block; margin-bottom: 2px; }
+    .param span { color: var(--muted); font-size: 0.92rem; }
+    .note {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th { background: #f8fafc; }
+    code {
+      background: #f1f3f5;
+      border-radius: 5px;
+      padding: 1px 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 34px;
+    }
+    svg { width: 100%; height: auto; display: block; }
+    .small { color: var(--muted); font-size: 0.92rem; }
+    @media (max-width: 600px) {
+      main { padding: 28px 15px 48px; }
+      h1 { font-size: 1.6rem; }
+      .card { padding: 18px; }
+    }
+  </style>
+</head>
+
+<body>
+<main>
+  <header>
+    <h1>2D Stationary Heat Transfer Benchmark</h1>
+    <p class="subtitle">
+      Benchmark <code>HeatTransfer-FEM-Stationary-2D-Single-HeatTransfer-0001</code>
+    </p>
+  </header>
+
+  <section class="card">
+    <h2>Problem description</h2>
+    <p>
+      This benchmark considers steady-state heat conduction in a rectangular
+      solid. The rectangle has a width of <strong>0.6 m</strong> and a height
+      of <strong>1 m</strong>. The lower boundary is maintained at
+      <strong>100 °C</strong>. The upper and right boundaries exchange heat
+      with an ambient environment at <strong>0 °C</strong> by natural
+      convection. The left boundary is thermally insulated.
+    </p>
+
+    <svg viewBox="0 0 760 430" role="img"
+         aria-label="Schematic of the rectangular heat-transfer benchmark">
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="8"
+                refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L7,3 z" fill="#2563eb"/>
+        </marker>
+      </defs>
+
+      <!-- axes -->
+      <line x1="105" y1="355" x2="620" y2="355" stroke="#555" stroke-width="1.5"/>
+      <line x1="105" y1="355" x2="105" y2="65" stroke="#555" stroke-width="1.5"/>
+      <text x="625" y="361" font-size="18">x</text>
+      <text x="92" y="58" font-size="18">y</text>
+
+      <!-- domain -->
+      <rect x="105" y="75" width="390" height="280"
+            fill="#eef4fb" stroke="#222" stroke-width="3"/>
+
+      <!-- bottom temperature -->
+      <line x1="105" y1="355" x2="495" y2="355"
+            stroke="#b42318" stroke-width="8"/>
+      <text x="300" y="393" text-anchor="middle" font-size="17" fill="#b42318">
+        T = 100 °C
+      </text>
+
+      <!-- convection arrows top -->
+      <line x1="180" y1="70" x2="180" y2="35"
+            stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="300" y1="70" x2="300" y2="35"
+            stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="420" y1="70" x2="420" y2="35"
+            stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <!-- convection arrows right -->
+      <line x1="500" y1="135" x2="545" y2="135"
+            stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="215" x2="545" y2="215"
+            stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="500" y1="295" x2="545" y2="295"
+            stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <text x="365" y="25" text-anchor="middle" font-size="16" fill="#2563eb">
+        convection: h = 750 W/(m²·°C), T<tspan baseline-shift="sub" font-size="12">amb</tspan> = 0 °C
+      </text>
+
+      <!-- insulated left -->
+      <text x="48" y="220" text-anchor="middle" font-size="15"
+            transform="rotate(-90 48 220)">
+        insulated
+      </text>
+
+      <!-- dimensions -->
+      <line x1="105" y1="378" x2="495" y2="378"
+            stroke="#555" stroke-width="1"/>
+      <text x="300" y="416" text-anchor="middle" font-size="15">0.6 m</text>
+
+      <line x1="70" y1="75" x2="70" y2="355"
+            stroke="#555" stroke-width="1"/>
+      <text x="42" y="220" text-anchor="middle" font-size="15"
+            transform="rotate(-90 42 220)">1 m</text>
+
+      <!-- reference point -->
+      <circle cx="495" cy="299" r="5" fill="#111"/>
+      <text x="505" y="294" font-size="14">(0.6, 0.2)</text>
+    </svg>
+  </section>
+
+  <section class="card">
+    <h2>Governing equation</h2>
+    <p>
+      For steady heat transfer in a solid with no internal heat source and no
+      material velocity, the transient, source, and advection terms vanish.
+      The resulting heat equation is
+    </p>
+
+    <div class="equation">
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+        <mrow>
+          <mo>∇</mo><mo>·</mo>
+          <mrow>
+            <mo>(</mo>
+            <mi>k</mi>
+            <mo>∇</mo><mi>T</mi>
+            <mo>)</mo>
+          </mrow>
+          <mo>=</mo><mn>0</mn>
+        </mrow>
+      </math>
+    </div>
+
+    <p>
+      Here <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>T</mi></math>
+      is temperature and
+      <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>k</mi></math>
+      is the thermal conductivity. Since the material is homogeneous,
+      <math xmlns="http://www.w3.org/1998/Math/MathML">
+        <mi>k</mi><mo>=</mo><mn>52</mn>
+        <mtext> W/(m·°C)</mtext>
+      </math>.
+    </p>
+
+    <div class="equation">
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+        <mrow>
+          <mo>∇</mo><mo>·</mo><mrow>
+            <mo>(</mo><mn>52</mn><mo>∇</mo><mi>T</mi><mo>)</mo>
+          </mrow>
+          <mo>=</mo><mn>0</mn>
+          <mspace width="1em"/>
+          <mo>in</mo>
+          <mspace width="0.5em"/>
+          <mi>Ω</mi>
+        </mrow>
+      </math>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Boundary conditions</h2>
+
+    <h3>Bottom boundary</h3>
+    <p>
+      The temperature is prescribed on the lower boundary:
+    </p>
+    <div class="equation">
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+        <mrow>
+          <mi>T</mi><mo>=</mo><mn>100</mn>
+          <mtext> °C</mtext>
+          <mo>,</mo>
+          <mspace width="0.5em"/>
+          <mi>y</mi><mo>=</mo><mn>0</mn>
+        </mrow>
+      </math>
+    </div>
+
+    <h3>Top and right boundaries</h3>
+    <p>
+      These boundaries are subject to Newton's law of cooling with ambient
+      temperature <strong>0 °C</strong> and heat-transfer coefficient
+      <strong>750 W/(m²·°C)</strong>:
+    </p>
+    <div class="equation">
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+        <mrow>
+          <mo>−</mo><mi>k</mi>
+          <mfrac>
+            <mrow><mo>∂</mo><mi>T</mi></mrow>
+            <mrow><mo>∂</mo><mi>n</mi></mrow>
+          </mfrac>
+          <mo>=</mo>
+          <mi>h</mi>
+          <mo>(</mo><mi>T</mi><mo>−</mo><msub><mi>T</mi><mi>amb</mi></msub><mo>)</mo>
+        </mrow>
+      </math>
+    </div>
+    <div class="equation">
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+        <mrow>
+          <mi>h</mi><mo>=</mo><mn>750</mn>
+          <mtext> W/(m²·°C)</mtext>
+          <mo>,</mo>
+          <mspace width="0.6em"/>
+          <msub><mi>T</mi><mi>amb</mi></msub><mo>=</mo><mn>0</mn>
+          <mtext> °C</mtext>
+        </mrow>
+      </math>
+    </div>
+    <p class="small">
+      The outward normal <math xmlns="http://www.w3.org/1998/Math/MathML">
+      <mi>n</mi></math> is used in the convection condition.
+    </p>
+
+    <h3>Left boundary</h3>
+    <p>
+      The remaining boundary is thermally insulated, so the normal heat flux
+      vanishes:
+    </p>
+    <div class="equation">
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+        <mrow>
+          <mo>−</mo><mi>k</mi>
+          <mfrac>
+            <mrow><mo>∂</mo><mi>T</mi></mrow>
+            <mrow><mo>∂</mo><mi>n</mi></mrow>
+          </mfrac>
+          <mo>=</mo><mn>0</mn>
+          <mo>,</mo>
+          <mspace width="0.5em"/>
+          <mi>x</mi><mo>=</mo><mn>0</mn>
+        </mrow>
+      </math>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Reference solution and verification point</h2>
+    <p>
+      The benchmark uses the temperature at
+      <strong>P = (0.6 m, 0.2 m)</strong> as the reference quantity.
+      The reference temperature is
+      <strong>18.25 °C</strong>.
+    </p>
+
+    <div class="grid">
+      <div class="param">
+        <strong>Reference point</strong>
+        <span>P = (0.6 m, 0.2 m)</span>
+      </div>
+      <div class="param">
+        <strong>Reference temperature</strong>
+        <span>T<sub>ref</sub> = 18.25 °C</span>
+      </div>
+      <div class="param">
+        <strong>Verification tolerance</strong>
+        <span>relative error &lt; 10<sup>−3</sup></span>
+      </div>
+    </div>
+
+    <p>
+      The numerical solution is accepted when the relative error at the
+      reference point satisfies
+    </p>
+
+    <div class="equation">
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+        <mrow>
+          <mo>|</mo>
+          <mfrac>
+            <mrow>
+              <mi>T</mi><mo>(</mo><mn>0.6</mn><mo>,</mo><mn>0.2</mn><mo>)</mo>
+              <mo>−</mo><msub><mi>T</mi><mi>ref</mi></msub>
+            </mrow>
+            <msub><mi>T</mi><mi>ref</mi></msub>
+          </mfrac>
+          <mo>|</mo>
+          <mo>&lt;</mo>
+          <msup><mn>10</mn><mo>−</mo><mn>3</mn></msup>.
+        </mrow>
+      </math>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Model summary</h2>
+    <table>
+      <thead>
+        <tr><th>Quantity</th><th>Value</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Domain</td><td>0 ≤ x ≤ 0.6 m, 0 ≤ y ≤ 1 m</td></tr>
+        <tr><td>Thermal conductivity</td><td>k = 52 W/(m·°C)</td></tr>
+        <tr><td>Bottom boundary</td><td>T = 100 °C</td></tr>
+        <tr><td>Top/right boundaries</td><td>Convection to T<sub>amb</sub> = 0 °C</td></tr>
+        <tr><td>Heat-transfer coefficient</td><td>h = 750 W/(m²·°C)</td></tr>
+        <tr><td>Left boundary</td><td>Thermally insulated</td></tr>
+        <tr><td>Reference point</td><td>(0.6 m, 0.2 m)</td></tr>
+        <tr><td>Reference temperature</td><td>18.25 °C</td></tr>
+        <tr><td>Acceptance criterion</td><td>|(T − T<sub>ref</sub>)/T<sub>ref</sub>| &lt; 10<sup>−3</sup></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="note">
+    <strong>Source:</strong> Wolfram Documentation,
+    <em>Heat Transfer Model Verification Tests</em>, benchmark
+    <code>HeatTransfer-FEM-Stationary-2D-Single-HeatTransfer-0001</code>.
+    The page identifies the benchmark reference as A. D. Cameron, J. A. Casey,
+    and G. B. Simpson, <em>Benchmark Tests for Thermal Analysis</em>,
+    NAFEMS Documentation.
+  </div>
+
+  <p class="source">
+    Source page:
+    <a href="https://reference.wolfram.com/language/PDEModels/tutorial/HeatTransfer/HeatTransferVerificationTests.html">
+      Wolfram Heat Transfer Model Verification Tests
+    </a>
+  </p>
+</main>
+</body>
+</html>

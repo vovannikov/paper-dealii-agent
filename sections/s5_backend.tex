@@ -1,0 +1,51 @@
+\section{The \dealii{} Reference Backend}
+\label{sec:backend}
+
+\subsection{Scope and structure}
+The backend turns a validated \code{(PDEModel, ProblemInstance, DiscretizationPlan)} triple into a complete, self-contained \dealii{} project (a \code{main.cc} and a \code{CMakeLists.txt}). It is the \emph{reference} backend of the research plan: it favours mathematical transparency and ease of debugging over speed, and uses assembled sparse matrices with \code{FEValues}, \code{DoFHandler}, \code{AffineConstraints} and explicit assembly loops. Two generators share the compiler: a scalar path (\code{FE\_Q}, sparse matrix) and a system path (\code{FESystem} with one block per field, used for vector-valued, mixed and coupled models and for every nonlinear model that needs Newton). A third generator emits the Newton-specific code for scalar quasilinear diffusion. Table~\ref{tab:coverage} summarises the classes of problems covered, with the benchmark in the repository that exercises each.
+
+\begin{table}[t]
+\centering\small
+\caption{Problem classes handled by the reference backend and the repository benchmarks that exercise them. All run end to end on a real \dealii{} installation.}
+\label{tab:coverage}
+\begin{tabularx}{\textwidth}{@{}p{4.1cm}X@{}}
+\toprule
+Class & Benchmarks (gold PDE-IR models)\\
+\midrule
+Linear steady scalar & \code{poisson}, \code{heat\_conduction\_robin} (Dirichlet, Neumann and Robin data)\\
+Nonlinear steady scalar & \code{nonlinear\_diffusion} ($-\nabla\cdot(\kappa(u)\nabla u)=f$, Newton)\\
+Linear elasticity (vector) & \code{elasticity}, \code{loaded\_beam} (spatially varying traction)\\
+Nonlinear elasticity & \code{nonlinear\_elasticity} (Newton on the \code{FESystem}, quadratic convergence)\\
+Stokes (mixed) & \code{stokes}, \code{lid\_driven\_cavity}, \code{channel\_flow}\\
+Navier--Stokes & \code{navier\_stokes} (Newton and Picard), \code{unsteady\_navier\_stokes}, \code{ramped\_lid\_cavity}\\
+Transient linear & \code{transient\_heat} (time-varying Dirichlet data), \code{unsteady\_stokes}\\
+Nonlinear coupled transient & \code{nonlinear\_parabolic}, \code{allen\_cahn}, \code{cahn\_hilliard} (two-field $c/\mu$ formulation, Newton per step)\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Generated solver features}
+\paragraph{Boundary data.} Constant and spatially varying scalar and vector data, time-varying Dirichlet and source data, Neumann tractions as vector expressions, and Robin terms are rendered into component-wise quadrature-point expressions. Boundary names that cover several mesh sides are relabelled to one mesh boundary id. Hanging-node constraints are combined with Dirichlet constraints; for time-varying Dirichlet data the Dirichlet part of the constraints is rebuilt every step while the hanging-node part is kept.
+
+\paragraph{Linear solvers.} Direct (UMFPACK \citep{davis2004}), CG with SSOR, and GMRES. For saddle-point systems the backend generates a block upper-triangular preconditioner with an algebraic Schur-complement approximation by SIMPLE \citep{patankar1972} or by the scaled least-squares commutator (LSC) approach \citep{elman2006}. On a lid-driven cavity the LSC variant needed 17, 25 and 38 GMRES iterations on three successively refined meshes: it is not mesh independent and, in two dimensions, not faster than the direct solver, so it is a scalability option rather than a default.
+
+\paragraph{Nonlinear solvers.} Newton with the symbolically derived tangent, with optional residual-based backtracking and robust convergence criteria (absolute and relative residual, step norm, iteration limit, divergence and stagnation detection reported by name). A Reynolds-number-1000 cavity that plain Newton cannot solve converged in 13 iterations with backtracking.
+
+\paragraph{Adaptivity.} Steady problems can be solved on adaptively refined meshes using the Kelly error estimator \citep{kelly1983} with fixed-fraction marking; for a steep manufactured solution the adaptive loop reached the accuracy of uniform refinement with $3.9$--$8.7\times$ fewer degrees of freedom, and for Navier--Stokes it refined at the lid corners. For transient problems an \code{adapt\_mesh()} step with \code{SolutionTransfer} is inserted in the time loop (with initial refinement towards the initial data); for a persistent steep feature the adaptive run had a $3.3\times$ lower error with 37\% fewer cells, but for a quickly decaying bump it did not help. An embedded error estimate (a pair of different order) and a PI controller throttled by the Newton iteration count control the time step.
+
+\paragraph{Diagnostics.} The generated programs print machine-parsable lines (mesh size, Newton residual history and step lengths, linear-solver iteration counts, time-step acceptance and rejection, invariants per step). The pipeline parses them into structured reports and an acceptance gate (\code{diagnose}) that fails, with a named reason, on Newton divergence, stagnation or line-search failure.
+
+\subsection{Pipeline stages and reports}
+The orchestrator runs six stages and records each as \code{passed}, \code{failed} or \code{skipped}:
+\begin{enumerate}[nosep]
+\item \textbf{validate}: IR, instance, time plan, solver plan and well-posedness checks (Section~\ref{sec:validation}).
+\item \textbf{generate}: derive the weak form and emit the program; unsupported constructs raise a descriptive error (``unsupported construct: \ldots'') rather than producing partial code.
+\item \textbf{build}: configure with CMake against the given \dealii{} installation and compile; the first compiler error is quoted.
+\item \textbf{run}: execute; mesh size and solver notes are extracted from the output.
+\item \textbf{diagnose}: Newton/linear-solver/time-step acceptance.
+\item \textbf{verify}: the verification gate of Section~\ref{sec:verification}, with the applicable checks chosen from the structure of the model.
+\end{enumerate}
+Stages that need a \dealii{} installation are skipped, not failed, when none is provided, so \code{validate} and \code{generate} run anywhere. For example, the heat benchmark program of Section~\ref{sec:heat} is generated on a mesh of $16\times16$ cells and is a 236-line \dealii{} program, all of it produced from the eight-line IR summary of Section~\ref{sec:ir} and the instance.
+
+\subsection{Limitations of the current backend}
+The geometry is an axis-aligned box generated with \code{GridGenerator::hyper\_rectangle} and colorized sides; no unstructured meshes are read yet. The expression language has no transcendental functions, so data are polynomials in the coordinates and time (a separate analytic AST with $\sin$, $\cos$ and $\exp$ is used only inside the verification code to derive forcing terms). Only \code{H1} fields (continuous Lagrange) are generated, and the scalar path currently uses $Q_1$ elements regardless of the requested degree (we observed identical meshes and results for $Q_1$ and $Q_2$ requests on the heat benchmark); higher degrees are available in the system path through \code{field\_degrees}. $\mathrm{H(div)}$, $\mathrm{H(curl)}$ and discontinuous spaces are representable in the IR but rejected by the generator. Time-dependent nonlinear systems use backward Euler. There is no MPI, matrix-free or SIMD backend yet; this is the principal item of future work (Section~\ref{sec:outlook}).

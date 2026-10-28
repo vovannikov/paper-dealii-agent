@@ -1,0 +1,22 @@
+Here is the corrected JSON object:
+
+```
+{
+  "parameter_values": {
+    "lambda": 1.5,
+    "mu": 1.0,
+    "f": [0.0, 0.0],
+    "gN": [0.0, -0.05]
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [4.0, 1.0],
+    "boundary_ids": {
+      "clamped": 0,
+      "traction": 1,
+      "free": [2, 3]
+    }
+  },
+  "value_sources": {}
+}
+```

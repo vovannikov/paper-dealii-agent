@@ -1,0 +1,59 @@
+{
+ "model": "qwen3.6:27b-coding",
+ "case": "poisson",
+ "modality": "html",
+ "document_chars": 4669,
+ "started": 1793133689.2025735,
+ "model_ok": true,
+ "model_attempts": 2,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 194.69066190719604,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: 3 validation errors for PDEModel\nboundary_conditions.0.provenance\n  Input should be a dictionary or an instance of Provenance [type=dataclass_type, input_value='Equation (2): u = 0 on x=0 and y=0', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/dataclass_type\nboundary_conditions.1.provenance\n  Input should be a dictionary or an instance of Provenance [type=dataclass_type, input_value='Equation (3): k du/dn = g_N on x=2', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/dataclass_type\nboundary_conditions.2.provenance\n  Input should be a dictionary or an instance of Provenance [type=dataclass_type, input_value='Text: top side y=1 is impermeable, k du/dn = 0', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/dataclass_type"
+ ],
+ "instance_ok": true,
+ "instance_attempts": 2,
+ "instance_first_ok": false,
+ "instance_issues": [],
+ "instance_seconds": 157.5524513721466,
+ "total_seconds": 352.30337381362915,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 106.45866537094116,
+   "prompt_tokens": 3229,
+   "completion_tokens": 3294,
+   "answer_chars": 3247,
+   "reasoning_chars": 7585,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 88.22901630401611,
+   "prompt_tokens": 4456,
+   "completion_tokens": 2836,
+   "answer_chars": 3048,
+   "reasoning_chars": 7042,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 93.70473194122314,
+   "prompt_tokens": 2212,
+   "completion_tokens": 2929,
+   "answer_chars": 388,
+   "reasoning_chars": 8554,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 63.84676909446716,
+   "prompt_tokens": 2440,
+   "completion_tokens": 2047,
+   "answer_chars": 373,
+   "reasoning_chars": 5704,
+   "finish": "stop"
+  }
+ ]
+}

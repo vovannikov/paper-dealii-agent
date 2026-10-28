@@ -1,0 +1,39 @@
+{
+ "model": "devstral-small-2:latest",
+ "case": "stokes",
+ "modality": "html",
+ "document_chars": 4547,
+ "started": 1793173093.402919,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 82.90540647506714,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 12.15264630317688,
+ "total_seconds": 95.08743119239807,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 82.90098786354065,
+   "prompt_tokens": 3517,
+   "completion_tokens": 1296,
+   "answer_chars": 5219,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 12.15200686454773,
+   "prompt_tokens": 2154,
+   "completion_tokens": 160,
+   "answer_chars": 407,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

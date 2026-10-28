@@ -1,0 +1,688 @@
+The user wants me to extract a PDE model from a scientific paper snippet and return it as a JSON object matching a specific schema (PDE-IR).
+The previous response failed JSON parsing due to a schema mismatch or formatting issue.
+I need to carefully construct the JSON according to the schema provided in the prompt.
+
+Let's analyze the paper content:
+- Equation: Allen-Cahn equation: $\frac{\partial c}{\partial t} = -M (f'(c) - \kappa \nabla^2 c)$
+- $f(c) = \frac{1}{4}(c^2 - 1)^2$
+- $f'(c) = \frac{1}{2}(c^2 - 1) \cdot 2c = c(c^2 - 1) = c^3 - c$
+- So the PDE is: $\frac{\partial c}{\partial t} = -M(c^3 - c - \kappa \nabla^2 c)$
+- Rearranged to strong form LHS = 0 or LHS = RHS:
+  $\frac{\partial c}{\partial t} + M(c^3 - c) - M \kappa \nabla^2 c = 0$
+  Or $\frac{\partial c}{\partial t} = -M c^3 + M c - M \kappa \nabla^2 c$
+  Let's stick to the form given: $\frac{\partial c}{\partial t} = -M(f'(c) - \kappa \nabla^2 c)$
+  LHS: $\frac{\partial c}{\partial t}$
+  RHS: $-M(c^3 - c - \kappa \nabla^2 c) = -M c^3 + M c + M \kappa \nabla^2 c$
+  Actually, it's easier to put everything on LHS or keep it as LHS = RHS.
+  Let's define the equation as:
+  LHS: $\frac{\partial c}{\partial t}$
+  RHS: $-M(c^3 - c - \kappa \nabla^2 c)$
+  Wait, the prompt says "Give the strong form". Usually, PDE-IR expects `lhs` and `rhs`.
+  I will construct the expression tree carefully.
+
+Fields:
+- `c`: scalar, H1, order parameter.
+
+Parameters:
+- `M`: mobility, scalar.
+- `kappa`: gradient-energy coefficient, scalar.
+
+Equation:
+$\partial_t c = -M (c^3 - c - \kappa \nabla^2 c)$
+Let's expand RHS: $-M c^3 + M c + M \kappa \nabla^2 c$
+Or keep it factored: `Mul` of `-M` and `(c^3 - c - kappa * Laplacian(c))`
+Actually, the prompt example shows `lhs` and `rhs`. I'll put $\partial_t c$ on LHS and the rest on RHS.
+Wait, the example has `lhs` as an `Add` of terms and `rhs` as `Constant 0`. That's fine.
+I will write:
+LHS: `TimeDerivative(c)`
+RHS: `Mul(-M, Add(c^3, Neg(c), Neg(kappa * Laplacian(c))))`
+Or simpler: `lhs` = `TimeDerivative(c)`, `rhs` = `Mul(-M, Add(Pow(c,3), Neg(c), Neg(Mul(kappa, Laplacian(c)))))`
+Let's check signs: $f'(c) = c^3 - c$. So $-M(f'(c) - \kappa \nabla^2 c) = -M(c^3 - c - \kappa \nabla^2 c) = -M c^3 + M c + M \kappa \nabla^2 c$.
+I'll stick to the direct translation: `rhs` = `Mul({type: "Neg", operand: {type: "Parameter", name: "M"}}, {type: "Add", terms: [{type: "Pow", base: c, exponent: 3}, {type: "Neg", operand: c}, {type: "Neg", operand: {type: "Mul", factors: [kappa, Laplacian(c)]}]}})`
+Actually, it's easier to just write `lhs` = `TimeDerivative(c)` and `rhs` = `Add` of terms.
+Let's just use `lhs` = `TimeDerivative(c)` and `rhs` = `Mul` of `-M` and `(c^3 - c - kappa * Laplacian(c))`.
+Wait, the schema expects `lhs` and `rhs` to be expression trees.
+I will construct it carefully.
+
+Boundary conditions:
+- No flux: $\nabla c \cdot n = 0$ on $\partial \Omega$. This is a Neumann BC with value 0.
+- `boundary_id`: "domain_boundary" or "all_boundaries".
+- `type`: "neumann"
+- `value`: 0
+
+Initial conditions:
+- $c(x, y, 0) = \frac{1}{2}(2x - 1)(2y - 1)$
+- This depends on spatial coordinates `x` and `y`. In PDE-IR, spatial coordinates are often handled as fields or parameters, or just constants in the expression if the domain is fixed. The prompt says "Declare every field and parameter you reference". I'll add `x` and `y` as parameters or fields? Usually coordinates are not declared as fields in PDE-IR unless necessary, but I'll declare them as parameters of rank scalar, or just use them directly. Actually, PDE-IR usually handles coordinates implicitly or as parameters. I'll declare them as parameters.
+- Wait, the prompt example doesn't show coordinates. I'll just use `x` and `y` as parameters. Or I can just write the expression using `x` and `y` as parameters.
+- Actually, in many PDE-IR formats, coordinates are accessed via a special node, but the prompt says "Declare every field and parameter you reference under fields/parameters." So I will declare `x` and `y` as parameters.
+
+Let's refine the expression tree for the initial condition:
+`0.5 * (2*x - 1) * (2*y - 1)`
+Tree:
+`Mul` factors:
+  `Constant 0.5`
+  `Add` terms: `Mul(Constant 2, Parameter x)`, `Neg(Constant 1)`
+  `Add` terms: `Mul(Constant 2, Parameter y)`, `Neg(Constant 1)`
+
+Check dimensions: The paper doesn't give SI units, so `dimension: null` for all.
+
+Check PDE equation structure:
+`lhs`: `TimeDerivative` of `c`
+`rhs`: `Mul` of `-M` and `(c^3 - c - kappa * Laplacian(c))`
+Wait, `-M` can be `Neg(Parameter M)`.
+Let's construct `rhs` carefully:
+```json
+{
+  "type": "Mul",
+  "factors": [
+    {
+      "type": "Neg",
+      "operand": {
+        "type": "Parameter",
+        "name": "M",
+        "rank": "scalar",
+        "description": "mobility",
+        "dimension": null
+      }
+    },
+    {
+      "type": "Add",
+      "terms": [
+        {
+          "type": "Pow",
+          "base": {
+            "type": "Field",
+            "name": "c",
+            "rank": "scalar",
+            "space": "H1",
+            "description": "non-conserved order parameter",
+            "dimension": null
+          },
+          "exponent": 3
+        },
+        {
+          "type": "Neg",
+          "operand": {
+            "type": "Field",
+            "name": "c",
+            "rank": "scalar",
+            "space": "H1",
+            "description": "non-conserved order parameter",
+            "dimension": null
+          }
+        },
+        {
+          "type": "Neg",
+          "operand": {
+            "type": "Mul",
+            "factors": [
+              {
+                "type": "Parameter",
+                "name": "kappa",
+                "rank": "scalar",
+                "description": "gradient-energy coefficient",
+                "dimension": null
+              },
+              {
+                "type": "Laplacian",
+                "operand": {
+                  "type": "Field",
+                  "name": "c",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "non-conserved order parameter",
+                  "dimension": null
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+This matches $-M(c^3 - c - \kappa \nabla^2 c)$. Correct.
+
+Wait, the prompt says "Give the strong form (not the weak form)".
+The equation in the paper is $\frac{\partial c}{\partial t} = -M(f'(c) - \kappa \nabla^2 c)$.
+I will use this exactly.
+
+Let's verify the schema requirements:
+- `fields`: array of objects with `name`, `rank`, `space`, `description`, `dimension`.
+- `parameters`: array of objects with `name`, `rank`, `description`, `dimension`.
+- `equations`: array of objects with `type: "Equation"`, `lhs`, `rhs`, `name`.
+- `initial_conditions`: array of objects with `field`, `value`, `provenance`, `ambiguity`.
+- `boundary_conditions`: array of objects with `field`, `type`, `boundary_id`, `value`, `provenance`, `ambiguity`.
+- `constitutive_relations`, `invariants`, `assumptions`, `provenance`, `ambiguity` at root level.
+
+I will make sure all keys match exactly.
+One detail: `exponent` in `Pow` should be a number. The prompt example doesn't show `Pow`, but standard JSON allows numbers. I'll use `3`.
+Another detail: `x` and `y` in initial condition. I'll declare them as parameters.
+Actually, in PDE-IR, spatial coordinates are often not declared as parameters but are implicit or handled differently. However, the prompt says "Declare every field and parameter you reference". I'll declare `x` and `y` as parameters to be safe. Or I can just use them without declaring if they are standard, but the prompt is strict. I'll declare them.
+
+Wait, the initial condition is $c(x, y, 0) = \frac{1}{2}(2x - 1)(2y - 1)$.
+I will construct the tree for this.
+`Mul` factors: `Constant 0.5`, `Add` terms: `Mul(Constant 2, Parameter x)`, `Neg(Constant 1)`, `Add` terms: `Mul(Constant 2, Parameter y)`, `Neg(Constant 1)`.
+
+Let's assemble carefully.
+
+Check `boundary_conditions`:
+`type`: "neumann"
+`boundary_id`: "domain_boundary"
+`value`: `Constant 0`
+`field`: "c"
+
+Check `equations`:
+`lhs`: `TimeDerivative` of `c`
+`rhs`: as constructed above.
+`name`: "allen_cahn"
+
+Check `parameters`:
+`M`, `kappa`, `x`, `y`.
+
+One thing: `x` and `y` might be better as `Field`? No, coordinates are usually parameters or just constants in the expression tree for ICs. I'll stick to parameters.
+
+Let's double check the `Pow` node. The prompt says: `Expression trees are encoded as nested objects tagged by a "type" field (Add, Mul, Neg, Grad, Div, Laplacian, TimeDerivative, Inner, Pow, Apply, Field, Parameter, Constant, Equation, DomainIntegral, BoundaryIntegral).`
+So `Pow` takes `base` and `exponent`.
+
+I will construct the JSON carefully.
+
+Structure:
+```json
+{
+  "name": "allen_cahn_phase_ordering",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "c",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "non-conserved order parameter",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "M",
+      "rank": "scalar",
+      "description": "mobility",
+      "dimension": null
+    },
+    {
+      "name": "kappa",
+      "rank": "scalar",
+      "description": "gradient-energy coefficient",
+      "dimension": null
+    },
+    {
+      "name": "x",
+      "rank": "scalar",
+      "description": "spatial coordinate x",
+      "dimension": null
+    },
+    {
+      "name": "y",
+      "rank": "scalar",
+      "description": "spatial coordinate y",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "TimeDerivative",
+        "operand": {
+          "type": "Field",
+          "name": "c",
+          "rank": "scalar",
+          "space": "H1",
+          "description": "non-conserved order parameter",
+          "dimension": null
+        }
+      },
+      "rhs": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Parameter",
+              "name": "M",
+              "rank": "scalar",
+              "description": "mobility",
+              "dimension": null
+            }
+          },
+          {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Pow",
+                "base": {
+                  "type": "Field",
+                  "name": "c",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "non-conserved order parameter",
+                  "dimension": null
+                },
+                "exponent": 3
+              },
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Field",
+                  "name": "c",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "non-conserved order parameter",
+                  "dimension": null
+                }
+              },
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Mul",
+                  "factors": [
+                    {
+                      "type": "Parameter",
+                      "name": "kappa",
+                      "rank": "scalar",
+                      "description": "gradient-energy coefficient",
+                      "dimension": null
+                    },
+                    {
+                      "type": "Laplacian",
+                      "operand": {
+                        "type": "Field",
+                        "name": "c",
+                        "rank": "scalar",
+                        "space": "H1",
+                        "description": "non-conserved order parameter",
+                        "dimension": null
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "name": "allen_cahn_strong"
+    }
+  ],
+  "initial_conditions": [
+    {
+      "field": "c",
+      "value": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Constant",
+            "value": 0.5
+          },
+          {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "x",
+                    "rank": "scalar",
+                    "description": "spatial coordinate x",
+                    "dimension": null
+                  }
+                ]
+              },
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Constant",
+                  "value": 1
+                }
+              }
+            ]
+          },
+          {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "y",
+                    "rank": "scalar",
+                    "description": "spatial coordinate y",
+                    "dimension": null
+                  }
+                ]
+              },
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Constant",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "boundary_conditions": [
+    {
+      "field": "c",
+      "type": "neumann",
+      "boundary_id": "domain_boundary",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+
+Wait, the prompt says: "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`."
+For Allen-Cahn, the flux term in the PDE is usually $-M \kappa \nabla^2 c$. The boundary condition is $\nabla c \cdot n = 0$.
+The outward normal flux corresponding to the diffusion term $-M \kappa \nabla^2 c$ is $M \kappa \frac{\partial c}{\partial n}$.
+Since $\frac{\partial c}{\partial n} = 0$, the flux is 0. So `value: 0` is correct.
+
+One minor point: `exponent` in `Pow` might need to be a number or a Constant node. The prompt says `Pow` is in the list of types. I'll use a number `3` as it's standard. If it expects a node, I'll change to `{"type": "Constant", "value": 3}`. But usually numbers are fine. I'll stick to number.
+
+Check `initial_conditions` structure: The prompt example doesn't show it, but typically it's `{"field": "c", "value": {...}, ...}`. I'll keep it.
+
+Check `parameters` vs `fields`: `x` and `y` are coordinates. In many PDE-IRs, coordinates are not parameters but are accessed via a special syntax or are implicit. However, the prompt says "Declare every field and parameter you reference". I'll keep them as parameters. Alternatively, I could just use `x` and `y` as `Field`? No, coordinates are not fields. I'll leave them as parameters.
+
+Wait, the prompt says: "Expression trees are encoded as nested objects tagged by a "type" field (Add, Mul, Neg, Grad, Div, Laplacian, TimeDerivative, Inner, Pow, Apply, Field, Parameter, Constant, Equation, DomainIntegral, BoundaryIntegral)."
+It doesn't mention coordinates explicitly. I will assume `Parameter` is fine for `x` and `y`.
+
+Let's verify the JSON syntax carefully. No trailing commas. All strings quoted. Numbers unquoted. `null` unquoted.
+The structure matches the schema.
+One thing: `lhs` and `rhs` in `equations` should be expression trees.
+I will double check the `rhs` tree.
+`Mul` factors: `Neg(M)`, `Add(c^3, -c, -kappa*Laplacian(c))`
+This correctly represents $-M(c^3 - c - \kappa \nabla^2 c)$.
+Matches $\partial_t c = -M(f'(c) - \kappa \nabla^2 c)$ with $f'(c) = c^3 - c$.
+Correct.
+
+I will produce the JSON now.
+One detail: `pde_ir_version` should be a string.
+`dimension` is `null`.
+All good.
+I will output only the JSON.
+Let's quickly verify the `Pow` node structure. Sometimes `Pow` expects `base` and `exponent` as nodes. I'll make `exponent` a number `3` as it's simpler and standard. If it fails, it's a minor schema detail, but usually numbers are accepted. I'll stick with `3`.
+Actually, to be safe, I'll make `exponent` a `Constant` node? The prompt says `Pow` is a type. I'll keep it as number.
+Wait, the prompt example shows `Constant` for numbers in expressions. I'll change `exponent` to `{"type": "Constant", "value": 3}` just in case, or keep it as number. I'll keep it as number, it's fine.
+
+Final check of the JSON structure against the prompt:
+- `name`, `pde_ir_version`, `fields`, `parameters`, `equations`, `initial_conditions`, `boundary_conditions`, `constitutive_relations`, `invariants`, `assumptions`, `provenance`, `ambiguity`.
+All present.
+I will generate it. 
+One minor adjustment: `x` and `y` in initial condition. I'll just use them as `Parameter`. It's fine.
+The prompt says "Reply with ONLY the corrected JSON object -- no prose, no code fences."
+I will output raw JSON.
+Proceed. 
+Self-Correction/Refinement during thought:
+The `Pow` node in some IRs expects `exponent` to be a number. I'll keep it as `3`.
+The `initial_conditions` structure in the prompt example isn't shown, but typically it's `{"field": "c", "value": {...}}`. I'll stick to that.
+The `boundary_conditions` `type` is "neumann". Correct.
+Everything looks solid.
+Output matches request.
+Generating. 
+[Output Generation] -> JSON string. 
+Note: I will ensure strict JSON formatting. No markdown.
+Done. 
+Let's produce it. 
+```json
+{
+  "name": "allen_cahn_phase_ordering",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "c",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "non-conserved order parameter",
+      "dimension": null
+    }
+  ],
+  "parameters": [
+    {
+      "name": "M",
+      "rank": "scalar",
+      "description": "mobility",
+      "dimension": null
+    },
+    {
+      "name": "kappa",
+      "rank": "scalar",
+      "description": "gradient-energy coefficient",
+      "dimension": null
+    },
+    {
+      "name": "x",
+      "rank": "scalar",
+      "description": "spatial coordinate x",
+      "dimension": null
+    },
+    {
+      "name": "y",
+      "rank": "scalar",
+      "description": "spatial coordinate y",
+      "dimension": null
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "TimeDerivative",
+        "operand": {
+          "type": "Field",
+          "name": "c",
+          "rank": "scalar",
+          "space": "H1",
+          "description": "non-conserved order parameter",
+          "dimension": null
+        }
+      },
+      "rhs": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Parameter",
+              "name": "M",
+              "rank": "scalar",
+              "description": "mobility",
+              "dimension": null
+            }
+          },
+          {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Pow",
+                "base": {
+                  "type": "Field",
+                  "name": "c",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "non-conserved order parameter",
+                  "dimension": null
+                },
+                "exponent": 3
+              },
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Field",
+                  "name": "c",
+                  "rank": "scalar",
+                  "space": "H1",
+                  "description": "non-conserved order parameter",
+                  "dimension": null
+                }
+              },
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Mul",
+                  "factors": [
+                    {
+                      "type": "Parameter",
+                      "name": "kappa",
+                      "rank": "scalar",
+                      "description": "gradient-energy coefficient",
+                      "dimension": null
+                    },
+                    {
+                      "type": "Laplacian",
+                      "operand": {
+                        "type": "Field",
+                        "name": "c",
+                        "rank": "scalar",
+                        "space": "H1",
+                        "description": "non-conserved order parameter",
+                        "dimension": null
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "name": "allen_cahn_strong"
+    }
+  ],
+  "initial_conditions": [
+    {
+      "field": "c",
+      "value": {
+        "type": "Mul",
+        "factors": [
+          {
+            "type": "Constant",
+            "value": 0.5
+          },
+          {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "x",
+                    "rank": "scalar",
+                    "description": "spatial coordinate x",
+                    "dimension": null
+                  }
+                ]
+              },
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Constant",
+                  "value": 1
+                }
+              }
+            ]
+          },
+          {
+            "type": "Add",
+            "terms": [
+              {
+                "type": "Mul",
+                "factors": [
+                  {
+                    "type": "Constant",
+                    "value": 2
+                  },
+                  {
+                    "type": "Parameter",
+                    "name": "y",
+                    "rank": "scalar",
+                    "description": "spatial coordinate y",
+                    "dimension": null
+                  }
+                ]
+              },
+              {
+                "type": "Neg",
+                "operand": {
+                  "type": "Constant",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "boundary_conditions": [
+    {
+      "field": "c",
+      "type": "neumann",
+      "boundary_id": "domain_boundary",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      },
+      "provenance": null,
+      "ambiguity": null
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}
+```
+All checks passed. Output matches exactly. No extra text.
+Proceeds. 
+(Self-Correction/Verification during generation prep)
+Wait, `exponent` in `Pow` might be expected as a number. I'll keep it as `3`.
+The prompt says `Pow` is in the list. It's fine.
+One thing: `initial_conditions` in the prompt example isn't shown, but the structure I used is standard.
+I will output the JSON now. 
+All good. 
+Output matches request.
+Done. 
+[Output Generation] -> *Proceeds*

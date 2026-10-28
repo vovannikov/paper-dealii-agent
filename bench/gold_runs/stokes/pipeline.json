@@ -1,0 +1,22 @@
+{
+ "stages": {
+  "validate": "passed",
+  "generate": "passed",
+  "build": "passed",
+  "run": "passed",
+  "diagnose": "passed",
+  "verify": "skipped"
+ },
+ "details": {
+  "validate": "model and instance consistent",
+  "generate": "deal.II reference program generated",
+  "build": "compiled against deal.II",
+  "run": "ran to completion (256 cells, 2467 unknowns)",
+  "diagnose": "Newton / linear-solver / time-step diagnostics acceptable",
+  "verify": "verification disabled"
+ },
+ "issues": [],
+ "solution": "/home/vladimir/work/dealii-agent/paper-bench/gold_runs/stokes/solution.vtu",
+ "passed": true,
+ "seconds": 39.4251389503479
+}

@@ -1,0 +1,121 @@
+{
+  "name": "allen_cahn",
+  "pde_ir_version": "0.1",
+  "fields": [
+    {
+      "name": "c",
+      "rank": "scalar",
+      "space": "H1",
+      "description": "order parameter",
+      "dimension": {"length": 2, "time": 1}
+    }
+  ],
+  "parameters": [
+    {
+      "name": "M",
+      "rank": "scalar",
+      "description": "mobility",
+      "dimension": {"time": -1}
+    },
+    {
+      "name": "κ",
+      "rank": "scalar",
+      "description": "gradient-energy coefficient",
+      "dimension": {"length": 2, "time": -1}
+    }
+  ],
+  "equations": [
+    {
+      "type": "Equation",
+      "lhs": {
+        "type": "Add",
+        "terms": [
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Grad",
+                  "operand": {
+                    "type": "Field",
+                    "name": "c",
+                    "rank": "scalar",
+                    "space": "H1",
+                    "description": "order parameter",
+                    "dimension": {"length": 2, "time": 1}
+                  }
+                },
+                {
+                  "type": "Parameter",
+                  "name": "κ",
+                  "rank": "scalar",
+                  "description": "gradient-energy coefficient",
+                  "dimension": {"length": 2, "time": -1}
+                }
+              ]
+            }
+          },
+          {
+            "type": "Neg",
+            "operand": {
+              "type": "Mul",
+              "factors": [
+                {
+                  "type": "Parameter",
+                  "name": "M",
+                  "rank": "scalar",
+                  "description": "mobility",
+                  "dimension": {"time": -1}
+                },
+                {
+                  "type": "Grad",
+                  "operand": {
+                    "type": "Field",
+                    "name": "c",
+                    "rank": "scalar",
+                    "space": "H1",
+                    "description": "order parameter",
+                    "dimension": {"length": 2, "time": 1}
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "rhs": {
+        "type": "Constant",
+        "value": 0
+      },
+      "name": "strong"
+    }
+  ],
+  "initial_conditions": [
+    {
+      "field": "c",
+      "type": "dirichlet",
+      "boundary_id": "inlet",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      }
+    }
+  ],
+  "boundary_conditions": [
+    {
+      "field": "c",
+      "type": "neumann",
+      "boundary_id": "inlet",
+      "value": {
+        "type": "Constant",
+        "value": 0
+      }
+    }
+  ],
+  "constitutive_relations": [],
+  "invariants": [],
+  "assumptions": [],
+  "provenance": null,
+  "ambiguity": null
+}

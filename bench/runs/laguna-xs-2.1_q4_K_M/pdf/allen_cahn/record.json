@@ -1,0 +1,47 @@
+{
+ "model": "laguna-xs-2.1:q4_K_M",
+ "case": "allen_cahn",
+ "modality": "pdf",
+ "document_chars": 943,
+ "started": 1793144966.1604774,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 102.05592179298401,
+ "model_parse_errors": [
+  "response JSON did not match PDEModel: 'int' object is not subscriptable",
+  "response JSON did not match PDEModel: 'int' object is not subscriptable",
+  "response JSON did not match PDEModel: 'int' object is not subscriptable"
+ ],
+ "total_seconds": 102.0821635723114,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 70.6398241519928,
+   "prompt_tokens": 1811,
+   "completion_tokens": 5814,
+   "answer_chars": 6088,
+   "reasoning_chars": 14448,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 15.971394300460815,
+   "prompt_tokens": 3419,
+   "completion_tokens": 1253,
+   "answer_chars": 5255,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 15.439485788345337,
+   "prompt_tokens": 4728,
+   "completion_tokens": 1253,
+   "answer_chars": 5255,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

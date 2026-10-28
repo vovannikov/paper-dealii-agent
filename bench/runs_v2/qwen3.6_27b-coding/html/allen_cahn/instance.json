@@ -1,0 +1,31 @@
+{
+  "parameter_values": {
+    "M": 1.0,
+    "kappa": 0.01
+  },
+  "geometry": {
+    "lower_left": [
+      0.0,
+      0.0
+    ],
+    "upper_right": [
+      1.0,
+      1.0
+    ],
+    "boundary_ids": {
+      "boundary": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    "refinements": 4
+  },
+  "field_degrees": {},
+  "pin_fields": [],
+  "value_sources": {
+    "M": "Section 3",
+    "kappa": "Section 3"
+  }
+}

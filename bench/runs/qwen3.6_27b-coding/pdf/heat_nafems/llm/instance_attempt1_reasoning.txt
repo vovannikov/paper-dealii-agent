@@ -1,0 +1,173 @@
+Here's a thinking process:
+
+1.  **Analyze User Input:**
+   - **Task:** Extract CONCRETE run data for a PDE model from a scientific paper/benchmark description.
+   - **Output Format:** Single JSON object matching `ProblemInstance` schema.
+   - **Required Fields:**
+     - `parameter_values`: numeric values for `k`, `h`, `T_amb`.
+     - `geometry`: axis-aligned box (`lower_left`, `upper_right`), `boundary_ids` (map from boundary names to deal.II face ids: 0=x-min/left, 1=x-max/right, 2=y-min/bottom, 3=y-max/top, or lists), `refinements` (optional but in example), `field_degrees` (optional), `pin_fields` (optional).
+     - `value_sources` (optional): notes on where values came from.
+   - **Input Text:** A benchmark description for "2D Stationary Heat Transfer Benchmark".
+   - **Key Data in Text:**
+     - Domain: width 0.6 m, height 1 m. Coordinates: 0 ≤ x ≤ 0.6 m, 0 ≤ y ≤ 1 m.
+     - Parameters:
+       - `k` (thermal conductivity) = 52 W/(m·°C)
+       - `h` (heat-transfer coefficient) = 750 W/(m²·°C)
+       - `T_amb` (ambient temperature) = 0 °C
+     - Boundaries:
+       - Bottom (y=0): T = 100 °C (Dirichlet)
+       - Top and Right: Convection to T_amb = 0 °C (Robin/Neumann)
+       - Left (x=0): Insulated (Neumann, flux=0)
+     - Reference point: (0.6, 0.2), T_ref = 18.25 °C (not needed for schema, but good to note)
+   - **Schema Mapping:**
+     - `parameter_values`: `k`: 52.0, `h`: 750.0, `T_amb`: 0.0
+     - `geometry`:
+       - `lower_left`: [0.0, 0.0]
+       - `upper_right`: [0.6, 1.0]
+       - `boundary_ids`:
+         - "bottom": 2 (y-min)
+         - "top_and_right": [1, 3] (x-max and y-max)
+         - "left": 0 (x-min)
+     - `value_sources`: Can note "benchmark description" or specific sections.
+     - Check deal.II face id mapping: 0 = x-min/left, 1 = x-max/right, 2 = y-min/bottom, 3 = y-max/top.
+     - The prompt says: `boundary_ids`, a map from each of these boundary names to a deal.II colorize face id (0 = x-min/left, 1 = x-max/right, 2 = y-min/bottom, 3 = y-max/top), or to a list of face ids when one boundary covers several sides (e.g. [1, 3]): bottom, top_and_right, left. Each side belongs to at most one name.
+     - So I will use exactly those names: "bottom", "top_and_right", "left".
+     - `bottom` -> 2
+     - `top_and_right` -> [1, 3]
+     - `left` -> 0
+     - All sides covered? 0, 1, 2, 3. Yes.
+     - `refinements`: Not specified in text. I'll omit it or set to null/default. The prompt says "Return a SINGLE JSON object matching the ProblemInstance schema". I'll stick to the required fields. I'll include `refinements` if needed, but it's not in the text. I'll omit it.
+     - `field_degrees`, `pin_fields`: Not in text. Omit.
+     - `value_sources`: I'll add brief notes.
+
+2.  **Construct JSON:**
+   ```json
+   {
+     "parameter_values": {
+       "k": 52.0,
+       "h": 750.0,
+       "T_amb": 0.0
+     },
+     "geometry": {
+       "lower_left": [0.0, 0.0],
+       "upper_right": [0.6, 1.0],
+       "boundary_ids": {
+         "bottom": 2,
+         "top_and_right": [1, 3],
+         "left": 0
+       }
+     },
+     "value_sources": {
+       "k": "Governing equation / Model summary",
+       "h": "Boundary conditions / Model summary",
+       "T_amb": "Boundary conditions / Model summary",
+       "geometry": "Problem description / Model summary"
+     }
+   }
+   ```
+
+3.  **Verify against constraints:**
+   - `parameter_values`: numeric values for k, h, T_amb. -> 52.0, 750.0, 0.0. Correct.
+   - `geometry`: axis-aligned box (`lower_left`, `upper_right`) plus `boundary_ids`. -> [0.0, 0.0], [0.6, 1.0]. Correct.
+   - `boundary_ids` mapping: bottom->2, top_and_right->[1,3], left->0. Matches deal.II convention specified. Correct.
+   - `value_sources`: optional, included. Correct.
+   - Units: The prompt says "Use the values/units the paper states." I'll just put the numeric values as requested. The schema expects numbers.
+   - Check if any other fields are strictly required by the prompt's example: `refinements`, `field_degrees`, `pin_fields` are in the example but marked optional or not strictly required by the prompt text. I'll stick to the core requested fields.
+   - The prompt says: "Return a SINGLE JSON object matching the ProblemInstance schema: - `parameter_values`: ... - `geometry`: ... - `value_sources` (optional): ..."
+   - I will output exactly that.
+
+   One minor point: The prompt says "boundary_ids, a map from each of these boundary names to a deal.II colorize face id ... : bottom, top_and_right, left." It explicitly lists the names to use. I will use exactly those.
+   All good.
+
+   Let's double check the exact wording: "boundary_ids, a map from each of these boundary names to a deal.II colorize face id (0 = x-min/left, 1 = x-max/right, 2 = y-min/bottom, 3 = y-max/top), or to a list of face ids when one boundary covers several sides (e.g. [1, 3]): bottom, top_and_right, left."
+   So the keys should be "bottom", "top_and_right", "left".
+   Values: bottom -> 2, top_and_right -> [1, 3], left -> 0.
+   Matches perfectly.
+
+   Parameter values: k=52, h=750, T_amb=0.
+   Geometry: lower_left=[0.0, 0.0], upper_right=[0.6, 1.0].
+   All set.
+
+   I will generate the JSON now.
+   One thing: The prompt example includes `refinements`, `field_degrees`, `pin_fields`. I'll omit them as they aren't in the text and aren't strictly requested. The prompt says "matching the ProblemInstance schema" but only lists the required ones in the bullet points. I'll stick to the requested structure.
+
+   Final check of the text:
+   "The rectangle has a width of 0.6 m and a height of 1 m." -> x in [0, 0.6], y in [0, 1].
+   "k = 52 W/(m·°C)"
+   "h = 750 W/(m²·°C)"
+   "Tamb = 0 °C"
+   All numeric values are clear.
+   JSON structure matches request.
+   Ready. 
+   Output matches exactly.✅
+   I will produce the JSON. 
+   Note: I'll make sure the JSON is valid and strictly follows the requested format. No extra text.
+   One detail: `value_sources` is optional, I'll include it briefly.
+   All good. 
+   Output generation. 
+   ```json
+   {
+     "parameter_values": {
+       "k": 52.0,
+       "h": 750.0,
+       "T_amb": 0.0
+     },
+     "geometry": {
+       "lower_left": [
+         0.0,
+         0.0
+       ],
+       "upper_right": [
+         0.6,
+         1.0
+       ],
+       "boundary_ids": {
+         "bottom": 2,
+         "top_and_right": [
+           1,
+           3
+         ],
+         "left": 0
+       }
+     },
+     "value_sources": {
+       "k": "Governing equation / Model summary table",
+       "h": "Boundary conditions / Model summary table",
+       "T_amb": "Boundary conditions / Model summary table",
+       "geometry": "Problem description / Model summary table"
+     }
+   }
+   ```
+   Matches perfectly. Proceeds. 
+   Self-Correction/Refinement during thought: 
+   The prompt says "Use the values/units the paper states." It doesn't ask to strip units, but JSON numbers can't have units. I'll just put the numbers as requested. The schema says `parameter_values`: a numeric value for each...
+   I'll keep it as numbers.
+   All good.✅
+   Output matches. 
+   [Done] 
+   Generating response. 
+   *(Self-Correction/Verification during generation prep)*: 
+   Check boundary mapping again: 
+   0 = x-min/left -> left boundary is insulated. Correct.
+   1 = x-max/right -> right boundary is convection. Correct.
+   2 = y-min/bottom -> bottom boundary is T=100. Correct.
+   3 = y-max/top -> top boundary is convection. Correct.
+   So `top_and_right` -> [1, 3]. Correct.
+   `bottom` -> 2. Correct.
+   `left` -> 0. Correct.
+   Geometry: lower_left [0.0, 0.0], upper_right [0.6, 1.0]. Correct.
+   Parameters: k=52, h=750, T_amb=0. Correct.
+   Everything aligns. Output matches request.✅
+   Proceeds. 
+   [Output Generation] -> *Proceeds*
+   *(Note: I will format it exactly as requested, single JSON object)*
+   `{ "parameter_values": { "k": 52.0, "h": 750.0, "T_amb": 0.0 }, "geometry": { "lower_left": [0.0, 0.0], "upper_right": [0.6, 1.0], "boundary_ids": { "bottom": 2, "top_and_right": [1, 3], "left": 0 } }, "value_sources": { "k": "Governing equation / Model summary", "h": "Boundary conditions / Model summary", "T_amb": "Boundary conditions / Model summary", "geometry": "Problem description / Model summary" } }`
+   Looks solid.✅
+   Output matches. 
+   [Final Check of the Prompt]: "Return a SINGLE JSON object matching the ProblemInstance schema: - `parameter_values`: ... - `geometry`: ... - `value_sources` (optional): ..."
+   All constraints met. 
+   Proceeds. 
+   [Output Generation] (matches the refined JSON) -> *Done.* 
+   *(Self-Correction/Note during thought)*: I should ensure the JSON keys exactly match the prompt's request. The prompt says `boundary_ids` map from "bottom, top_and_right, left". I used those. Good.
+   I will output the JSON now. 
+   [Output] -> *Proceeds*

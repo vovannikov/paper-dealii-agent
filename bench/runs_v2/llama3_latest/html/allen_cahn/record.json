@@ -1,0 +1,47 @@
+{
+ "model": "llama3:latest",
+ "case": "allen_cahn",
+ "modality": "html",
+ "document_chars": 4767,
+ "started": 1793168782.4790294,
+ "model_ok": false,
+ "model_attempts": 3,
+ "model_first_ok": false,
+ "model_issues": [],
+ "model_seconds": 51.15339517593384,
+ "model_parse_errors": [
+  "no valid JSON object found in response",
+  "no valid JSON object found in response",
+  "no valid JSON object found in response"
+ ],
+ "total_seconds": 51.17510747909546,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 18.292232275009155,
+   "prompt_tokens": 3500,
+   "completion_tokens": 831,
+   "answer_chars": 3724,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 16.319788694381714,
+   "prompt_tokens": 4378,
+   "completion_tokens": 761,
+   "answer_chars": 3442,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "model",
+   "seconds": 16.539011478424072,
+   "prompt_tokens": 5186,
+   "completion_tokens": 761,
+   "answer_chars": 3442,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+Here is the extracted ProblemInstance in JSON format:
+
+```
+{
+  "parameter_values": {
+    "κ": 0.5,
+    "β": 2.0
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [1.0, 1.0],
+    "boundary_ids": {
+      "left": 0,
+      "right": 1,
+      "bottom": 2,
+      "top": 3
+    }
+  },
+  "value_sources": {}
+}
+```
+
+Note that the paper does not provide any information about the domain geometry beyond the fact that it is a square plate. Therefore, I did not include any additional information about the domain geometry.

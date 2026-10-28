@@ -1,0 +1,59 @@
+{
+ "model": "llama3:latest",
+ "case": "heat_nafems",
+ "modality": "pdf",
+ "document_chars": 2489,
+ "started": 1793130516.8745694,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 21.82382822036743,
+ "model_parse_errors": [],
+ "instance_ok": false,
+ "instance_attempts": 3,
+ "instance_first_ok": false,
+ "instance_issues": [
+  "missing_parameter_value: no numeric value supplied for parameter 'Tamb'"
+ ],
+ "instance_seconds": 8.768539428710938,
+ "total_seconds": 30.62455677986145,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 21.82152795791626,
+   "prompt_tokens": 2123,
+   "completion_tokens": 1040,
+   "answer_chars": 4209,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 3.6190948486328125,
+   "prompt_tokens": 1229,
+   "completion_tokens": 157,
+   "answer_chars": 480,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 2.5717997550964355,
+   "prompt_tokens": 1426,
+   "completion_tokens": 127,
+   "answer_chars": 322,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 2.57629132270813,
+   "prompt_tokens": 1593,
+   "completion_tokens": 127,
+   "answer_chars": 322,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

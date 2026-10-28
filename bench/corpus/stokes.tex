@@ -1,0 +1,33 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}\usepackage{amsmath,amssymb}\usepackage[margin=2.5cm]{geometry}
+\title{Creeping Flow in a Lid-Driven Square Cavity}\author{G. Fluid and H. Flow}\date{}
+\begin{document}\maketitle
+\section*{1. Problem description}
+We consider the steady flow of an incompressible Newtonian fluid in the unit square cavity $\Omega=(0,1)\times(0,1)$. The upper wall, $y=1$, slides in its own plane with a constant velocity, whereas the other three walls are at rest. The Reynolds number is so small that inertia is negligible.
+
+\section*{2. Governing equations}
+The velocity $u=(u_x,u_y)$ and the pressure $p$ satisfy the Stokes equations
+
+\begin{equation}
+-\nabla\cdot\left(2\nu\,\varepsilon(u)\right) + \nabla p = 0 \quad \text{in } \Omega,
+\end{equation}
+\begin{equation}
+\nabla\cdot u = 0 \quad \text{in } \Omega,
+\end{equation}
+where $\nu$ is the kinematic viscosity and $\varepsilon(u)=\tfrac12(\nabla u+\nabla u^{T})$ is the rate of strain tensor.
+
+\section*{3. Boundary conditions}
+On the moving lid the velocity is prescribed,
+
+\begin{equation}
+u = u_{\mathrm{lid}} \quad \text{on } y=1 ,
+\end{equation}
+and the remaining walls, $x=0$, $x=1$ and $y=0$, are no-slip walls, $u=0$. Because the velocity is prescribed on the whole boundary, the pressure is determined only up to an additive constant.
+
+\section*{4. Parameters}
+The viscosity is $\nu=0.1$ and the lid moves in the positive $x$-direction with $u_{\mathrm{lid}}=(1,0)$.
+
+\section*{5. Discussion}
+A primary vortex forms slightly above the centre of the cavity; secondary vortices appear in the lower corners only for much larger cavities.
+
+\end{document}

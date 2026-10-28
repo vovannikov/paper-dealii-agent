@@ -1,0 +1,322 @@
+Here's a thinking process:
+
+1.  **Analyze User Input:**
+   - **Task:** Extract a mathematical model from a scientific paper into femagent's typed PDE intermediate representation (PDE-IR).
+   - **Input Text:** A short paper describing transient heating of a square plate with a ramped wall temperature.
+   - **Key Components in Text:**
+     - Domain: Square plate $\Omega = (0, 1) \times (0, 1)$
+     - Time interval: $0 \le t \le 1$
+     - Initial condition: $T(x, y, 0) = 0$
+     - Governing equation: $\frac{\partial T}{\partial t} - \nabla \cdot (\kappa \nabla T) = 0$
+     - Boundary conditions:
+       - Left edge ($x=0$): $T(0, y, t) = \beta t$ (Dirichlet)
+       - Right ($x=1$), bottom ($y=0$), top ($y=1$): Insulated, $\kappa \frac{\partial T}{\partial n} = 0$ (Neumann, value 0)
+     - Parameters: $\kappa = 0.5$ (thermal diffusivity), $\beta = 2$ (heating rate)
+     - Units: Time in seconds, Temperature in Kelvin. $\kappa$ has units $m^2/s$ (diffusivity), $\beta$ has units $K/s$.
+     - Note: The problem is 2D spatial, 1D temporal.
+
+2.  **Map to PDE-IR Schema:**
+   - **Fields:**
+     - `T`: scalar, H1 (or H1 for transient heat equation), description: "Temperature", dimension: `{"temperature": 1}`
+   - **Parameters:**
+     - `kappa` (or `κ`): scalar, description: "thermal diffusivity", dimension: `{"length": 2, "time": -1}` (since $m^2/s$)
+     - `beta` (or `β`): scalar, description: "heating rate", dimension: `{"temperature": 1, "time": -1}` (since $K/s$)
+     - `t`: Actually, time is usually handled implicitly in the PDE-IR or as a parameter/field. The schema doesn't explicitly list `t` as a field, but time derivatives are handled via `TimeDerivative`. I'll stick to fields/parameters as requested. I won't add `t` as a field unless necessary, but the Dirichlet condition uses `t`. In PDE-IR, time-dependent BCs can use a `Time` parameter or just be expressed as a function of time. I'll add `t` as a parameter or just use a `Time` placeholder if needed, but the schema example uses constants/parameters. I'll define `t` as a parameter or just use a `Parameter` named `t` for the BC value, or better, just use a `Parameter` `t` with dimension `{"time": 1}`. Actually, femagent PDE-IR often handles time implicitly, but for BCs depending on time, I'll define `t` as a parameter or just use a `Parameter` named `t`. Wait, the schema says "Declare every field and parameter you reference". I'll add `t` as a parameter with dimension `{"time": 1}`.
+     - Let's check dimensions: $\kappa$ is diffusivity $[L^2 T^{-1}]$. $\beta$ is heating rate $[\Theta T^{-1}]$. $T$ is temperature $[\Theta]$.
+   - **Equations:**
+     - Strong form: $\frac{\partial T}{\partial t} - \nabla \cdot (\kappa \nabla T) = 0$
+     - In PDE-IR: `Add` of `TimeDerivative(T)` and `Neg(Div(Mul(kappa, Grad(T))))` equals 0.
+     - Structure:
+       ```json
+       {
+         "type": "Equation",
+         "lhs": {
+           "type": "Add",
+           "terms": [
+             {"type": "TimeDerivative", "operand": {"type": "Field", "name": "T", ...}},
+             {"type": "Neg", "operand": {"type": "Div", "operand": {"type": "Mul", "factors": [{"type": "Parameter", "name": "kappa", ...}, {"type": "Grad", "operand": {"type": "Field", "name": "T", ...}}]}}}
+           ]
+         },
+         "rhs": {"type": "Constant", "value": 0},
+         "name": "heat_equation"
+       }
+       ```
+   - **Initial Conditions:**
+     - $T(x, y, 0) = 0$
+     - Structure: `{"field": "T", "value": {"type": "Constant", "value": 0}, "provenance": null, "ambiguity": null}`
+   - **Boundary Conditions:**
+     - Left edge ($x=0$): Dirichlet, value $\beta t$. I'll represent $\beta t$ as `Mul(beta, t)`. I need to declare `t` as a parameter or just use a `Parameter` named `t`. Actually, time is often implicit, but I'll add `t` as a parameter with dimension `{"time": 1}`.
+     - Right, bottom, top edges: Neumann, value 0. I can group them as `insulated_boundaries` or separate them. The prompt says "Use one boundary_id per distinct condition; one id may cover several sides". I'll use `insulated` for x=1, y=0, y=1.
+     - Left edge: `left`
+     - Structure for Dirichlet: `{"field": "T", "type": "dirichlet", "boundary_id": "left", "value": {"type": "Mul", "factors": [{"type": "Parameter", "name": "beta", ...}, {"type": "Parameter", "name": "t", ...}]}, ...}`
+     - Structure for Neumann: `{"field": "T", "type": "neumann", "boundary_id": "insulated", "value": {"type": "Constant", "value": 0}, ...}`
+   - **Constitutive Relations, Invariants, Assumptions:** None explicitly stated beyond constant $\kappa$ and no sources. I'll leave them empty or add assumptions if needed. The prompt says "Produce your best guess even when a reading is uncertain." I'll keep them empty arrays.
+   - **Dimensions:**
+     - T: `{"temperature": 1}`
+     - kappa: `{"length": 2, "time": -1}`
+     - beta: `{"temperature": 1, "time": -1}`
+     - t: `{"time": 1}`
+   - **Check PDE-IR syntax:**
+     - `TimeDerivative` takes an `operand`.
+     - `Grad` takes an `operand`.
+     - `Div` takes an `operand`.
+     - `Mul` takes `factors` (array).
+     - `Add` takes `terms` (array).
+     - `Neg` takes `operand`.
+     - `Field` has `name`, `rank`, `space`, `description`, `dimension`.
+     - `Parameter` has `name`, `rank`, `description`, `dimension`.
+     - `Constant` has `value`.
+     - `Equation` has `lhs`, `rhs`, `name`.
+     - `boundary_conditions` array items have `field`, `type`, `boundary_id`, `value`, `provenance`, `ambiguity`.
+     - `initial_conditions` array items have `field`, `value`, `provenance`, `ambiguity`.
+
+   Let's construct carefully.
+
+   Fields:
+   ```json
+   {
+     "name": "T",
+     "rank": "scalar",
+     "space": "H1",
+     "description": "Temperature",
+     "dimension": {"temperature": 1}
+   }
+   ```
+
+   Parameters:
+   ```json
+   {
+     "name": "kappa",
+     "rank": "scalar",
+     "description": "Thermal diffusivity",
+     "dimension": {"length": 2, "time": -1}
+   },
+   {
+     "name": "beta",
+     "rank": "scalar",
+     "description": "Heating rate",
+     "dimension": {"temperature": 1, "time": -1}
+   },
+   {
+     "name": "t",
+     "rank": "scalar",
+     "description": "Time",
+     "dimension": {"time": 1}
+   }
+   ```
+
+   Equation:
+   $\frac{\partial T}{\partial t} - \nabla \cdot (\kappa \nabla T) = 0$
+   LHS: `Add` of `TimeDerivative(T)` and `Neg(Div(Mul(kappa, Grad(T))))`
+   RHS: `Constant(0)`
+
+   Initial Condition:
+   `T` at t=0 is 0.
+
+   Boundary Conditions:
+   - `left`: dirichlet, value `Mul(beta, t)`
+   - `insulated`: neumann, value `Constant(0)`
+
+   Let's verify the Neumann condition sign convention from the prompt:
+   "A `neumann` or `robin` value is the prescribed OUTWARD normal flux, i.e. for `-div(k grad(u))` the value is `k du/dn`. An insulated / zero-flux boundary is neumann with value 0."
+   The paper says: $\kappa \frac{\partial T}{\partial n} = 0$. This matches exactly. So value is 0.
+
+   Check Dirichlet: "a `dirichlet` value is the prescribed field value." Paper: $T(0, y, t) = \beta t$. So value is $\beta t$.
+
+   All good.
+
+   One detail: The prompt says "Declare every field and parameter you reference under `fields`/`parameters`." I'll include `t` as a parameter. Sometimes time is implicit, but it's safer to declare it. Alternatively, I could just use a `Parameter` named `t` or assume it's handled by the solver. I'll stick to declaring it.
+
+   Let's assemble the JSON carefully.
+
+   Structure:
+   ```json
+   {
+     "name": "transient_heating_square_plate",
+     "pde_ir_version": "0.1",
+     "fields": [ ... ],
+     "parameters": [ ... ],
+     "equations": [ ... ],
+     "initial_conditions": [ ... ],
+     "boundary_conditions": [ ... ],
+     "constitutive_relations": [],
+     "invariants": [],
+     "assumptions": [],
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+
+   Filling in details:
+   Fields: T
+   Parameters: kappa, beta, t
+   Equation: heat equation
+   IC: T=0
+   BCs: left (dirichlet), insulated (neumann)
+
+   Check dimensions again:
+   T: temperature -> `{"temperature": 1}`
+   kappa: diffusivity -> $m^2/s$ -> `{"length": 2, "time": -1}`
+   beta: heating rate -> $K/s$ -> `{"temperature": 1, "time": -1}`
+   t: time -> `{"time": 1}`
+
+   Check equation structure:
+   ```json
+   {
+     "type": "Equation",
+     "lhs": {
+       "type": "Add",
+       "terms": [
+         {
+           "type": "TimeDerivative",
+           "operand": {
+             "type": "Field",
+             "name": "T",
+             "rank": "scalar",
+             "space": "H1",
+             "description": "Temperature",
+             "dimension": {"temperature": 1}
+           }
+         },
+         {
+           "type": "Neg",
+           "operand": {
+             "type": "Div",
+             "operand": {
+               "type": "Mul",
+               "factors": [
+                 {
+                   "type": "Parameter",
+                   "name": "kappa",
+                   "rank": "scalar",
+                   "description": "Thermal diffusivity",
+                   "dimension": {"length": 2, "time": -1}
+                 },
+                 {
+                   "type": "Grad",
+                   "operand": {
+                     "type": "Field",
+                     "name": "T",
+                     "rank": "scalar",
+                     "space": "H1",
+                     "description": "Temperature",
+                     "dimension": {"temperature": 1}
+                   }
+                 }
+               ]
+             }
+           }
+         }
+       ]
+     },
+     "rhs": {
+       "type": "Constant",
+       "value": 0
+     },
+     "name": "heat_equation"
+   }
+   ```
+
+   Initial condition:
+   ```json
+   {
+     "field": "T",
+     "value": {
+       "type": "Constant",
+       "value": 0
+     },
+     "provenance": null,
+     "ambiguity": null
+   }
+   ```
+
+   Boundary conditions:
+   ```json
+   [
+     {
+       "field": "T",
+       "type": "dirichlet",
+       "boundary_id": "left",
+       "value": {
+         "type": "Mul",
+         "factors": [
+           {
+             "type": "Parameter",
+             "name": "beta",
+             "rank": "scalar",
+             "description": "Heating rate",
+             "dimension": {"temperature": 1, "time": -1}
+           },
+           {
+             "type": "Parameter",
+             "name": "t",
+             "rank": "scalar",
+             "description": "Time",
+             "dimension": {"time": 1}
+           }
+         ]
+       },
+       "provenance": null,
+       "ambiguity": null
+     },
+     {
+       "field": "T",
+       "type": "neumann",
+       "boundary_id": "insulated",
+       "value": {
+         "type": "Constant",
+         "value": 0
+       },
+       "provenance": null,
+       "ambiguity": null
+     }
+   ]
+   ```
+
+   Wait, should I include `t` as a parameter? In many PDE-IR formats, time is implicit or handled by the solver. But the prompt says "Declare every field and parameter you reference". I'll keep it. Alternatively, I could just use a `Parameter` named `t` or assume it's fine. I'll stick with it.
+
+   One minor point: The prompt example uses `Neg` for the source term in the equation: `-f`. Here the equation is `dT/dt - div(k grad T) = 0`. So `Add([TimeDerivative(T), Neg(Div(...))])` is correct.
+
+   Check dimensions for `kappa`: The paper says "constant thermal diffusivity κ". Diffusivity units are $L^2 T^{-1}$. Correct.
+   Check dimensions for `beta`: "heating rate β". Units $K/s$ or $\Theta T^{-1}$. Correct.
+   Check dimensions for `T`: Temperature. Correct.
+
+   All looks solid. I will generate the JSON now.
+   I'll make sure the JSON matches the schema exactly.
+   One thing: `space` for transient heat equation is typically `H1`. I'll use `"H1"`.
+   I'll double check the `Mul` factors order. It doesn't matter mathematically, but I'll keep it consistent.
+   I'll verify the `boundary_id` names: "left" and "insulated" (covers right, bottom, top). The prompt says "one id may cover several sides of the domain (e.g. 'top_and_right')". So "insulated" is fine.
+
+   Final check of the prompt: "A convective condition `-k du/dn = h (u - u_amb)` is robin with value `-h*(u - u_amb)`". Not applicable here.
+   "An insulated / zero-flux boundary is neumann with value 0." Matches.
+   "Give every boundary the paper mentions a condition." Left, right, bottom, top. Covered.
+   "Attach SI base dimensions...". Done.
+   "Produce your best guess even when a reading is uncertain." Done.
+
+   I will construct the JSON carefully.
+   One detail: `t` as a parameter might be redundant if the solver handles time, but it's safer to include it as requested. I'll include it.
+   Actually, in femagent PDE-IR, time is often implicit, but I'll follow the instruction strictly.
+   I'll format it properly.
+   All set. Output matches request.✅
+   Let's produce it. 
+   Self-Correction/Refinement during thought: 
+   Should I use `κ` and `β` as names or `kappa`/`beta`? The prompt uses `k` in the example. I'll use `kappa` and `beta` for ASCII compatibility, but it doesn't matter. I'll stick to `kappa` and `beta`.
+   The dimension for temperature is `{"temperature": 1}`.
+   The dimension for time is `{"time": 1}`.
+   The dimension for diffusivity is `{"length": 2, "time": -1}`.
+   The dimension for heating rate is `{"temperature": 1, "time": -1}`.
+   All correct.
+   I will generate the JSON now. 
+   Structure matches exactly. No extra text. Single JSON object.✅
+   Proceeds. 
+   Output Generation. 
+   [Done] 
+   *Self-Correction/Verification during generation prep*:
+   Wait, the prompt says: "Expression trees are encoded as nested objects tagged by a "type" field (Add, Mul, Neg, Grad, Div, Laplacian, TimeDerivative, Inner, Pow, Apply, Field, Parameter, Constant, Equation, DomainIntegral, BoundaryIntegral)."
+   I used `TimeDerivative`, `Div`, `Grad`, `Mul`, `Add`, `Neg`, `Field`, `Parameter`, `Constant`, `Equation`. All valid.
+   I'll make sure the JSON is strictly valid.
+   One thing: `t` might not need to be a parameter if it's just a variable in the BC. But I'll keep it as a parameter for completeness. Alternatively, I could just use a `Parameter` named `t`. It's fine.
+   I will output the JSON. 
+   All good. 
+   Output matches response. 
+   [Proceeds]

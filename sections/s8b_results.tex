@@ -1,0 +1,53 @@
+Table~\ref{tab:summary} summarises the 60 runs; Table~\ref{tab:matrix} shows every cell.
+
+\begin{table}[t]
+\centering\small
+\caption{Extraction benchmark with the original prompt: number of documents (out of 6) per model and input format that were \emph{valid} (accepted by the deterministic checks), \emph{correct} (equivalent to gold), \emph{ran} (the generated solver compiled and ran) and \emph{exact} (solver output identical to the gold solver's).}
+\label{tab:summary}
+\input{tables/tab_summary}
+\end{table}
+
+\begin{table}[t]
+\centering\small
+\caption{Outcome of every run with the original prompt (H = HTML/MathML, P = PDF text). \cmark: correct (equivalent to gold); $\sim$: accepted by the validators but not equivalent to the paper; \xmark: rejected at the trust boundary (no valid model/instance).}
+\label{tab:matrix}
+\input{tables/tab_matrix}
+\end{table}
+
+\paragraph{Overall.} Of 60 runs, 33 (55\%) produced a model and an instance that passed the deterministic checks and 19 (32\%) were equivalent to the gold specification. The two input formats are indistinguishable at this sample size (valid 16 vs.\ 17, correct 10 vs.\ 9). The 27B reasoning model (Qwen3.6) was the most reliable: valid output in 11 of 12 runs and correct output in 7; the small non-reasoning models were valid in 5 to 7 of 12. No model solved the transient-heat or the Allen--Cahn document, and the vector-valued documents were solved only by the 27B model and, once, by Qwen3-Coder.
+
+\paragraph{The repair loop matters.} Of the 33 valid extractions, 16 (48\%) required at least one repair round, and 7 of the 19 correct ones (37\%) would not have existed without it. The repair messages were of three kinds: the JSON failed the schema (a missing \code{name}, \code{base} or \code{space} key); the equation sides had different tensor ranks; or a hallucinated dimension made the two sides of an equation inconsistent.
+
+\paragraph{By problem class.} The steady scalar problems are largely solved: of the 20 runs on the heat and Poisson documents, 15 were correct (7 and 8). The transient-heat and Allen--Cahn documents were correct in none of the 20 runs, the elasticity document in one, the Stokes document in three. This is the pattern expected if the obstacle is the expressiveness of the prompt contract rather than mathematical understanding, which Section~\ref{sec:prompt} tests.
+
+\subsubsection{Failure analysis}
+Table~\ref{tab:failures} classifies the 41 runs that were not correct.
+\begin{table}[t]
+\centering\small
+\caption{What happened in the 41 runs (original prompt) that were not correct.}
+\label{tab:failures}
+\input{tables/tab_failures}
+\end{table}
+
+\paragraph{Rejected at the trust boundary (27 runs).} The most frequent reason (16) is the \emph{schema}: the model's JSON misses a key that the codec requires (for a constitutive relation, a \code{Pow} without \code{base}, a \code{Field} without \code{space}) or contains members that do not exist in the schema (invented \code{provenance} objects). Five runs, all by the 33B reasoning model, ended in \emph{runaway reasoning} (about $62\,000$ output tokens and 20 minutes each, then truncation). Three runs by the smallest model were \emph{dimension-inconsistent} (the dimensions the model itself attached to parameters made the two sides of an equation disagree) and two were \emph{rank-inconsistent} (for example a scalar and a vector term in one sum of the Stokes momentum equation). One run lacked a parameter value ($T_\infty$ in the PDF text of the heat page, where the subscript is split from the symbol). These are the errors a typed IR detects mechanically, and in each case the diagnostic names what is wrong.
+
+\paragraph{Accepted by the validators but not equivalent to the paper (14 runs).} This is the dangerous class. Seven runs have a wrong equation (for example a flipped source sign, a missing time-derivative term, an equation that refers to the time as an unknown field, or the wrong momentum operator), five have wrong boundary data (a ramp written with a wrong time symbol; a prescribed temperature turned into a Robin condition), and two lost the initial condition (the Allen--Cahn document has a spatially varying initial field that the original prompt gives the model no node to express). Eight of the transient-heat extractions write the ramp as \code{beta*t} with \code{t} as a declared \emph{field} or \emph{parameter} instead of the time coordinate (Appendix~\ref{app:supp}); the original prompt does not list a time coordinate among its node tags.
+
+\subsubsection{End-to-end consequences}
+\label{sec:e2e}
+The 19 correct extractions entered the pipeline (generation, build, run; verification disabled) with the discretization data of the gold instance. Eighteen compiled and ran, and 15 of these produced output \emph{identical} to the gold solver's (relative nodal $\ell^2$ difference below $10^{-6}$). Three runs on the Stokes document were correct only \emph{modulo the incompressibility constraint}: the models wrote $-\nabla\cdot(\nu\nabla u)+\nabla p$ instead of $-\nabla\cdot(2\nu\varepsilon(u))+\nabla p$. The solvers ran, and their solutions differ from the gold one by 16\% (velocity) and 9.6\% (pressure) in relative nodal $\ell^2$ norm: the two forms agree in the continuum for $\nabla\cdot u=0$ but are different discrete problems (a different treatment of the lid corners is consistent with the velocity difference as well). One further run, correct by the scorer, was refused by the generator: the Navier--Cauchy form of elasticity (Appendix~\ref{app:supp}).
+
+What stopped the 14 ``valid but wrong'' runs? Thirteen did not produce a solution. In eight the generator refused the model (``field \code{t} uses space L2'', ``Dirichlet value must be a Constant or depend on space/time'', ``a time derivative but no initial condition''); in three the pipeline's \code{validate} stage rejected it (one boundary condition was flagged by the anti-dissipative flux rule; two instances failed because the injected pressure pinning referred to a field the model had named differently, an artefact of our injection of the gold discretization data); one produced code that failed to compile; and one made the generator crash. Only \emph{one} of the 14 ran to completion with a wrong problem: the Poisson source of flipped sign (Appendix~\ref{app:supp}). Two points should be made plainly. First, the late layers worked here largely because the backend's scope is narrow, not because they understand the mathematics: the generator's refusals are a by-product of what it cannot represent, so a wider backend would let more of these through, and the compile failure and the crash show that the generator's robustness against malformed models is itself a gap. Second, errors such as the flipped source sign are, by construction, invisible to every internal consistency check; they can only be detected by human review or by comparison with an independent reference, which is why the framework stores what was extracted together with the source notes.
+
+\subsubsection{Cost}
+Table~\ref{tab:cost} gives the average cost per run (two to three model calls including repair rounds). The non-reasoning models answer in well under a minute per call after loading: the median run takes 46~s (Llama~3), 40~s (Qwen3-Coder) or 3.3 minutes (Devstral, which is slower on this server). The two reasoning models spend 85\% and 96\% of their output on reasoning, which makes a typical Qwen3.6 run take 6 minutes and a bad Laguna run 20 minutes. The prompt of a first attempt is about 3\,000 tokens for the model call and 2\,000 for the instance call; the totals in the table include the repeated context of repair rounds. On the heat page, a correct extraction cost about $1.2\cdot10^3$ output tokens with the non-reasoning models and about $9\cdot10^3$ with Qwen3.6. No comparison with direct code generation is made, since that baseline was not run.
+\begin{table}[t]
+\centering\small
+\caption{Mean cost per run (original prompt, 12 runs per model): LLM calls, prompt and output tokens (summed over the calls of a run, including repair rounds), fraction of the output that is reasoning, and wall time per run on the local server.}
+\label{tab:cost}
+\input{tables/tab_cost}
+\end{table}
+
+\input{sections/s8c_prompt2}
+
+\input{sections/s8e_baseline}

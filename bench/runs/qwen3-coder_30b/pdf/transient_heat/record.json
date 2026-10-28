@@ -1,0 +1,39 @@
+{
+ "model": "qwen3-coder:30b",
+ "case": "transient_heat",
+ "modality": "pdf",
+ "document_chars": 1309,
+ "started": 1793131053.5528994,
+ "model_ok": true,
+ "model_attempts": 1,
+ "model_first_ok": true,
+ "model_issues": [],
+ "model_seconds": 12.306224346160889,
+ "model_parse_errors": [],
+ "instance_ok": true,
+ "instance_attempts": 1,
+ "instance_first_ok": true,
+ "instance_issues": [],
+ "instance_seconds": 2.1639113426208496,
+ "total_seconds": 14.482277870178223,
+ "calls": [
+  {
+   "stage": "model",
+   "seconds": 12.305429697036743,
+   "prompt_tokens": 1718,
+   "completion_tokens": 954,
+   "answer_chars": 3714,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  },
+  {
+   "stage": "instance",
+   "seconds": 2.163605213165283,
+   "prompt_tokens": 828,
+   "completion_tokens": 146,
+   "answer_chars": 388,
+   "reasoning_chars": 0,
+   "finish": "stop"
+  }
+ ]
+}

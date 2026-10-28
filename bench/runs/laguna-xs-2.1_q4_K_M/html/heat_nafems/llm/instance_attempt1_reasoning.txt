@@ -1,0 +1,149 @@
+Let me extract the problem instance from this paper content.
+
+**Parameter values:**
+- k (thermal conductivity): 52 W/(m·°C)
+- h (heat-transfer coefficient): 750 W/(m²·°C)
+- T_amb (ambient temperature): 0 °C
+
+**Geometry:**
+- Width: 0.6 m
+- Height: 1 m
+- So the rectangle has:
+  - lower_left: [0.0, 0.0]
+  - upper_right: [0.6, 1.0]
+
+**Boundary conditions:**
+- Bottom boundary (y=0): temperature prescribed at 100 °C
+- Top and right boundaries: Newton's law of cooling with h=750 W/(m²·°C), T_amb=0 °C
+- Left boundary (x=0): thermally insulated (zero normal heat flux)
+
+**Boundary IDs mapping:**
+In deal.II, the standard face IDs for a 2D box are:
+- 0 = x-min (left)
+- 1 = x-max (right)
+- 2 = y-min (bottom)
+- 3 = y-max (top)
+
+So:
+- Left boundary (x=0): face ID 0
+- Right boundary (x=0.6): face ID 1
+- Bottom boundary (y=0): face ID 2
+- Top boundary (y=1): face ID 3
+
+From the problem description:
+- Bottom boundary: temperature prescribed (T=100 °C) → face ID 2
+- Top and right boundaries: convection with ambient → faces 1 and 3
+- Left boundary: insulated → face ID 0
+
+So the boundary_ids mapping should be:
+- "left": 0 (insulated)
+- "bottom": 2 (prescribed temperature)
+- "top_and_right": [1, 3] (convection)
+
+Wait, let me re-read the problem. It says:
+- "The lower boundary is maintained at 100 °C" → bottom
+- "The upper and right boundaries exchange heat with an ambient environment at 0 °C by natural convection" → top and right
+- "The left boundary is thermally insulated" → left
+
+So:
+- left (x=0): insulated → face ID 0
+- bottom (y=0): T=100°C → face ID 2
+- top (y=1) and right (x=0.6): convection → faces 3 and 1
+
+The boundary_ids should map boundary names to face IDs. Let me think about what names to use...
+
+Looking at the example in the prompt:
+```
+"boundary_ids": {
+  "left": 0,
+  "bottom": 2,
+  "walls": [
+    1,
+    3
+  ]
+}
+```
+
+So I should use descriptive names. Based on the problem:
+- "left": 0 (insulated)
+- "bottom": 2 (prescribed temperature)
+- "top_and_right": [1, 3] (convection)
+
+Or maybe I should use more descriptive names like:
+- "insulated": 0 (left boundary)
+- "prescribed_temp": 2 (bottom boundary)
+- "convection": [1, 3] (top and right boundaries)
+
+Actually, looking at the example again, it seems like the names should be descriptive of the boundary condition type or location. Let me use:
+- "left": 0 (for the left boundary which is insulated)
+- "bottom": 2 (for the bottom boundary which has prescribed temperature)
+- "top_and_right": [1, 3] (for the top and right boundaries which have convection)
+
+This matches the example structure.
+
+**Value sources:**
+- k: paper, from the thermal conductivity section
+- h: paper, from the boundary conditions section
+- T_amb: paper, from the boundary conditions section
+
+Let me construct the JSON:
+
+```json
+{
+  "parameter_values": {
+    "k": 52.0,
+    "h": 750.0,
+    "T_amb": 0.0
+  },
+  "geometry": {
+    "lower_left": [0.0, 0.0],
+    "upper_right": [0.6, 1.0],
+    "boundary_ids": {
+      "left": 0,
+      "bottom": 2,
+      "top_and_right": [1, 3]
+    }
+  },
+  "value_sources": {
+    "k": "paper, thermal conductivity section",
+    "h": "paper, boundary conditions section",
+    "T_amb": "paper, boundary conditions section"
+  }
+}
+```
+
+Wait, I need to double-check the boundary IDs. In deal.II's deal.II library, for a 2D Cartesian mesh:
+- Face 0 is the left boundary (x-min)
+- Face 1 is the right boundary (x-max)
+- Face 2 is the bottom boundary (y-min)
+- Face 3 is the top boundary (y-max)
+
+So:
+- Left boundary (x=0): face ID 0 ✓
+- Right boundary (x=0.6): face ID 1 ✓
+- Bottom boundary (y=0): face ID 2 ✓
+- Top boundary (y=1): face ID 3 ✓
+
+The boundary conditions are:
+- Left (face 0): insulated
+- Bottom (face 2): T=100°C
+- Top (face 3) and Right (face 1): convection with T_amb=0°C
+
+So the boundary_ids mapping is correct.
+
+Actually, let me reconsider the naming. The problem says:
+- "The left boundary is thermally insulated"
+- "The lower boundary is maintained at 100 °C"
+- "The upper and right boundaries exchange heat with an ambient environment"
+
+So I could name them:
+- "insulated": 0 (left)
+- "prescribed": 2 (bottom)
+- "convection": [1, 3] (top and right)
+
+But the example uses "left", "bottom", "walls" which are more geometric names. Let me stick with geometric names that match the problem description:
+- "left": 0
+- "bottom": 2
+- "top_and_right": [1, 3]
+
+This seems reasonable.
